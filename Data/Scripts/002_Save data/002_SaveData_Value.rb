@@ -14,6 +14,9 @@ module SaveData
     # @return [Symbol] the value id
     attr_reader :id
 
+    #Sylvi Items
+    attr_reader :vanilla_id
+
     # @param id [Symbol] value id
     def initialize(id, &block)
       validate id => Symbol, block => Proc
@@ -22,7 +25,8 @@ module SaveData
       @load_in_bootup = false
       instance_eval(&block)
       raise "No save_value defined for save value #{id.inspect}" if @save_proc.nil?
-      raise "No load_value defined for save value #{id.inspect}" if @load_proc.nil?
+      ##Sylvi Items
+      #raise "No load_value defined for save value #{id.inspect}" if @load_proc.nil?
     end
 
     # @param value [Object] value to check
@@ -37,7 +41,7 @@ module SaveData
     # @raise [InvalidValueError] if an invalid value is being loaded
     def load(value)
       validate_value(value)
-      @load_proc.call(value)
+      @load_proc.call(value) if !@load_proc.nil?
       @loaded = true
     end
 
@@ -88,6 +92,17 @@ module SaveData
     def get_from_old_format(old_format)
       return nil if @old_format_get_proc.nil?
       return @old_format_get_proc.call(old_format)
+    end
+
+    #Sylvi Items
+    def get_from_vanilla(vanilla_data)
+      return vanilla_data.clone if @from_vanilla_proc.nil?
+      return @from_vanilla_proc.call(vanilla_data)
+    end
+
+    #Sylvi Items
+    def modded?
+      return !@vanilla_id.nil?
     end
 
     private
@@ -144,6 +159,18 @@ module SaveData
     def from_old_format(&block)
       raise ArgumentError, 'No block given to from_old_format' unless block_given?
       @old_format_get_proc = block
+    end
+
+    #Sylvi Items
+    def vanilla_value(id)
+      validate id => Symbol
+      @vanilla_id = id
+    end
+
+    #Sylvi Items
+    def from_vanilla(&block)
+      raise ArgumentError, 'No block given to from_vanilla' unless block_given?
+      @from_vanilla_proc = block
     end
 
     # @!endgroup
@@ -265,5 +292,17 @@ module SaveData
     save_data = {}
     @values.each { |value| save_data[value.id] = value.save }
     return save_data
+  end
+
+  #Sylvi Items
+  def self.resolve_modded_data(save_data)
+    @values.each do |value|
+      next unless value.modded?
+      if save_data.has_key?(value.id)
+        save_data[value.vanilla_id] = save_data[value.id].clone
+      elsif save_data.has_key?(value.vanilla_id)
+        save_data[value.id] = value.get_from_vanilla(save_data[value.vanilla_id])
+      end
+    end
   end
 end

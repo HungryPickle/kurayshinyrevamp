@@ -686,6 +686,11 @@ module MessageTypes
     @@messages.loadMessageFile(filename)
   end
 
+  #Sylvi Items
+  def self.set(type,id,value)
+    @@messages.set(type,id,value)
+  end
+
   def self.get(type,id)
     ret=@@messages.get(type,id)
     if ret==""

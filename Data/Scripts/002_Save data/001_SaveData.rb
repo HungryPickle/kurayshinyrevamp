@@ -11,6 +11,10 @@ module SaveData
                 './Game.rxdata'
               end
 
+  ##Sylvi Items
+  # Constant to check if the mod is installed
+  KURAY_SHINY_REVAMP = true
+
   # @return [Boolean] whether the save file exists
   def self.exists?
     return File.file?(FILE_PATH)
@@ -47,6 +51,7 @@ module SaveData
     if !save_data.empty? && run_conversions(save_data)
       File.open(file_path, 'wb') { |file| Marshal.dump(save_data, file) }
     end
+    resolve_modded_data(save_data)
     return save_data
   end
 

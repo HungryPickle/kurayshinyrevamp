@@ -8,10 +8,6 @@ class Trainer
   attr_accessor :language
   attr_accessor :party
   attr_accessor :quests
-  attr_accessor :sprite_override
-  attr_accessor :lowest_difficulty
-  attr_accessor :selected_difficulty
-  attr_accessor :game_mode
 
   def inspect
     str = super.chop
@@ -180,10 +176,6 @@ class Trainer
     return pokemon_party.any? { |p| p && p.isSpecies?(species) && (form < 0 || p.form == form) }
   end
 
-  def has_species_or_fusion?(species, form = -1)
-    return pokemon_party.any? { |p| p && p.isSpecies?(species) || p.isFusionOf(species) }
-  end
-
   # Returns whether there is a fatefully met Pokémon of the given species in the
   # trainer's party.
   def has_fateful_species?(species)
@@ -210,18 +202,27 @@ class Trainer
     @party.each { |pkmn| pkmn.heal }
   end
 
+  #Sylvi Items
+  def clone
+    ret = super
+    ret.party = @party.clone
+    return ret
+  end
+
+  #Sylvi Items
+  def make_vanilla
+    @party.map! { |pkmn| pkmn.clone.make_vanilla }
+    return self
+  end
+
   #=============================================================================
 
-  def initialize(name, trainer_type, sprite_override=nil)
+  def initialize(name, trainer_type)
     @trainer_type = GameData::TrainerType.get(trainer_type).id
     @name = name
     @id = rand(2 ** 16) | rand(2 ** 16) << 16
     @language = pbGetLanguage
     @party = []
-    @sprite_override = sprite_override
-    @lowest_difficulty=2  #On hard by default, lowered whenever the player selects another difficulty
-    @selected_difficulty=2  #On hard by default, lowered whenever the player selects another difficulty
-    @game_mode =0  #classic
   end
 end
 
@@ -232,7 +233,7 @@ class NPCTrainer < Trainer
   attr_accessor :items
   attr_accessor :lose_text
 
-  def initialize(name, trainer_type, sprite_override=nil)
+  def initialize(name, trainer_type)
     super
     @items = []
     @lose_text = nil
