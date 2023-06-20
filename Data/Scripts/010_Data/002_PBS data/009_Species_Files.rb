@@ -1,17 +1,16 @@
 module GameData
   class Species
-    def self.check_graphic_file(path, species, form = "", gender = 0, shiny = false, shadow = false, subfolder = "")
+    def self.check_graphic_file(path, species, form = 0, gender = 0, shiny = false, shadow = false, subfolder = "")
       try_subfolder = sprintf("%s/", subfolder)
       try_species = species
-
-      try_form = form ? sprintf("_%s", form) : ""
+      try_form = (form > 0) ? sprintf("_%d", form) : ""
       try_gender = (gender == 1) ? "_female" : ""
       try_shadow = (shadow) ? "_shadow" : ""
       factors = []
       factors.push([4, sprintf("%s shiny/", subfolder), try_subfolder]) if shiny
       factors.push([3, try_shadow, ""]) if shadow
       factors.push([2, try_gender, ""]) if gender == 1
-      factors.push([1, try_form, ""]) if form
+      factors.push([1, try_form, ""]) if form > 0
       factors.push([0, try_species, "000"])
       # Go through each combination of parameters in turn to find an existing sprite
       for i in 0...2 ** factors.length
@@ -84,36 +83,43 @@ module GameData
       return self.front_sprite_filename(species, form, gender, shiny, shadow)
     end
 
-    def self.front_sprite_bitmap(species, form = 0, gender = 0, shiny = false, shadow = false)
+    #KurayX - KURAYX_ABOUT_SHINIES
+    def self.front_sprite_bitmap(species, form = 0, gender = 0, shiny = false, shadow = false, shinyValue = 0, shinyR = 0, shinyG = 1, shinyB = 2)
       #filename = self.front_sprite_filename(species, form, gender, shiny, shadow)
       filename = self.front_sprite_filename(GameData::Species.get(species).id_number)
       return (filename) ? AnimatedBitmap.new(filename) : nil
     end
 
-    def self.back_sprite_bitmap(species, form = 0, gender = 0, shiny = false, shadow = false)
-      filename = self.back_sprite_filename(species, form, gender, shiny, shadow)
+    #KurayX - KURAYX_ABOUT_SHINIES
+    def self.back_sprite_bitmap(species, form = 0, gender = 0, shiny = false, shadow = false, shinyValue = 0, shinyR = 0, shinyG = 1, shinyB = 2)
+      filename = self.back_sprite_filename(species, form, gender, shiny, shadow, shinyValue, shinyR, shinyG, shinyB)
       return (filename) ? AnimatedBitmap.new(filename) : nil
     end
 
+    #KurayX - KURAYX_ABOUT_SHINIES
     def self.egg_sprite_bitmap(species, form = 0)
       filename = self.egg_sprite_filename(species, form)
       return (filename) ? AnimatedBitmap.new(filename) : nil
     end
 
-    def self.sprite_bitmap(species, form = 0, gender = 0, shiny = false, shadow = false, back = false, egg = false)
+    #KurayX - KURAYX_ABOUT_SHINIES
+    def self.sprite_bitmap(species, form = 0, gender = 0, shiny = false, shadow = false, back = false, egg = false, shinyValue = 0, shinyR = 0, shinyG = 1, shinyB = 2)
       return self.egg_sprite_bitmap(species, form) if egg
-      return self.back_sprite_bitmap(species, form, gender, shiny, shadow) if back
-      return self.front_sprite_bitmap(species, form, gender, shiny, shadow)
+      return self.back_sprite_bitmap(species, form, gender, shiny, shadow, shinyValue, shinyR, shinyG, shinyB) if back
+      return self.front_sprite_bitmap(species, form, gender, shiny, shadow, shinyValue, shinyR, shinyG, shinyB)
     end
 
+    #KurayX - KURAYX_ABOUT_SHINIES
     def self.sprite_bitmap_from_pokemon(pkmn, back = false, species = nil)
       species = pkmn.species if !species
       species = GameData::Species.get(species).species # Just to be sure it's a symbol
       return self.egg_sprite_bitmap(species, pkmn.form) if pkmn.egg?
       if back
-        ret = self.back_sprite_bitmap(species, pkmn.form, pkmn.gender, pkmn.shiny?, pkmn.shadowPokemon?)
+        #KurayX - KURAYX_ABOUT_SHINIES
+        ret = self.back_sprite_bitmap(species, pkmn.form, pkmn.gender, pkmn.shiny?, pkmn.shadowPokemon?, pkmn.shinyValue?, pkmn.shinyR?, pkmn.shinyG?, pkmn.shinyB?)
       else
-        ret = self.front_sprite_bitmap(species, pkmn.form, pkmn.gender, pkmn.shiny?, pkmn.shadowPokemon?)
+        #KurayX - KURAYX_ABOUT_SHINIES
+        ret = self.front_sprite_bitmap(species, pkmn.form, pkmn.gender, pkmn.shiny?, pkmn.shadowPokemon?, pkmn.shinyValue?, pkmn.shinyR?, pkmn.shinyG?, pkmn.shinyB?)
       end
       alter_bitmap_function = MultipleForms.getFunction(species, "alterBitmap")
       if ret && alter_bitmap_function
@@ -122,8 +128,6 @@ module GameData
         new_ret.each { |bitmap| alter_bitmap_function.call(pkmn, bitmap) }
         ret = new_ret
       end
-      print "hat"
-      add_hat_to_bitmap(ret,pkmn.hat,pkmn.hat_x,pkmn.hat_y) if pkmn.hat
       return ret
     end
 
@@ -134,17 +138,17 @@ module GameData
       return (ret) ? ret : pbResolveBitmap("Graphics/Pokemon/Eggs/000_icon")
     end
 
-    def self.icon_filename(species,  spriteform= nil, gender=nil, shiny = false, shadow = false, egg = false)
-      return self.egg_icon_filename(species, 0) if egg
-      return self.check_graphic_file("Graphics/Pokemon/", species, spriteform, gender, shiny, shadow, "Icons")
+    def self.icon_filename(species, form = 0, gender = 0, shiny = false, shadow = false, egg = false)
+      return self.egg_icon_filename(species, form) if egg
+      return self.check_graphic_file("Graphics/Pokemon/", species, form, gender, shiny, shadow, "Icons")
     end
 
     def self.icon_filename_from_pokemon(pkmn)
-      return pbResolveBitmap(sprintf("Graphics/Icons/iconEgg")) if pkmn.egg?
       if pkmn.isFusion?
         return  pbResolveBitmap(sprintf("Graphics/Icons/iconDNA"))
       end
-      return self.icon_filename(pkmn.species, pkmn.spriteform_head, pkmn.gender, pkmn.shiny?, pkmn.shadowPokemon?, pkmn.egg?)
+
+      return self.icon_filename(pkmn.species, pkmn.form, pkmn.gender, pkmn.shiny?, pkmn.shadowPokemon?, pkmn.egg?)
     end
 
     def self.icon_filename_from_species(species)
@@ -156,13 +160,21 @@ module GameData
       return (filename) ? AnimatedBitmap.new(filename).deanimate : nil
     end
 
-    def self.icon_bitmap(species, form = 0, gender = 0, shiny = false, shadow = false)
+    #KurayX - KURAYX_ABOUT_SHINIES
+    #KuraIcon
+    def self.icon_bitmap(species, form = 0, gender = 0, shiny = false, shadow = false, shinyValue = 0, dex_number = 0, bodyShiny = false, headShiny = false, shinyR = 0, shinyG = 1, shinyB = 2)
       filename = self.icon_filename(species, form, gender, shiny, shadow)
-      return (filename) ? AnimatedBitmap.new(filename).deanimate : nil
+      spritemade = (filename) ? AnimatedBitmap.new(filename).deanimate : nil
+      if shiny && $PokemonSystem.shiny_icons_kuray == 1 && $PokemonSystem.kuraynormalshiny != 1
+        # spritemade.shiftColors(colorshifting)
+        spritemade.pbGiveFinaleColor(shinyR, shinyG, shinyB, shinyValue)
+      end
+      return spritemade
     end
 
+    # #KurayX - KURAYX_ABOUT_SHINIES
     def self.icon_bitmap_from_pokemon(pkmn)
-      return self.icon_bitmap(pkmn.species, pkmn.form, pkmn.gender, pkmn.shiny?, pkmn.shadowPokemon?, pkmn.egg?)
+      return self.icon_bitmap(pkmn.species, pkmn.form, pkmn.gender, pkmn.shiny?, pkmn.shadowPokemon?, pkmn.egg?, pkmn.shinyValue?, pkmn.dexNum, pkmn.bodyShiny?, pkmn.headShiny?, pkmn.shinyR?, pkmn.shinyG?, pkmn.shinyB?)
     end
 
     #===========================================================================
@@ -213,10 +225,10 @@ module GameData
         species_data = GameData::Species.get(getHeadID(species_data))
       end
 
-      # if form > 0
-      #   ret = sprintf("Cries/%s_%d", species_data.species, form)
-      #   return ret if pbResolveAudioSE(ret)
-      # end
+      if form > 0
+        ret = sprintf("Cries/%s_%d", species_data.species, form)
+        return ret if pbResolveAudioSE(ret)
+      end
       ret = sprintf("Cries/%s", species_data.species)
       return (pbResolveAudioSE(ret)) ? ret : nil
     end

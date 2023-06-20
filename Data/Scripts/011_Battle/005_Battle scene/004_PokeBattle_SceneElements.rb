@@ -18,11 +18,12 @@ class PokemonDataBox < SpriteWrapper
   # MALE_SHADOW_COLOR       = NAME_SHADOW_COLOR
   # FEMALE_BASE_COLOR       = Color.new(248,88,40)
   # FEMALE_SHADOW_COLOR     = NAME_SHADOW_COLOR
+  #KurayNewSymbolGender
   NAME_BASE_COLOR         = Color.new(255,255,255)
   NAME_SHADOW_COLOR       = Color.new(32,32,32)
-  MALE_BASE_COLOR         = Color.new(48,96,216)
+  MALE_BASE_COLOR         = Color.new(55, 148, 229)
   MALE_SHADOW_COLOR       = NAME_SHADOW_COLOR
-  FEMALE_BASE_COLOR       = Color.new(248,88,40)
+  FEMALE_BASE_COLOR       = Color.new(229, 55, 203)
   FEMALE_SHADOW_COLOR     = NAME_SHADOW_COLOR
 
 
@@ -63,31 +64,20 @@ class PokemonDataBox < SpriteWrapper
     # Determine the co-ordinates of the data box and the left edge padding width
     if onPlayerSide
       @spriteX = Graphics.width - 244
-      @spriteY = Graphics.height - 176#192
+      @spriteY = Graphics.height - 192
       @spriteBaseX = 34
     else
       @spriteX = 8 #-16
-      @spriteY = 0##36
+      @spriteY = 36
       @spriteBaseX = 8 #16
     end
     case sideSize
     when 2
-
-
       @spriteX += [-12,  12,  0,  0][@battler.index]
-
-      #@spriteY += [-38, -6, 16, 48][@battler.index]    #standard
-      #@spriteY += [-32, -6, 16, 42][@battler.index]     #smaller gap
-      @spriteY += [-18, -6, 16, 28][@battler.index]     #overlap
-
-
-
-      #@spriteY += [-20, -34, 34, 20][@battler.index]
+      @spriteY += [-20, -34, 34, 20][@battler.index]
     when 3
       @spriteX += [-12,  12, -6,  6,  0,  0][@battler.index]
-      #@spriteY += [-74, -8,  -28,  38, 16, 84][@battler.index]    #standard
-      @spriteY += [-54, -8,  -18,  26, 16, 58][@battler.index]    #overlap
-
+      @spriteY += [-42, -46,  4,  0, 50, 46][@battler.index]
     end
   end
 
@@ -233,11 +223,32 @@ class PokemonDataBox < SpriteWrapper
     nameOffset = nameWidth-116 if nameWidth>116
     textPos.push([@battler.name,@spriteBaseX+8-nameOffset,0,false,NAME_BASE_COLOR,NAME_SHADOW_COLOR])
     # Draw Pokémon's gender symbol
-    case @battler.displayGender
-    when 0   # Male
-      textPos.push([_INTL("♂"),@spriteBaseX+126,0,false,MALE_BASE_COLOR,MALE_SHADOW_COLOR])
-    when 1   # Female
-      textPos.push([_INTL("♀"),@spriteBaseX+126,0,false,FEMALE_BASE_COLOR,FEMALE_SHADOW_COLOR])
+    #KurayNewSymbolGender
+    kuraygender1t = "♂"
+    kuraygender2t = "♀"
+    # kuraygender3t = "♃"
+    # kuraygender4t = "♄"
+    kuraygender1r = [55, 148, 229]
+    kuraygender1s = [68, 98, 125]
+    kuraygender2r = [229, 55, 203]
+    kuraygender2s = [137, 73, 127]
+    # kuraygender3r = [55, 229, 81]
+    # kuraygender3s = [68, 127, 76]
+    # kuraygender4r = [229, 127, 55]
+    # kuraygender4s = [135, 95, 69]
+    if @battler.displayGenderPizza
+      imagePos.push(["Graphics/Pictures/Storage/gender4", @spriteBaseX+126-18, 5])
+      # textPos.push([_INTL(kuraygender4t), @spriteBaseX+126, 0, false, Color.new(kuraygender4r[0], kuraygender4r[1], kuraygender4r[2]), Color.new(kuraygender4s[0], kuraygender4s[1], kuraygender4s[2])])
+    else
+      case @battler.displayGender
+      when 0   # Male
+        textPos.push([_INTL(kuraygender1t), @spriteBaseX+126, 0, false, Color.new(kuraygender1r[0], kuraygender1r[1], kuraygender1r[2]), Color.new(kuraygender1s[0], kuraygender1s[1], kuraygender1s[2])])
+      when 1   # Female
+        textPos.push([_INTL(kuraygender2t), @spriteBaseX+126, 0, false, Color.new(kuraygender2r[0], kuraygender2r[1], kuraygender2r[2]), Color.new(kuraygender2s[0], kuraygender2s[1], kuraygender2s[2])])
+      when 2  # Genderless
+        imagePos.push(["Graphics/Pictures/Storage/gender3", @spriteBaseX+126-14, 14])
+        # textPos.push([_INTL(kuraygender3t), @spriteBaseX+126, 0, false, Color.new(kuraygender3r[0], kuraygender3r[1], kuraygender3r[2]), Color.new(kuraygender3s[0], kuraygender3s[1], kuraygender3s[2])])
+      end
     end
     pbDrawTextPositions(self.bitmap,textPos)
     # Draw Pokémon's level
@@ -246,9 +257,9 @@ class PokemonDataBox < SpriteWrapper
     # Draw shiny icon
     if @battler.shiny?
       shinyX = (@battler.opposes?(0)) ? 206 : -6   # Foe's/player's
-
-      pokeRadarShiny= !@battler.pokemon.debugShiny? && !@battler.pokemon.naturalShiny?
-      addShinyStarsToGraphicsArray(imagePos,@spriteBaseX+shinyX,35, @battler.pokemon.bodyShiny?,@battler.pokemon.headShiny?,@battler.pokemon.debugShiny?, pokeRadarShiny)
+      #KurayX
+      # pokeRadarShiny= !@battler.pokemon.debugShiny? && !@battler.pokemon.naturalShiny?
+      addShinyStarsToGraphicsArray(imagePos,@spriteBaseX+shinyX,35, @battler.pokemon.bodyShiny?,@battler.pokemon.headShiny?,@battler.pokemon.debugShiny?,nil,nil,nil,nil,false,false)
     end
     # Draw Mega Evolution/Primal Reversion icon
     if @battler.mega?
@@ -403,10 +414,8 @@ class AbilitySplashBar < SpriteWrapper
   TEXT_BASE_COLOR   = Color.new(0,0,0)
   TEXT_SHADOW_COLOR = Color.new(248,248,248)
 
-  def initialize(side,viewport=nil, secondAbility=false)
+  def initialize(side,viewport=nil)
     super(viewport)
-    @ability_name=nil
-    @secondAbility=secondAbility
     @side    = side
     @battler = nil
     # Create sprite wrapper that displays background graphic
@@ -448,10 +457,6 @@ class AbilitySplashBar < SpriteWrapper
     @bgSprite.z = value-1
   end
 
-  def ability_name=(value)
-    @ability_name=value
-  end
-
   def opacity=(value)
     super
     @bgSprite.opacity = value
@@ -472,9 +477,6 @@ class AbilitySplashBar < SpriteWrapper
     refresh
   end
 
-  def secondAbility=(value)
-    @secondAbility = value
-  end
   def refresh
     self.bitmap.clear
     return if !@battler
@@ -482,12 +484,9 @@ class AbilitySplashBar < SpriteWrapper
     textX = (@side==0) ? 10 : self.bitmap.width-8
     # Draw Pokémon's name
     textPos.push([_INTL("{1}'s",@battler.name),textX,-4,@side==1,
-       TEXT_BASE_COLOR,TEXT_SHADOW_COLOR,true]) if !@secondAbility
+       TEXT_BASE_COLOR,TEXT_SHADOW_COLOR,true])
     # Draw Pokémon's ability
-    abilityName = @secondAbility ? @battler.ability2Name : @battler.abilityName
-    abilityName = @ability_name if @ability_name
-    #return if abilityName ==""
-    textPos.push([abilityName,textX,26,@side==1,
+    textPos.push([@battler.abilityName,textX,26,@side==1,
        TEXT_BASE_COLOR,TEXT_SHADOW_COLOR,true])
     pbDrawTextPositions(self.bitmap,textPos)
   end
@@ -589,13 +588,13 @@ class PokemonBattlerSprite < RPG::Sprite
     @pkmn = pkmn
     @_iconBitmap.dispose if @_iconBitmap
     @_iconBitmap = GameData::Species.sprite_bitmap_from_pokemon(@pkmn, back)
-    scale =Settings::FRONTSPRITE_SCALE
-    scale = Settings::BACKRPSPRITE_SCALE if @back
-    @_iconBitmap.scale_bitmap(scale)
+    if @back
+      @_iconBitmap.scale_bitmap(Settings::BACKRPSPRITE_SCALE)
+    else
+      @_iconBitmap.scale_bitmap(Settings::FRONTSPRITE_SCALE)
+    end
 
     self.bitmap = (@_iconBitmap) ? @_iconBitmap.bitmap : nil
-    add_hat_to_bitmap(self.bitmap,pkmn.hat,pkmn.hat_x,pkmn.hat_y,scale,self.mirror) if self.bitmap && pkmn.hat
-
     pbSetPosition
   end
 

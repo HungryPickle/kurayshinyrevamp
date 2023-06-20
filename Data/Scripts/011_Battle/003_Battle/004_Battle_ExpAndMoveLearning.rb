@@ -89,7 +89,6 @@ class PokeBattle_Battle
     end
   end
 
-
   def pbGainExpOne(idxParty, defeatedBattler, numPartic, expShare, expAll, showMessages = true)
     pkmn = pbParty(0)[idxParty] # The Pokémon gaining EVs from defeatedBattler
     growth_rate = pkmn.growth_rate
@@ -154,15 +153,8 @@ class PokeBattle_Battle
     end
     exp = i if i >= 0
     # Make sure Exp doesn't exceed the maximum
-
-    exp = 0 if $PokemonSystem.level_caps==1 && pokemonExceedsLevelCap(pkmn)
-
     expFinal = growth_rate.add_exp(pkmn.exp, exp)
     expGained = expFinal - pkmn.exp
-
-
-
-
     return if expGained <= 0
     # "Exp gained" message
     if showMessages
@@ -174,15 +166,18 @@ class PokeBattle_Battle
     end
     curLevel = pkmn.level
     newLevel = growth_rate.level_from_exp(expFinal)
-    dontAnimate=false
-    if newLevel < curLevel
-      dontAnimate = true
-      # debugInfo = "Levels: #{curLevel}->#{newLevel} | Exp: #{pkmn.exp}->#{expFinal} | gain: #{expGained}"
-      # raise RuntimeError.new(
-      #   echoln  _INTL("{1}'s new level is less than its\r\ncurrent level, which shouldn't happen.\r\n[Debug: {2}]",
-      #         pkmn.name, debugInfo)
-      pbDisplayPaused(_INTL("{1}'s growth rate has changed to '{2}''. Its level will be adjusted to reflect its current exp.", pkmn.name, pkmn.growth_rate.real_name))
+    if $PokemonSystem.kuraylevelcap != 0
+      levelcap = getkuraylevelcap()
+      if curLevel >= levelcap
+        return
+      end
     end
+    # if newLevel < curLevel
+    #   debugInfo = "Levels: #{curLevel}->#{newLevel} | Exp: #{pkmn.exp}->#{expFinal} | gain: #{expGained}"
+    #   raise RuntimeError.new(
+    #     _INTL("{1}'s new level is less than its\r\ncurrent level, which shouldn't happen.\r\n[Debug: {2}]",
+    #           pkmn.name, debugInfo))
+    # end
     # Give Exp
     if pkmn.shadowPokemon?
       pkmn.exp += expGained
@@ -190,6 +185,7 @@ class PokeBattle_Battle
     end
     tempExp1 = pkmn.exp
     battler = pbFindBattler(idxParty)
+    levelwas = 0
     loop do
       # For each level gained in turn...
       # EXP Bar animation
@@ -197,8 +193,6 @@ class PokeBattle_Battle
       levelMaxExp = growth_rate.minimum_exp_for_level(curLevel + 1)
       tempExp2 = (levelMaxExp < expFinal) ? levelMaxExp : expFinal
       pkmn.exp = tempExp2
-
-
 
       if pkmn.isFusion?
         if pkmn.exp_gained_since_fused == nil
@@ -208,11 +202,22 @@ class PokeBattle_Battle
         end
 
       end
-      @scene.pbEXPBar(battler, levelMinExp, levelMaxExp, tempExp1, tempExp2) if !dontAnimate
-
-
+      @scene.pbEXPBar(battler, levelMinExp, levelMaxExp, tempExp1, tempExp2)
       tempExp1 = tempExp2
-      curLevel += 1
+      if $PokemonSystem.kuraylevelcap != 0
+        levelcap = getkuraylevelcap()
+        if newLevel > levelcap
+          newLevel = levelcap
+        end
+        if curLevel < levelcap
+          curLevel += 1
+        end
+      else
+        curLevel += 1
+      end
+      if levelwas == curLevel
+        break
+      end
       if curLevel > newLevel
         # Gained all the Exp now, end the animation
         pkmn.calc_stats
@@ -234,16 +239,14 @@ class PokeBattle_Battle
       pkmn.calc_stats
       battler.pbUpdate(false) if battler
       @scene.pbRefreshOne(battler.index) if battler
+      levelwas = curLevel
       pbDisplayPaused(_INTL("{1} grew to Lv. {2}!", pkmn.name, curLevel))
       if !$game_switches[SWITCH_NO_LEVELS_MODE]
         @scene.pbLevelUp(pkmn, battler, oldTotalHP, oldAttack, oldDefense,
-                         oldSpAtk, oldSpDef, oldSpeed)
+                        oldSpAtk, oldSpDef, oldSpeed)
       end
-
-      echoln "256"
-
       # Learn all moves learned at this level
-      moveList = pkmn.getMoveList
+      moveList = pkmn.getMLStandard
       moveList.each { |m| pbLearnMove(idxParty, m[1]) if m[0] == curLevel }
     end
   end

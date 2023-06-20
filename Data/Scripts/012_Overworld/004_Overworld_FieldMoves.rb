@@ -197,6 +197,9 @@ def pbCut
       return false
     end
   end
+  if $PokemonSystem.quicksurf == 1
+    return true
+  end
   pbMessage(_INTL("This tree looks like it can be cut down!\1"))
   if pbConfirmMessage(_INTL("Would you like to cut it?"))
     speciesname = (movefinder) ? movefinder.name : $Trainer.name
@@ -304,7 +307,10 @@ def pbRockClimb
       return false
     end
   end
-
+  if $PokemonSystem.quicksurf == 1
+    climbLedge
+    return true
+  end
   if pbConfirmMessage(_INTL("It looks like it's possible to climb. Would you like to use Rock Climb?"))
     speciesname = (movefinder) ? movefinder.name : $Trainer.name
     pbMessage(_INTL("{1} used {2}!", speciesname, GameData::Move.get(move).name))
@@ -336,16 +342,23 @@ def pbDive
       return false
     end
   end
+  if $PokemonSystem.quicksurf == 1
+    pbFadeOutIn {
+      $game_temp.player_new_map_id = map_metadata.dive_map_id
+      $game_temp.player_new_x = $game_player.x
+      $game_temp.player_new_y = $game_player.y
+      $game_temp.player_new_direction = $game_player.direction
+      $PokemonGlobal.surfing = false
+      $PokemonGlobal.diving = true
+      pbUpdateVehicle
+      $scene.transfer_player(false)
+      $game_map.autoplay
+      $game_map.refresh
+    }
+    return true
+  end
   if pbConfirmMessage(_INTL("The sea is deep here. Would you like to use Dive?"))
     speciesname = (movefinder) ? movefinder.name : $Trainer.name
-    if movefinder
-      $Trainer.surfing_pokemon= getSpecies(movefinder.species)
-
-      echoln movefinder.species
-      echoln getSpecies(movefinder.species)
-    else
-      $Trainer.surfing_pokemon=nil
-    end
     pbMessage(_INTL("{1} used {2}!", speciesname, GameData::Move.get(move).name))
     pbHiddenMoveAnimation(movefinder)
     pbFadeOutIn {
@@ -357,7 +370,6 @@ def pbDive
       $PokemonGlobal.diving = true
       pbUpdateVehicle
       $scene.transfer_player(false)
-      addWaterCausticsEffect()
       $game_map.autoplay
       $game_map.refresh
     }
@@ -382,6 +394,22 @@ def pbSurfacing
   #   pbMessage(_INTL("Light is filtering down from above. A Pokémon may be able to surface here."))
   #   return false
   # end
+  if $PokemonSystem.quicksurf == 1
+    pbFadeOutIn {
+      $game_temp.player_new_map_id = surface_map_id
+      $game_temp.player_new_x = $game_player.x
+      $game_temp.player_new_y = $game_player.y
+      $game_temp.player_new_direction = $game_player.direction
+      $PokemonGlobal.surfing = true
+      $PokemonGlobal.diving = false
+      pbUpdateVehicle
+      $scene.transfer_player(false)
+      surfbgm = GameData::Metadata.get.surf_BGM
+      (surfbgm) ? pbBGMPlay(surfbgm) : $game_map.autoplayAsCue
+      $game_map.refresh
+    }
+    return true
+  end
   if pbConfirmMessage(_INTL("Light is filtering down from above. Would you like to use Dive?"))
     speciesname = (movefinder) ? movefinder.name : $Trainer.name
     pbMessage(_INTL("{1} used {2}!", speciesname, GameData::Move.get(move).name))
@@ -410,12 +438,7 @@ def pbTransferUnderwater(mapid, x, y, direction = $game_player.direction)
     $game_temp.player_new_x = x
     $game_temp.player_new_y = y
     $game_temp.player_new_direction = direction
-    $PokemonGlobal.diving = true
-    $PokemonGlobal.surfing = false
-    pbUpdateVehicle
-    $scene.transfer_player(false )
-    addWaterCausticsEffect()
-
+    $scene.transfer_player(false)
     $game_map.autoplay
     $game_map.refresh
   }
@@ -438,6 +461,7 @@ Events.onAction += proc { |_sender, _e|
     pbDive if $game_player.terrain_tag.can_dive
   end
 }
+
 
 HiddenMoveHandlers::CanUseMove.add(:DIVE, proc { |move, pkmn, showmsg|
   next false if !pbCheckHiddenMoveBadge(Settings::BADGE_FOR_DIVE, showmsg)
@@ -505,7 +529,7 @@ HiddenMoveHandlers::UseMove.add(:DIVE, proc { |move, pokemon|
 HiddenMoveHandlers::CanUseMove.add(:FLASH, proc { |move, pkmn, showmsg|
   next false if !pbCheckHiddenMoveBadge(Settings::BADGE_FOR_FLASH, showmsg)
   if !GameData::MapMetadata.exists?($game_map.map_id) ||
-    !(GameData::MapMetadata.get($game_map.map_id).dark_map || darknessEffectOnCurrentMap())
+    !GameData::MapMetadata.get($game_map.map_id).dark_map
     pbMessage(_INTL("Can't use that here.")) if showmsg
     next false
   end
@@ -620,6 +644,10 @@ def pbHeadbutt(event = nil)
     pbMessage(_INTL("A Pokémon could be in this tree. Maybe a Pokémon could shake it."))
     return false
   end
+  if $PokemonSystem.quicksurf == 1
+    pbHeadbuttEffect(event)
+    return true
+  end
   if pbConfirmMessage(_INTL("A Pokémon could be in this tree. Would you like to use Headbutt?"))
     speciesname = (movefinder) ? movefinder.name : $Trainer.name
     pbMessage(_INTL("{1} used {2}!", speciesname, GameData::Move.get(move).name))
@@ -647,54 +675,6 @@ HiddenMoveHandlers::UseMove.add(:HEADBUTT, proc { |move, pokemon|
   pbHeadbuttEffect(facingEvent)
 })
 
-HiddenMoveHandlers::CanUseMove.add(:RELICSONG, proc { |move, pokemon, showmsg|
-  if  !(pokemon.isFusionOf(:MELOETTA_A) || pokemon.isFusionOf(:MELOETTA_P))
-    pbMessage(_INTL("It won't have any effect")) if showmsg
-    next false
-  end
-  next true
-})
-
-HiddenMoveHandlers::UseMove.add(:RELICSONG, proc { |move, pokemon|
-  if !pbHiddenMoveAnimation(pokemon)
-    pbMessage(_INTL("{1} used {2}!", pokemon.name, GameData::Move.get(move).name))
-  end
-  changeMeloettaForm(pokemon)
-})
-
-def changeMeloettaForm(pokemon)
-  is_meloetta_A = pokemon.isFusionOf(:MELOETTA_A)
-  is_meloetta_P = pokemon.isFusionOf(:MELOETTA_P)
-  if !pokemon.isFusion?
-    if is_meloetta_A
-      changeSpeciesSpecific(pokemon, :MELOETTA_P)
-      pbMessage(_INTL("{1} changed to the Pirouette form!", pokemon.name))
-    end
-    if is_meloetta_P
-      changeSpeciesSpecific(pokemon, :MELOETTA_A)
-      pbMessage(_INTL("{1} changed to the Aria form!", pokemon.name))
-    end
-    return
-  end
-  if is_meloetta_A && is_meloetta_P
-    if pokemon.species_data.get_body_species() == :MELOETTA_A
-      changeSpeciesSpecific(pokemon, :B467H466)
-    else
-      changeSpeciesSpecific(pokemon, :B466H467)
-    end
-    pbMessage(_INTL("{1} changed form!", pokemon.name))
-  else
-    if is_meloetta_P
-    replaceFusionSpecies(pokemon, :MELOETTA_P, :MELOETTA_A)
-    pbMessage(_INTL("{1} changed to the Aria form!", pokemon.name))
-    end
-    if is_meloetta_A
-      replaceFusionSpecies(pokemon, :MELOETTA_A, :MELOETTA_P)
-      pbMessage(_INTL("{1} changed to the Pirouette form!", pokemon.name))
-    end
-  end
-end
-
 #===============================================================================
 # Rock Smash
 #===============================================================================
@@ -713,12 +693,16 @@ def pbRockSmash
       return false
     end
   end
+  if $PokemonSystem.quicksurf == 1
+    facingEvent = $game_player.pbFacingEvent(true)
+    $scene.spriteset.addUserAnimation(Settings::ROCK_SMASH_ANIMATION_ID, facingEvent.x, facingEvent.y, false)
+    return true
+  end
   if pbConfirmMessage(_INTL("This rock appears to be breakable. Would you like to use Rock Smash?"))
     speciesname = (movefinder) ? movefinder.name : $Trainer.name
     pbMessage(_INTL("{1} used {2}!", speciesname, GameData::Move.get(move).name))
     pbHiddenMoveAnimation(movefinder)
     facingEvent = $game_player.pbFacingEvent(true)
-    pbSEPlay("Rock Smash", 80)
     $scene.spriteset.addUserAnimation(Settings::ROCK_SMASH_ANIMATION_ID, facingEvent.x, facingEvent.y, false)
     return true
   end
@@ -762,6 +746,12 @@ def pbStrength
       pbMessage(_INTL("It looks heavy, but a Pokémon may be able to push it aside."))
       return false
     end
+  end
+  if $PokemonSystem.quicksurf == 1
+    speciesname = (movefinder) ? movefinder.name : $Trainer.name
+    pbMessage(_INTL("{1}'s Strength made it possible to move boulders around!", speciesname))
+    $PokemonMap.strengthUsed = true
+    return true
   end
   pbMessage(_INTL("It looks heavy, but a Pokémon may be able to push it aside.\1"))
   if pbConfirmMessage(_INTL("Would you like to use Strength?"))
@@ -815,8 +805,7 @@ def pbSurf
   if $PokemonSystem.quicksurf == 1
     surfbgm = GameData::Metadata.get.surf_BGM
     pbCueBGM(surfbgm, 0.5) if surfbgm
-    surfingPoke = movefinder.species if movefinder
-    pbStartSurfing(surfingPoke)
+    pbStartSurfing
     return true
   end
   if pbConfirmMessage(_INTL("The water is a deep blue...\nWould you like to surf on it?"))
@@ -826,21 +815,14 @@ def pbSurf
     pbHiddenMoveAnimation(movefinder)
     surfbgm = GameData::Metadata.get.surf_BGM
     pbCueBGM(surfbgm, 0.5) if surfbgm && !Settings::MAPS_WITHOUT_SURF_MUSIC.include?($game_map.map_id)
-
-    surfingPoke = movefinder.species if movefinder
-    pbStartSurfing(surfingPoke)
+    pbStartSurfing
     return true
   end
   return false
 end
 
-def pbStartSurfing(speciesID=nil)
+def pbStartSurfing
   pbCancelVehicles
-  if speciesID
-    $Trainer.surfing_pokemon=getSpecies(speciesID)
-  else
-    $Trainer.surfing_pokemon=nil
-  end
   $PokemonEncounters.reset_step_count
   $PokemonGlobal.surfing = true
   pbUpdateVehicle
@@ -894,49 +876,6 @@ Events.onAction += proc { |_sender, _e|
   pbSurf
 }
 
-#Flowers
-Events.onAction += proc { |_sender, _e|
-  next if !$game_player.pbFacingTerrainTag.flower
-  if $game_player.pbFacingTerrainTag.flowerRed
-    if $game_switches[SWITCH_ORICORIO_QUEST_IN_PROGRESS]
-      oricorioEventPickFlower(:RED)
-    else
-      changeOricorioFlower(1)
-    end
-  end
-  if $game_player.pbFacingTerrainTag.flowerYellow
-    if $game_switches[SWITCH_ORICORIO_QUEST_IN_PROGRESS]
-
-    else
-      changeOricorioFlower(2)
-    end
-  end
-  if $game_player.pbFacingTerrainTag.flowerPink
-    if $game_switches[SWITCH_ORICORIO_QUEST_IN_PROGRESS]
-      oricorioEventPickFlower(:PINK)
-    else
-      changeOricorioFlower(3)
-    end
-  end
-  if $game_player.pbFacingTerrainTag.flowerBlue
-    if $game_switches[SWITCH_ORICORIO_QUEST_IN_PROGRESS]
-      oricorioEventPickFlower(:BLUE)
-    else
-      changeOricorioFlower(4)
-    end
-  end
-}
-
-#Trashcan
-Events.onAction += proc { |_sender, _e|
-  next if !$game_player.pbFacingTerrainTag.trashcan
-  if $PokemonGlobal.stepcount % 25 == 0
-    pbMessage(_INTL("Woah! A Pokémon jumped out of the trashcan!"))
-    pbWildBattle(:TRUBBISH, 10)
-    $PokemonGlobal.stepcount += 1
-  end
-}
-
 HiddenMoveHandlers::CanUseMove.add(:SURF, proc { |move, pkmn, showmsg|
   next false if !pbCheckHiddenMoveBadge(Settings::BADGE_FOR_SURF, showmsg)
   if $PokemonGlobal.surfing
@@ -968,8 +907,7 @@ HiddenMoveHandlers::UseMove.add(:SURF, proc { |move, pokemon|
   end
   surfbgm = GameData::Metadata.get.surf_BGM
   pbCueBGM(surfbgm, 0.5) if surfbgm
-  surfingPoke = pokemon if pokemon
-  pbStartSurfing(surfingPoke)
+  pbStartSurfing
   next true
 })
 
@@ -1118,6 +1056,10 @@ def pbWaterfall
       return false
     end
   end
+  if $PokemonSystem.quicksurf == 1
+    pbAscendWaterfall
+    return true
+  end
   if pbConfirmMessage(_INTL("It's a large waterfall. Would you like to use Waterfall?"))
     speciesname = (movefinder) ? movefinder.name : $Trainer.name
     pbMessage(_INTL("{1} used {2}!", speciesname, GameData::Move.get(move).name))
@@ -1153,6 +1095,8 @@ HiddenMoveHandlers::UseMove.add(:WATERFALL, proc { |move, pokemon|
   pbAscendWaterfall
   next true
 })
+
+
 
 HiddenMoveHandlers::CanUseMove.add(:ROCKCLIMB, proc { |move, pkmn, showmsg|
   next false if !pbCheckHiddenMoveBadge(Settings::BADGE_FOR_ROCKCLIMB, showmsg)

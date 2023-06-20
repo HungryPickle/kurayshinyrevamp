@@ -153,8 +153,6 @@ def pbPrepareBattle(battle)
       battle.defaultWeather = :Sandstorm
     when :Sun
       battle.defaultWeather = :Sun
-    when :StrongWinds
-      battle.defaultWeather = :StrongWinds
     end
   else
     battle.defaultWeather = battleRules["defaultWeather"]
@@ -176,13 +174,11 @@ def pbPrepareBattle(battle)
     back = getBattleBackgroundFromMetadata(GameData::MapMetadata.get($game_map.map_id))
     backdrop = back if back && back != ""
   end
-
   if !backdrop
     isOutdoor = GameData::MapMetadata.get($game_map.map_id).outdoor_map rescue false
     backdrop = "indoorA" if !isOutdoor
     backdrop = "Field" if isOutdoor
   end
-
   battle.backdrop = backdrop
   # Choose a name for bases depending on environment
   if battleRules["base"].nil?
@@ -244,8 +240,6 @@ def pbCanTripleBattle?
   return $PokemonGlobal.partner && $Trainer.able_pokemon_count >= 2
 end
 
-
-
 #===============================================================================
 # Start a wild battle
 #===============================================================================
@@ -261,7 +255,6 @@ def pbWildBattleCore(*args)
     $PokemonGlobal.nextBattleME        = nil
     $PokemonGlobal.nextBattleCaptureME = nil
     $PokemonGlobal.nextBattleBack      = nil
-    $PokemonTemp.forced_alt_sprites=nil
     pbMEStop
     return 1   # Treat it as a win
   end
@@ -336,48 +329,16 @@ def pbWildBattleCore(*args)
   return decision
 end
 
-def pbWildDoubleBattleSpecific(pokemon1,pokemon2, outcomeVar=1, canRun=true, canLose=false)
-  # Set some battle rules
-  setBattleRule("outcomeVar",outcomeVar) if outcomeVar!=1
-  setBattleRule("cannotRun") if !canRun
-  setBattleRule("canLose") if canLose
-  setBattleRule("double")
-  # Perform the battle
-  decision = pbWildBattleCore(pokemon1, pokemon2)
-  return (decision!=2 && decision!=5)
-end
-
-def pbWildBattleSpecific(pokemon, outcomeVar=1, canRun=true, canLose=false)
-  # Set some battle rules
-  setBattleRule("outcomeVar",outcomeVar) if outcomeVar!=1
-  setBattleRule("cannotRun") if !canRun
-  setBattleRule("canLose") if canLose
-  # Perform the battle
-  decision = pbWildBattleCore(pokemon)
-  # Used by the Poké Radar to update/break the chain
-  #Events.onWildBattleEnd.trigger(nil,species,level,decision)
-  # Return false if the player lost or drew the battle, and true if any other result
-  return (decision!=2 && decision!=5)
-end
-
 #===============================================================================
 # Standard methods that start a wild battle of various sizes
 #===============================================================================
 # Used when walking in tall grass, hence the additional code.
 def pbWildBattle(species, level, outcomeVar=1, canRun=true, canLose=false)
-  if !species
-    displayRandomizerErrorMessage()
-    return
-  end
   species = GameData::Species.get(species).id
   dexnum = getDexNumberForSpecies(species)
   if $game_switches[SWITCH_RANDOM_STATIC_ENCOUNTERS] && dexnum <= NB_POKEMON
     newSpecies = $PokemonGlobal.psuedoBSTHash[dexnum]
-    if !newSpecies
-      displayRandomizerErrorMessage()
-    else
-      species = getSpecies(newSpecies)
-    end
+    species = getSpecies(newSpecies)
   end
 
   # Potentially call a different pbWildBattle-type method instead (for roaming
@@ -452,7 +413,6 @@ def pbTrainerBattleCore(*args)
     $PokemonGlobal.nextBattleME        = nil
     $PokemonGlobal.nextBattleCaptureME = nil
     $PokemonGlobal.nextBattleBack      = nil
-    $PokemonTemp.forced_alt_sprites=nil
     pbMEStop
     return ($Trainer.able_pokemon_count == 0) ? 0 : 1   # Treat it as undecided/a win
   end
@@ -553,53 +513,6 @@ def pbTrainerBattleCore(*args)
   #    5 - Draw
   pbSet(outcomeVar,decision)
   return decision
-end
-
-def convert_pokemon_to_pokemon_hash(pokemon)
-  pokemon_hash = Hash.new
-  pokemon_hash[:species] = pokemon.species
-  pokemon_hash[:level] = pokemon.level
-  return pokemon_hash
-end
-
-
-
-#party: array of pokemon team
-# [[:SPECIES,level], ... ]
-#
-def customTrainerBattle(trainerName, trainerType, party_array, default_level=50, endSpeech="", sprite_override=nil)
-
-
-  # trainerID= "customTrainer"
-  #
-  # trainer_info_hash = {}
-  # trainer_info_hash[:id] = trainerID
-  # trainer_info_hash[:id_number] = 0
-  # trainer_info_hash[:name] = trainerName
-  # trainer_info_hash[:version] = 0
-  # trainer_info_hash[:items] = []
-  # trainer_info_hash[:lose_text] = endSpeech
-  # trainer_info_hash[:pokemon] = party
-
-  #trainer = GameData::Trainer.new(trainer_info_hash)
-  trainer = NPCTrainer.new(trainerName,trainerType,sprite_override)
-  trainer.lose_text=endSpeech
-  party = []
-  party_array.each { |pokemon|
-    if pokemon.is_a?(Pokemon)
-      party << pokemon
-    elsif pokemon.is_a?(Symbol)
-      party << Pokemon.new(pokemon,default_level,trainer)
-    end
-  }
-  trainer.party=party
-  Events.onTrainerPartyLoad.trigger(nil,trainer)
-
-
-
-  decision = pbTrainerBattleCore(trainer)
-  # Return true if the player won the battle, and false if any other result
-  return (decision==1)
 end
 
 #===============================================================================
@@ -758,6 +671,7 @@ Events.onEndBattle += proc { |_sender,e|
   end
 }
 
+#EVOLUTION_PREVENT_KURAY
 def pbEvolutionCheck(currentLevels,scene=nil)
   for i in 0...currentLevels.length
     pkmn = $Trainer.party[i]
@@ -765,6 +679,7 @@ def pbEvolutionCheck(currentLevels,scene=nil)
     next if currentLevels[i] && pkmn.level==currentLevels[i]
     newSpecies = pkmn.check_evolution_on_level_up()
     next if !newSpecies
+    next if pkmn.kuray_no_evo? == 1 && $PokemonSystem.kuray_no_evo == 1
     evo = PokemonEvolutionScene.new
     evo.pbStartScreen(pkmn,newSpecies)
     evo.pbEvolution

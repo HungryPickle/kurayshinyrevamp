@@ -588,9 +588,6 @@ class PokemonEvolutionScene
     end
     # Success jingle/message
     pbMEPlay("Evolution success")
-    sprite_bitmap=@sprites["rsprite2"].getBitmap
-    drawSpriteCredits(sprite_bitmap.filename,sprite_bitmap.path, @viewport)
-
     newspeciesname = GameData::Species.get(@newspecies).name
     if !reversing
       pbMessageDisplay(@sprites["msgwindow"],
@@ -602,14 +599,9 @@ class PokemonEvolutionScene
                              @pokemon.name,newspeciesname)) { pbUpdate }
     end
 
-
     @sprites["msgwindow"].text = ""
     # Check for consumed item and check if Pokémon should be duplicated
     pbEvolutionMethodAfterEvolution if !reversing
-
-
-    @pokemon
-    @pokemon.ability
 
     oldAbility = @pokemon.ability.id
     newSpecies = GameData::Species.get(@newspecies)
@@ -621,24 +613,15 @@ class PokemonEvolutionScene
     @pokemon.form    = 0 if @pokemon.isSpecies?(:MOTHIM)
     @pokemon.calc_stats
     # See and own evolved species
-    #
+    $Trainer.pokedex.register(@pokemon)
+    $Trainer.pokedex.set_owned(@newspecies)
 
-    if !$Trainer.pokedex.owned?(@newspecies)
-      $Trainer.pokedex.register(@pokemon)
-      $Trainer.pokedex.set_owned(@newspecies)
-      Kernel.pbMessageDisplay(@sprites["msgwindow"],
-                               _INTL("{1}'s data was added to the Pokédex", newspeciesname))
-      @scene.pbShowPokedex(@newspecies)
+    if allNewPossibleAbilities.include?(oldAbility)
+      @pokemon.ability=oldAbility
     end
 
-
-
-    # if allNewPossibleAbilities.include?(oldAbility)
-    #   @pokemon.ability=oldAbility
-    # end
-
     # Learn moves upon evolution for evolved species
-    movelist = @pokemon.getMoveList
+    movelist = @pokemon.getMLStandard
     for i in movelist
       next if i[0]!=0 && i[0]!=@pokemon.level   # 0 is "learn upon evolution"
       pbLearnMove(@pokemon,i[1],true) { pbUpdate }

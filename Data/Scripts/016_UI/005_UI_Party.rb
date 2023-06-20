@@ -420,16 +420,39 @@ class PokemonPartyPanel < SpriteWrapper
           end
         end
         # Draw gender symbol
-        if @pokemon.male?
-          textpos.push([_INTL("♂"), 224, 10, 0, Color.new(0, 112, 248), Color.new(120, 184, 232)])
+        #KurayNewSymbolGender
+        imagePos = []
+        kuraygender1t = "♂"
+        kuraygender2t = "♀"
+        # kuraygender3t = "♃"
+        # kuraygender4t = "♄"
+        kuraygender1r = [55, 148, 229]
+        kuraygender1s = [68, 98, 125]
+        kuraygender2r = [229, 55, 203]
+        kuraygender2s = [137, 73, 127]
+        # kuraygender3r = [55, 229, 81]
+        # kuraygender3s = [68, 127, 76]
+        # kuraygender4r = [229, 127, 55]
+        # kuraygender4s = [135, 95, 69]
+        if @pokemon.pizza?
+          imagePos.push(["Graphics/Pictures/Storage/gender4", 206, 15])
+          # textpos.push([_INTL(kuraygender4t), 224, 10, 0, Color.new(kuraygender4r[0], kuraygender4r[1], kuraygender4r[2]), Color.new(kuraygender4s[0], kuraygender4s[1], kuraygender4s[2])])
+        elsif @pokemon.male?
+          textpos.push([_INTL(kuraygender1t), 224, 10, 0, Color.new(kuraygender1r[0], kuraygender1r[1], kuraygender1r[2]), Color.new(kuraygender1s[0], kuraygender1s[1], kuraygender1s[2])])
         elsif @pokemon.female?
-          textpos.push([_INTL("♀"), 224, 10, 0, Color.new(232, 32, 16), Color.new(248, 168, 184)])
+          textpos.push([_INTL(kuraygender2t), 224, 10, 0, Color.new(kuraygender2r[0], kuraygender2r[1], kuraygender2r[2]), Color.new(kuraygender2s[0], kuraygender2s[1], kuraygender2s[2])])
+        elsif @pokemon.genderless?
+          imagePos.push(["Graphics/Pictures/Storage/gender3", 210, 24])
+          # textpos.push([_INTL(kuraygender3t), 224, 10, 0, Color.new(kuraygender3r[0], kuraygender3r[1], kuraygender3r[2]), Color.new(kuraygender3s[0], kuraygender3s[1], kuraygender3s[2])])
         end
         # Draw shiny icon
         if @pokemon.shiny?
-          imagePos = []
-          addShinyStarsToGraphicsArray(imagePos, 80, 48, @pokemon.bodyShiny?, @pokemon.headShiny?, @pokemon.debugShiny?, 0, 0, 16, 16)
-          pbDrawImagePositions(@overlaysprite.bitmap, imagePos)
+          # imagePos=[]
+          addShinyStarsToGraphicsArray(imagePos,80,48,@pokemon.bodyShiny?,@pokemon.headShiny?,@pokemon.debugShiny?,0,0,16,16,false,false)
+          # pbDrawImagePositions(@overlaysprite.bitmap,imagePos)
+        end
+        if imagePos
+          pbDrawImagePositions(@overlaysprite.bitmap,imagePos)
         end
       end
       pbDrawTextPositions(@overlaysprite.bitmap, textpos)
@@ -467,7 +490,6 @@ end
 # Pokémon party visuals
 #===============================================================================
 class PokemonParty_Scene
-  attr_accessor :viewport
   def pbStartScene(party, starthelptext, annotations = nil, multiselect = false)
     @sprites = {}
     @party = party
@@ -690,15 +712,6 @@ class PokemonParty_Scene
       yield if block_given?
     }
     return ret
-  end
-
-  def pbOpenHatScreen(pokemon)
-    #oldsprites = pbFadeOutAndHide(@sprites)
-    scene = PokemonHatView.new
-    screen = PokemonHatPresenter.new(scene, pokemon)
-    screen.pbStartScreen()
-    yield if block_given?
-    #pbFadeInAndShow(@sprites, oldsprites)
   end
 
   def pbUseItem(bag, pokemon)
@@ -1162,40 +1175,15 @@ class PokemonPartyScreen
     return ret
   end
 
-
-  def pbPokemonHat(pokemon)
-    cmd = 0
-    msg = "What should you do?"
-    loop do
-      cmd = @scene.pbShowCommands(msg, [
-        _INTL("Put on hat"),
-        _INTL("Remove hat"),
-        _INTL("Back")], cmd)
-      echoln cmd
-      break if cmd == -1
-      if cmd == 0   #Put on hat
-        @scene.pbOpenHatScreen(pokemon)
-        pbDisplay(_INTL("{1} put on a hat!",pokemon.name))
-      elsif cmd == 1 #remove hat
-        if pbConfirm(_INTL("Remove {1}'s hat?",pokemon.name))
-          pokemon.hat=nil
-          pbDisplay(_INTL("{1}'s hat was removed",pokemon.name))
-        end
-      else
-        break
-      end
-    end
-  end
-
   def pbPokemonRename(pkmn, pkmnid)
     cmd = 0
     loop do
-      speciesname = pkmn.speciesName
+      speciesname = PBSpecies.getName(pkmn.species)
       msg = [_INTL("{1} has the nickname {2}.", speciesname, pkmn.name),
              _INTL("{1} has no nickname.", speciesname)][pkmn.name == speciesname ? 1 : 0]
       cmd = @scene.pbShowCommands(msg, [
         _INTL("Rename"),
-        _INTL("Back")], cmd)
+        _INTL("Quit")], cmd)
       # Break
       if cmd == -1
         break
@@ -1236,10 +1224,9 @@ class PokemonPartyScreen
       cmdSwitch = -1
       cmdMail = -1
       cmdItem = -1
-      cmdHat = -1
-
       # Build the commands
       commands[cmdSummary = commands.length] = _INTL("Summary")
+      commands[cmdNickname = commands.length] = _INTL("Nickname") if !pkmn.egg?
       commands[cmdDebug = commands.length] = _INTL("Debug") if $DEBUG
       if !pkmn.egg?
         # Check for hidden moves and add any that were found
@@ -1251,7 +1238,6 @@ class PokemonPartyScreen
         end
       end
       commands[cmdSwitch = commands.length] = _INTL("Switch") if @party.length > 1
-      commands[cmdHat = commands.length] = _INTL("Hat") if !pkmn.egg? && $game_switches[SWITCH_UNLOCKED_POKEMON_HATS]
       if !pkmn.egg?
         if pkmn.mail
           commands[cmdMail = commands.length] = _INTL("Mail")
@@ -1259,7 +1245,6 @@ class PokemonPartyScreen
           commands[cmdItem = commands.length] = _INTL("Item")
         end
       end
-      commands[cmdNickname = commands.length] = _INTL("Nickname") if !pkmn.egg?
       commands[commands.length] = _INTL("Cancel")
       command = @scene.pbShowCommands(_INTL("Do what with {1}?", pkmn.name), commands)
       havecommand = false
@@ -1319,10 +1304,8 @@ class PokemonPartyScreen
         @scene.pbSummary(pkmnid) {
           @scene.pbSetHelpText((@party.length > 1) ? _INTL("Choose a Pokémon.") : _INTL("Choose Pokémon or cancel."))
         }
-      elsif cmdHat >= 0 && command == cmdHat
-        pbPokemonHat(pkmn)
       elsif cmdNickname >= 0 && command == cmdNickname
-        pbPokemonRename(pkmn, pkmnid)
+        pbPokemonRename(pkmn,pkmnid)
       elsif cmdDebug >= 0 && command == cmdDebug
         pbPokemonDebug(pkmn, pkmnid)
       elsif cmdSwitch >= 0 && command == cmdSwitch

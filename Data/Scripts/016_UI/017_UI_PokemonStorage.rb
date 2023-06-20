@@ -2,11 +2,17 @@
 # Pokémon icons
 #===============================================================================
 class PokemonBoxIcon < IconSprite
+  attr_accessor :heldox
+  attr_accessor :heldoy
+  attr_accessor :pokemon
+
   def initialize(pokemon, viewport = nil)
     super(0, 0, viewport)
     @pokemon = pokemon
     @release = Interpolator.new
     @startRelease = false
+    @heldox = 0
+    @heldoy = 0
     refresh
   end
 
@@ -24,29 +30,175 @@ class PokemonBoxIcon < IconSprite
     return false
   end
 
-  def createFusionIcon(species,spriteform_head=nil,spriteform_body=nil)
-    bodyPoke_number = getBodyID(species)
-    headPoke_number = getHeadID(species, bodyPoke_number)
+  #KurayX - KURAYX_ABOUT_SHINIES
+  #KuraIcon
+  def createRBGableShiny(pokemon)
+    result_icon = AnimatedBitmap.new(GameData::Species.icon_filename(pokemon.species, pokemon.form, pokemon.gender, pokemon.shiny?))
+    # result_icon = AnimatedBitmap.new(GameData::Species.icon_filename_from_pokemon(pokemon))
+    dexNum = getDexNumberForSpecies(pokemon.species)
+    if pokemon.shiny? && $PokemonSystem.shiny_icons_kuray == 1 && $PokemonSystem.kuraynormalshiny != 1
+      # result_icon.shiftColors(colorshifting)
+      result_icon.pbGiveFinaleColor(pokemon.shinyR?, pokemon.shinyG?, pokemon.shinyB?, pokemon.shinyValue?)
+    end
+    return result_icon
+  end
+
+
+
+  #KurayX Custom icons
+  def customIcons(dex_number)
+    return nil if dex_number == nil
+    if dex_number <= Settings::NB_POKEMON
+      return get_notfusedicon_sprite_path(dex_number)
+    else
+      if dex_number >= Settings::ZAPMOLCUNO_NB
+        specialPath = getSpecialIconName(dex_number)
+        return pbResolveBitmap(specialPath)
+        head_id=nil
+      else
+        body_id = getBodyID(dex_number)
+        head_id = getHeadID(dex_number, body_id)
+        return get_customicons_sprite_path(head_id,body_id)
+        # folder = head_id.to_s
+        # filename = sprintf("%s.%s.png", head_id, body_id)
+      end
+    end
+  end
+
+  #KurayX Custom icons
+  def getSpecialIconName(dexNum)
+    base_path = "Graphics/Battlers/special/"
+    case dexNum
+    when Settings::ZAPMOLCUNO_NB..Settings::ZAPMOLCUNO_NB + 1
+      return sprintf(base_path + "144.145.146")
+    when Settings::ZAPMOLCUNO_NB + 2
+      return sprintf(base_path + "243.244.245")
+    when Settings::ZAPMOLCUNO_NB + 3
+      return sprintf(base_path +"340.341.342")
+    when Settings::ZAPMOLCUNO_NB + 4
+      return sprintf(base_path +"343.344.345")
+    when Settings::ZAPMOLCUNO_NB + 5
+      return sprintf(base_path +"349.350.351")
+    when Settings::ZAPMOLCUNO_NB + 6
+      return sprintf(base_path +"151.251.381")
+    when Settings::ZAPMOLCUNO_NB + 11
+      return sprintf(base_path +"150.348.380")
+      #starters
+    when Settings::ZAPMOLCUNO_NB + 7
+      return sprintf(base_path +"3.6.9")
+    when Settings::ZAPMOLCUNO_NB + 8
+      return sprintf(base_path +"154.157.160")
+    when Settings::ZAPMOLCUNO_NB + 9
+      return sprintf(base_path +"278.281.284")
+    when Settings::ZAPMOLCUNO_NB + 10
+      return sprintf(base_path +"318.321.324")
+      #starters prevos
+    when Settings::ZAPMOLCUNO_NB + 12
+      return sprintf(base_path +"1.4.7")
+    when Settings::ZAPMOLCUNO_NB + 13
+      return sprintf(base_path +"2.5.8")
+    when Settings::ZAPMOLCUNO_NB + 14
+      return sprintf(base_path +"152.155.158")
+    when Settings::ZAPMOLCUNO_NB + 15
+      return sprintf(base_path +"153.156.159")
+    when Settings::ZAPMOLCUNO_NB + 16
+      return sprintf(base_path +"276.279.282")
+    when Settings::ZAPMOLCUNO_NB + 17
+      return sprintf(base_path +"277.280.283")
+    when Settings::ZAPMOLCUNO_NB + 18
+      return sprintf(base_path +"316.319.322")
+    when Settings::ZAPMOLCUNO_NB + 19
+      return sprintf(base_path +"317.320.323")
+    when Settings::ZAPMOLCUNO_NB + 20 #birdBoss Left
+      return sprintf(base_path +"invisible")
+    when Settings::ZAPMOLCUNO_NB + 21 #birdBoss middle
+      return sprintf(base_path + "144.145.146")
+    when Settings::ZAPMOLCUNO_NB + 22 #birdBoss right
+      return sprintf(base_path +"invisible")
+    when Settings::ZAPMOLCUNO_NB + 23 #sinnohboss left
+      return sprintf(base_path +"invisible")
+    when Settings::ZAPMOLCUNO_NB + 24 #sinnohboss middle
+      return sprintf(base_path +"343.344.345")
+    when Settings::ZAPMOLCUNO_NB + 25 #sinnohboss right
+      return sprintf(base_path +"invisible")
+    else
+      return sprintf(base_path + "000")
+    end
+  end
+
+  #Just in case (KurayX) KurayX Custom icons
+  def get_notfusedicon_sprite_path(dex_number)
+    folder = dex_number.to_s
+    filename = sprintf("%s_i.png", dex_number)
+  
+    if alt_sprites_substitutions_available && $PokemonGlobal.alt_sprite_substitutions.keys.include?(dex_number)
+      return $PokemonGlobal.alt_sprite_substitutions[dex_number]
+    end
+  
+    normal_path = Settings::BATTLERS_FOLDER + folder + "/" + filename
+    lightmode_path = Settings::BATTLERS_FOLDER + filename
+    return normal_path if pbResolveBitmap(normal_path)
+    return lightmode_path
+  end
+
+  #Just in case (KurayX) KurayX Custom icons
+  def get_customicons_sprite_path(head_id,body_id)
+    #Swap path if alt is selected for this pokemon
+    dex_num = getSpeciesIdForFusion(head_id,body_id)
+    if alt_sprites_substitutions_available && $PokemonGlobal.alt_sprite_substitutions.keys.include?(dex_num)
+      heredoing = $PokemonGlobal.alt_sprite_substitutions[dex_num]
+      heredoing = heredoing[0..-5] + "_i.png"
+      return heredoing if pbResolveBitmap(heredoing)
+      return false
+    end
+  
+    #Try local custom sprite
+    filename = sprintf("%s.%s_i.png", head_id, body_id)
+    local_custom_path = Settings::CUSTOM_BATTLERS_FOLDER_INDEXED + head_id.to_s + "/" +filename
+    return local_custom_path if pbResolveBitmap(local_custom_path)
+    return false
+  end
+
+  #KurayX - KURAYX_ABOUT_SHINIES
+  #KuraIcon
+  def createFusionIcon(pokemon)
+    bodyPoke_number = getBodyID(pokemon.species)
+    headPoke_number = getHeadID(pokemon.species, bodyPoke_number)
 
     bodyPoke = GameData::Species.get(bodyPoke_number).species
     headPoke = GameData::Species.get(headPoke_number).species
 
-    icon1 = AnimatedBitmap.new(GameData::Species.icon_filename(headPoke,spriteform_head))
-    icon2 = AnimatedBitmap.new(GameData::Species.icon_filename(bodyPoke,spriteform_body))
+    icon1 = AnimatedBitmap.new(GameData::Species.icon_filename(headPoke))
+    icon2 = AnimatedBitmap.new(GameData::Species.icon_filename(bodyPoke))
 
-    dexNum = getDexNumberForSpecies(species)
-    ensureFusionIconExists
-    bitmapFileName = sprintf("Graphics/Pokemon/FusionIcons/icon%03d", dexNum)
-    headPokeFileName = GameData::Species.icon_filename(headPoke,spriteform_head)
-    bitmapPath = sprintf("%s.png", bitmapFileName)
-    generated_new_icon = generateFusionIcon(headPokeFileName,bitmapPath)
-    result_icon = generated_new_icon ? AnimatedBitmap.new(bitmapPath) : icon1
+    #KurayX Github
+    directory_name = "Graphics/Pokemon/FusionIcons"
+    Dir.mkdir(directory_name) unless File.exists?(directory_name)
+    dexNum = getDexNumberForSpecies(pokemon.species)
+    #KurayX Custom icons
+    if dexNum.is_a?(Symbol)
+      dexNum = GameData::Species.get(dexNum).id_number
+    end
+    customiconname = customIcons(dexNum)
+    if customiconname
+      result_icon = AnimatedBitmap.new(customiconname)
+    else
+      bitmapFileName = sprintf("Graphics/Pokemon/FusionIcons/icon%03d", dexNum)
+      headPokeFileName = GameData::Species.icon_filename(headPoke)
+      bitmapPath = sprintf("%s.png", bitmapFileName)
+      IO.copy_stream(headPokeFileName, bitmapPath)
+      result_icon = AnimatedBitmap.new(bitmapPath)
 
-    for i in 0..icon1.width - 1
-      for j in ((icon1.height / 2) + Settings::FUSION_ICON_SPRITE_OFFSET)..icon1.height - 1
-        temp = icon2.bitmap.get_pixel(i, j)
-        result_icon.bitmap.set_pixel(i, j, temp)
+      for i in 0..icon1.width-1
+        for j in ((icon1.height / 2) + Settings::FUSION_ICON_SPRITE_OFFSET)..icon1.height-1
+          temp = icon2.bitmap.get_pixel(i, j)
+          result_icon.bitmap.set_pixel(i, j, temp)
+        end
       end
+    end
+    if @pokemon.shiny? && $PokemonSystem.shiny_icons_kuray == 1 && $PokemonSystem.kuraynormalshiny != 1
+      # result_icon.shiftColors(colorshifting)
+      result_icon.pbGiveFinaleColor(@pokemon.shinyR?, @pokemon.shinyG?, @pokemon.shinyB?, @pokemon.shinyValue?)
     end
     return result_icon
   end
@@ -64,12 +216,23 @@ class PokemonBoxIcon < IconSprite
     @startRelease = true
   end
 
+  #KurayX - KURAYX_ABOUT_SHINIES
   def refresh(fusion_enabled = true)
     return if !@pokemon
-    if useRegularIcon(@pokemon.species) || @pokemon.egg?
+    if @pokemon.egg?
       self.setBitmap(GameData::Species.icon_filename_from_pokemon(@pokemon))
+    elsif useRegularIcon(@pokemon.species)
+      self.setBitmapDirectly(createRBGableShiny(@pokemon))
+      # if @pokemon.shiny?
+        # self.setBitmap(GameData::Species.icon_filename_from_pokemon(@pokemon), GameData::Species.calculateShinyHueOffset(@pokemon.dexNum, @pokemon.bodyShiny?, @pokemon.headShiny?, @pokemon.shinyValue?))
+      # end
+      # self.visible = true
+      ## if @pokemon.shiny?
+        ## self.setBitmap(GameData::Species.icon_filename_from_pokemon(@pokemon), GameData::Species.calculateShinyHueOffset(@pokemon.dexNum, @pokemon.bodyShiny?, @pokemon.headShiny?, @pokemon.shinyValue?))
+        ## self.setBitmap(GameData::Species.icon_filename_from_pokemon(@pokemon), GameData::Species.calculateShinyHueOffset(@pokemon.dexNum, @pokemon.bodyShiny?, @pokemon.headShiny?, @pokemon.shinyValue?))
+      ## end
     else
-      self.setBitmapDirectly(createFusionIcon(@pokemon.species,@pokemon.spriteform_head, @pokemon.spriteform_body))
+      self.setBitmapDirectly(createFusionIcon(@pokemon))
       if fusion_enabled
         self.visible = true
       else
@@ -164,14 +327,14 @@ end
 # Cursor
 #===============================================================================
 class PokemonBoxArrow < SpriteWrapper
-  attr_accessor :quickswap
+  attr_accessor :cursormode
 
   def initialize(viewport = nil)
     super(viewport)
     @frame = 0
     @holding = false
     @updating = false
-    @quickswap = false
+    @cursormode = "default"
     @grabbingState = 0
     @placingState = 0
     @heldpkmn = nil
@@ -184,15 +347,21 @@ class PokemonBoxArrow < SpriteWrapper
     @handsprite.addBitmap("point2q", "Graphics/Pictures/Storage/cursor_point_2_q")
     @handsprite.addBitmap("grabq", "Graphics/Pictures/Storage/cursor_grab_q")
     @handsprite.addBitmap("fistq", "Graphics/Pictures/Storage/cursor_fist_q")
+    @handsprite.addBitmap("point1m", "Graphics/Pictures/Storage/cursor_point_1_m")
+    @handsprite.addBitmap("point2m", "Graphics/Pictures/Storage/cursor_point_2_m")
+    @handsprite.addBitmap("grabm", "Graphics/Pictures/Storage/cursor_grab_m")
+    @handsprite.addBitmap("fistm", "Graphics/Pictures/Storage/cursor_fist_m")
     @handsprite.changeBitmap("fist")
     @spriteX = self.x
     @spriteY = self.y
     @splicerType = 0
+    @multiheldpkmn = []
   end
 
   def dispose
     @handsprite.dispose
     @heldpkmn.dispose if @heldpkmn
+    @multiheldpkmn.each { |pkmn| pkmn.dispose }
     super
   end
 
@@ -220,8 +389,14 @@ class PokemonBoxArrow < SpriteWrapper
 
   def heldPokemon
     @heldpkmn = nil if @heldpkmn && @heldpkmn.disposed?
-    @holding = false if !@heldpkmn
+    @holding = false if !@heldpkmn && @multiheldpkmn.length == 0
     return @heldpkmn
+  end
+
+  def multiHeldPokemon
+    @multiheldpkmn.delete_if { |pkmn| pkmn.disposed? }
+    @holding = false if !@heldpkmn && @multiheldpkmn.length == 0
+    return @multiheldpkmn
   end
 
   def visible=(value)
@@ -229,6 +404,7 @@ class PokemonBoxArrow < SpriteWrapper
     @handsprite.visible = value
     sprite = heldPokemon
     sprite.visible = value if sprite
+    multiHeldPokemon.each { |pkmn| pkmn.visible = value }
   end
 
   def color=(value)
@@ -236,10 +412,15 @@ class PokemonBoxArrow < SpriteWrapper
     @handsprite.color = value
     sprite = heldPokemon
     sprite.color = value if sprite
+    multiHeldPokemon.each { |pkmn| pkmn.color = value }
   end
 
-  def holding?
+  def holdingSingle?
     return self.heldPokemon && @holding
+  end
+
+  def holdingMulti?
+    return @multiheldpkmn.length > 0 && @holding
   end
 
   def grabbing?
@@ -254,14 +435,16 @@ class PokemonBoxArrow < SpriteWrapper
     super
     @handsprite.x = self.x
     @spriteX = x if !@updating
-    heldPokemon.x = self.x if holding?
+    heldPokemon.x = self.x if holdingSingle?
+    multiHeldPokemon.each { |pkmn| pkmn.x = self.x + (pkmn.heldox * 48) } if holdingMulti?
   end
 
   def y=(value)
     super
     @handsprite.y = self.y
     @spriteY = y if !@updating
-    heldPokemon.y = self.y + 16 if holding?
+    heldPokemon.y = self.y + 16 if holdingSingle?
+    multiHeldPokemon.each { |pkmn| pkmn.y = self.y + 16 + (pkmn.heldoy * 48) } if holdingMulti?
   end
 
   def z=(value)
@@ -270,11 +453,23 @@ class PokemonBoxArrow < SpriteWrapper
   end
 
   def setSprite(sprite)
-    if holding?
+    if holdingSingle?
       @heldpkmn = sprite
       @heldpkmn.viewport = self.viewport if @heldpkmn
       @heldpkmn.z = 1 if @heldpkmn
-      @holding = false if !@heldpkmn
+      @holding = false if !@heldpkmn && @multiheldpkmn.length == 0
+      self.z = 2
+    end
+  end
+
+  def setSprites(sprites)
+    if holdingMulti?
+      @multiheldpkmn = sprites
+      for pkmn in @multiheldpkmn
+        pkmn.viewport = self.viewport
+        pkmn.z = 1
+      end
+      @holding = false if !@heldpkmn && @multiheldpkmn.length == 0
       self.z = 2
     end
   end
@@ -285,6 +480,8 @@ class PokemonBoxArrow < SpriteWrapper
       @heldpkmn.dispose
       @heldpkmn = nil
     end
+    @multiheldpkmn.each { |pkmn| pkmn.dispose }
+    @multiheldpkmn = []
   end
 
   def grab(sprite)
@@ -292,6 +489,16 @@ class PokemonBoxArrow < SpriteWrapper
     @heldpkmn = sprite
     @heldpkmn.viewport = self.viewport
     @heldpkmn.z = 1
+    self.z = 2
+  end
+
+  def grabMulti(sprites)
+    @grabbingState = 1
+    @multiheldpkmn = sprites
+    for pkmn in @multiheldpkmn
+      pkmn.viewport = self.viewport
+      pkmn.z = 1
+    end
     self.z = 2
   end
 
@@ -303,21 +510,35 @@ class PokemonBoxArrow < SpriteWrapper
     @heldpkmn.release if @heldpkmn
   end
 
+  def getModeSprites
+    case @cursormode
+    when "quickswap"
+      return ["point1q", "point2q", "grabq", "fistq"]
+    when "multiselect"
+      return ["point1m", "point2m", "grabm", "fistm"]
+    else
+      return ["point1", "point2", "grab", "fist"]
+    end
+  end
+
   def update
     @updating = true
     super
     heldpkmn = heldPokemon
     heldpkmn.update if heldpkmn
+    multiheldpkmn = multiHeldPokemon
+    multiheldpkmn.each { |pkmn| pkmn.update }
+    modeSprites = getModeSprites
     @handsprite.update
-    @holding = false if !heldpkmn
+    @holding = false if !heldpkmn && multiheldpkmn.length == 0
     if @grabbingState > 0
       if @grabbingState <= 4 * Graphics.frame_rate / 20
-        @handsprite.changeBitmap((@quickswap) ? "grabq" : "grab")
+        @handsprite.changeBitmap(modeSprites[2]) # grab
         self.y = @spriteY + 4.0 * @grabbingState * 20 / Graphics.frame_rate
         @grabbingState += 1
       elsif @grabbingState <= 8 * Graphics.frame_rate / 20
         @holding = true
-        @handsprite.changeBitmap((@quickswap) ? "fistq" : "fist")
+        @handsprite.changeBitmap(modeSprites[3]) # fist
         self.y = @spriteY + 4 * (8 * Graphics.frame_rate / 20 - @grabbingState) * 20 / Graphics.frame_rate
         @grabbingState += 1
       else
@@ -325,27 +546,28 @@ class PokemonBoxArrow < SpriteWrapper
       end
     elsif @placingState > 0
       if @placingState <= 4 * Graphics.frame_rate / 20
-        @handsprite.changeBitmap((@quickswap) ? "fistq" : "fist")
+        @handsprite.changeBitmap(modeSprites[3]) # fist
         self.y = @spriteY + 4.0 * @placingState * 20 / Graphics.frame_rate
         @placingState += 1
       elsif @placingState <= 8 * Graphics.frame_rate / 20
         @holding = false
         @heldpkmn = nil
-        @handsprite.changeBitmap((@quickswap) ? "grabq" : "grab")
+        @multiheldpkmn = []
+        @handsprite.changeBitmap(modeSprites[2]) # grab
         self.y = @spriteY + 4 * (8 * Graphics.frame_rate / 20 - @placingState) * 20 / Graphics.frame_rate
         @placingState += 1
       else
         @placingState = 0
       end
-    elsif holding?
-      @handsprite.changeBitmap((@quickswap) ? "fistq" : "fist")
+    elsif holdingSingle? || holdingMulti?
+      @handsprite.changeBitmap(modeSprites[3]) # fist
     else
       self.x = @spriteX
       self.y = @spriteY
       if @frame < Graphics.frame_rate / 2
-        @handsprite.changeBitmap((@quickswap) ? "point1q" : "point1")
+        @handsprite.changeBitmap(modeSprites[0]) # point1
       else
-        @handsprite.changeBitmap((@quickswap) ? "point2q" : "point2")
+        @handsprite.changeBitmap(modeSprites[1]) # point2
       end
     end
     @frame += 1
@@ -457,7 +679,11 @@ class PokemonBoxSprite < SpriteWrapper
         @storage[@boxnumber].background = @bg
       end
       @boxbitmap.dispose if @boxbitmap
-      @boxbitmap = AnimatedBitmap.new("Graphics/Pictures/Storage/box_#{@bg}")
+      if File.file?("Graphics/Pictures/Storage/box_#{@bg}.png")
+        @boxbitmap = AnimatedBitmap.new("Graphics/Pictures/Storage/box_#{@bg}")
+      else
+        @boxbitmap = AnimatedBitmap.new("Graphics/Pictures/Storage/missing_box")
+      end
     end
   end
 
@@ -476,6 +702,38 @@ class PokemonBoxSprite < SpriteWrapper
     if sprite
       arrow.grab(sprite)
       @pokemonsprites[index] = nil
+      update
+    end
+  end
+
+  def placePokemonMulti(index, sprites)
+    arrowX = index % PokemonBox::BOX_WIDTH
+    arrowY = (index / PokemonBox::BOX_WIDTH).floor
+    for sprite in sprites
+      spriteIndex = (sprite.heldox + arrowX) + (sprite.heldoy + arrowY) * PokemonBox::BOX_WIDTH
+      @pokemonsprites[spriteIndex] = sprite
+      @pokemonsprites[spriteIndex].refresh
+    end
+    if sprites.length > 0
+      refresh
+    end
+  end
+
+  def grabPokemonMulti(indexes, arrowIndex, arrow)
+    grabbedSprites = []
+    arrowX = arrowIndex % PokemonBox::BOX_WIDTH
+    arrowY = (arrowIndex / PokemonBox::BOX_WIDTH).floor
+    for index in indexes
+      sprite = @pokemonsprites[index]
+      if sprite && sprite.pokemon && !sprite.disposed?
+        sprite.heldox = (index % PokemonBox::BOX_WIDTH) - arrowX
+        sprite.heldoy = (index / PokemonBox::BOX_WIDTH).floor - arrowY
+        grabbedSprites.push(sprite)
+        @pokemonsprites[index] = nil
+      end
+    end
+    if grabbedSprites.length > 0
+      arrow.grabMulti(grabbedSprites)
       update
     end
   end
@@ -614,6 +872,38 @@ class PokemonBoxPartySprite < SpriteWrapper
     end
   end
 
+  def placePokemonMulti(index, sprites)
+    partyIndex = @pokemonsprites.count { |i| i && i.pokemon && !i.disposed? }
+    for sprite in sprites
+      @pokemonsprites[partyIndex] = sprite
+      partyIndex += 1
+    end
+    if sprites.length > 0
+      @pokemonsprites.compact!
+      refresh
+    end
+  end
+
+  def grabPokemonMulti(indexes, arrowIndex, arrow)
+    grabbedSprites = []
+    arrowX = arrowIndex % 2
+    arrowY = (arrowIndex / 2).floor
+    for index in indexes
+      sprite = @pokemonsprites[index]
+      if sprite && sprite.pokemon && !sprite.disposed?
+        sprite.heldox = (index % 2) - arrowX
+        sprite.heldoy = (index / 2).floor - arrowY
+        grabbedSprites.push(sprite)
+        @pokemonsprites[index] = nil
+      end
+    end
+    if grabbedSprites.length > 0
+      arrow.grabMulti(grabbedSprites)
+      @pokemonsprites.compact!
+      refresh
+    end
+  end
+
   def deletePokemon(index)
     @pokemonsprites[index].dispose
     @pokemonsprites[index] = nil
@@ -658,7 +948,7 @@ end
 # Pokémon storage visuals
 #===============================================================================
 class PokemonStorageScene
-  attr_reader :quickswap
+  attr_reader :cursormode
   attr_accessor :sprites
 
   def initialize
@@ -694,7 +984,7 @@ class PokemonStorageScene
     @viewport = Viewport.new(0, 0, Graphics.width, Graphics.height)
     @viewport.z = 99999
     @selection = 0
-    @quickswap = false
+    @cursormode = "default"
     @sprites = {}
     @choseFromParty = false
     @command = command
@@ -722,6 +1012,8 @@ class PokemonStorageScene
     @sprites["markingoverlay"] = BitmapSprite.new(Graphics.width, Graphics.height, @boxsidesviewport)
     @sprites["markingoverlay"].visible = false
     pbSetSystemFont(@sprites["markingoverlay"].bitmap)
+    @sprites["selectionrect"] = BitmapSprite.new(Graphics.width, Graphics.height, @arrowviewport)
+    @sprites["selectionrect"].visible = false
     @sprites["arrow"] = PokemonBoxArrow.new(@arrowviewport)
     @sprites["arrow"].z += 1
     if command != 2
@@ -824,7 +1116,10 @@ class PokemonStorageScene
   def pbChangeSelection(key, selection)
     case key
     when Input::UP
-      if selection == -1 # Box name
+      if @screen.multiSelectRange
+        selection -= PokemonBox::BOX_WIDTH
+        selection += PokemonBox::BOX_SIZE if selection < 0
+      elsif selection == -1 # Box name
         selection = -2
       elsif selection == -2 # Party
         selection = PokemonBox::BOX_SIZE - 1 - PokemonBox::BOX_WIDTH * 2 / 3 # 25
@@ -835,7 +1130,10 @@ class PokemonStorageScene
         selection = -1 if selection < 0
       end
     when Input::DOWN
-      if selection == -1 # Box name
+      if @screen.multiSelectRange
+        selection += PokemonBox::BOX_WIDTH
+        selection -= PokemonBox::BOX_SIZE if selection >= PokemonBox::BOX_SIZE
+      elsif selection == -1 # Box name
         selection = PokemonBox::BOX_WIDTH / 3 # 2
       elsif selection == -2 # Party
         selection = -1
@@ -852,7 +1150,13 @@ class PokemonStorageScene
         end
       end
     when Input::LEFT
-      if selection == -1 # Box name
+      if @screen.multiSelectRange
+        if (selection % PokemonBox::BOX_WIDTH) == 0 # Wrap around
+          selection += PokemonBox::BOX_WIDTH - 1
+        else
+          selection -= 1
+        end
+      elsif selection == -1 # Box name
         selection = -4 # Move to previous box
       elsif selection == -2
         selection = -3
@@ -864,7 +1168,13 @@ class PokemonStorageScene
         selection -= 1
       end
     when Input::RIGHT
-      if selection == -1 # Box name
+      if @screen.multiSelectRange
+        if (selection % PokemonBox::BOX_WIDTH) == PokemonBox::BOX_WIDTH - 1 # Wrap around
+          selection -= PokemonBox::BOX_WIDTH - 1
+        else
+          selection += 1
+        end
+      elsif selection == -1 # Box name
         selection = -5 # Move to next box
       elsif selection == -2
         selection = -3
@@ -898,26 +1208,29 @@ class PokemonStorageScene
   end
 
   def pbPartyChangeSelection(key, selection)
+    maxIndex = @screen.multiSelectRange ? Settings::MAX_PARTY_SIZE - 1 : Settings::MAX_PARTY_SIZE
     case key
     when Input::LEFT
       selection -= 1
-      selection = Settings::MAX_PARTY_SIZE if selection < 0
+      selection = maxIndex if selection < 0
     when Input::RIGHT
       selection += 1
-      selection = 0 if selection > Settings::MAX_PARTY_SIZE
+      selection = 0 if selection > maxIndex
     when Input::UP
       if selection == Settings::MAX_PARTY_SIZE
         selection = Settings::MAX_PARTY_SIZE - 1
       else
         selection -= 2
-        selection = Settings::MAX_PARTY_SIZE if selection < 0
+        selection = selection % Settings::MAX_PARTY_SIZE if @screen.multiSelectRange
+        selection = maxIndex if selection < 0
       end
     when Input::DOWN
       if selection == Settings::MAX_PARTY_SIZE
         selection = 0
       else
         selection += 2
-        selection = Settings::MAX_PARTY_SIZE if selection > Settings::MAX_PARTY_SIZE
+        selection = selection % Settings::MAX_PARTY_SIZE if @screen.multiSelectRange
+        selection = maxIndex if selection > maxIndex
       end
     end
     return selection
@@ -952,6 +1265,9 @@ class PokemonStorageScene
         selection = -1 if selection == -4 || selection == -5
         pbUpdateOverlay(selection)
         pbSetMosaic(selection)
+        if @screen.multiSelectRange
+          pbUpdateSelectionRect(@storage.currentBox, selection)
+        end
       end
       self.update
       if Input.trigger?(Input::JUMPUP)
@@ -978,7 +1294,7 @@ class PokemonStorageScene
         end
       elsif Input.trigger?(Input::ACTION) && @command == 0 # Organize only
         pbPlayDecisionSE
-        pbSetQuickSwap(!@quickswap)
+        pbNextCursorMode
       elsif Input.trigger?(Input::BACK)
         @selection = selection
         return nil
@@ -1053,11 +1369,14 @@ class PokemonStorageScene
         lastsel = selection if selection > 0
         pbUpdateOverlay(selection, party)
         pbSetMosaic(selection)
+        if @screen.multiSelectRange
+          pbUpdateSelectionRect(-1, selection)
+        end
       end
       self.update
       if Input.trigger?(Input::ACTION) && @command == 0 # Organize only
         pbPlayDecisionSE
-        pbSetQuickSwap(!@quickswap)
+        pbNextCursorMode
       elsif Input.trigger?(Input::BACK)
         @selection = selection
         return -1
@@ -1162,7 +1481,7 @@ class PokemonStorageScene
   end
 
   def pbSetMosaic(selection)
-    if !@screen.pbHeldPokemon
+    if !@screen.pbHolding?
       if @boxForMosaic != @storage.currentBox || @selectionForMosaic != selection
         @sprites["pokemon"].mosaic = Graphics.frame_rate / 4
         @boxForMosaic = @storage.currentBox
@@ -1171,9 +1490,24 @@ class PokemonStorageScene
     end
   end
 
-  def pbSetQuickSwap(value)
-    @quickswap = value
-    @sprites["arrow"].quickswap = value
+  def pbNextCursorMode()
+    case @cursormode
+    when "default"
+      pbSetCursorMode("quickswap")
+    when "quickswap"
+      pbSetCursorMode((@screen.pbHolding?) ? "default" : "multiselect")
+    when "multiselect"
+      pbSetCursorMode("default") if !@screen.pbHolding?
+    end
+  end
+
+  def pbSetCursorMode(value)
+    @cursormode = value
+    @sprites["arrow"].cursormode = value
+    if @screen.multiSelectRange
+      @screen.multiSelectRange = nil
+      pbUpdateSelectionRect(@choseFromParty ? -1 : @storage.currentBox, 0)
+    end
   end
 
   def pbShowPartyTab
@@ -1302,6 +1636,63 @@ class PokemonStorageScene
     end
   end
 
+  def pbHoldMulti(box, selected, selectedIndex)
+    pbSEPlay("GUI storage pick up")
+    if box == -1
+      @sprites["boxparty"].grabPokemonMulti(selected, selectedIndex, @sprites["arrow"])
+    else
+      @sprites["box"].grabPokemonMulti(selected, selectedIndex, @sprites["arrow"])
+    end
+    while @sprites["arrow"].grabbing?
+      Graphics.update
+      Input.update
+      self.update
+    end
+  end
+
+  def pbPlaceMulti(box, index)
+    pbSEPlay("GUI storage put down")
+    heldpokesprites = @sprites["arrow"].multiHeldPokemon
+    @sprites["arrow"].place
+    while @sprites["arrow"].placing?
+      Graphics.update
+      Input.update
+      self.update
+    end
+    if box == -1
+      @sprites["boxparty"].placePokemonMulti(index, heldpokesprites)
+    else
+      @sprites["box"].placePokemonMulti(index, heldpokesprites)
+    end
+    @boxForMosaic = @storage.currentBox
+    @selectionForMosaic = index
+  end
+
+  def pbReleaseMulti(box, selected)
+    releaseSprites = []
+    for index in selected
+      sprite = nil
+      if box == -1
+        sprite = @sprites["boxparty"].getPokemon(index)
+      else
+        sprite = @sprites["box"].getPokemon(index)
+      end
+      releaseSprites.push(sprite) if sprite
+    end
+    if releaseSprites.length > 0
+      for sprite in releaseSprites
+        sprite.release
+      end
+      while releaseSprites[0].releasing?
+        Graphics.update
+        for sprite in releaseSprites
+          sprite.update
+        end
+        self.update
+      end
+    end
+  end
+
   def pbChooseBox(msg)
     commands = []
     for i in 0...@storage.maxBoxes
@@ -1332,6 +1723,291 @@ class PokemonStorageScene
       ret = screen.pbChooseItemScreen(Proc.new { |item| GameData::Item.get(item).can_hold? })
     }
     return ret
+  end
+
+  def pbKuraShinify(selected, heldpoke)
+    while true
+      if $Trainer.money < 1000
+        pbPlayBuzzerSE
+        pbDisplay(_INTL("Not enough Money !"))
+        break
+      else
+        kuraychoices = [
+          _INTL("Gamble for Shiny (P1000)"),
+          _INTL("Nevermind"),
+        ]
+        kuraychoice = pbShowCommands(
+          _INTL("You have P" + $Trainer.money.to_s_formatted), kuraychoices)
+        case kuraychoice
+        when 0
+          $Trainer.money -= 1000
+          if $PokemonSystem.kuraygambleodds == nil || !$PokemonSystem.kuraygambleodds
+            $PokemonSystem.kuraygambleodds = 100
+          end
+          if $PokemonSystem.kuraygambleodds == 0
+            kurayshiny = 1
+          else
+            kurayshiny = $PokemonSystem.kuraygambleodds
+          end
+          becomeshiny = rand(kurayshiny)
+          pokemon = heldpoke
+          if heldpoke
+            pokemon = heldpoke
+          elsif selected[0] == -1
+            pokemon = @storage.party[selected[1]]
+          else
+            pokemon = @storage.boxes[selected[0]][selected[1]]
+          end
+          if becomeshiny == 0 || (pokemon.shiny? && becomeshiny == 1)
+            if pokemon.shiny?
+              newvalue = rand(0..360) - 180
+              pokemon.shinyValue=newvalue
+              pokemon.shinyR=rand(0..2)
+              pokemon.shinyG=rand(0..2)
+              pokemon.shinyB=rand(0..2)
+              pbHardRefresh
+              pbDisplay(_INTL("Wait... Its shiny color changed!"))
+            else
+              pokemon.shiny=true
+              pbHardRefresh
+              pbDisplay(_INTL("Wait... It became shiny!"))
+            end
+            break
+          else
+            pbDisplay(_INTL("Not this time :c Try again!"))
+          end
+        when 1
+          break
+        end
+      end
+    end
+  end
+
+  def pbDefineShinycolor(selected, heldpoke)
+    pokemon = heldpoke
+    if heldpoke
+      pokemon = heldpoke
+    elsif selected[0] == -1
+      pokemon = @storage.party[selected[1]]
+    else
+      pokemon = @storage.boxes[selected[0]][selected[1]]
+    end
+    qty = 360
+    helptext = pbDisplay(_INTL("Hue (0-360)"))
+    params = ChooseNumberParams.new
+    params.setMaxDigits(3)
+    params.setRange(0, 360)
+    params.setDefaultValue(pokemon.shinyValue?+180)
+    params.setInitialValue(pokemon.shinyValue?+180)
+    params.setCancelValue(pokemon.shinyValue?+180)
+    params.setNegativesAllowed(false)
+    qty = @scene.pbChooseNumber(helptext,params)
+    if qty < 361
+      if qty > -1
+        newvalue = qty - 180
+        pokemon.shinyValue=newvalue
+        pbHardRefresh
+        pbDisplay(_INTL("Changed Shiny Hue !"))
+      end
+    end
+    qty = 0
+    helptext = pbDisplay(_INTL("RedChannel (0-2)"))
+    params = ChooseNumberParams.new
+    params.setMaxDigits(1)
+    params.setRange(0, 2)
+    params.setDefaultValue(pokemon.shinyR?)
+    params.setInitialValue(pokemon.shinyR?)
+    params.setCancelValue(pokemon.shinyR?)
+    params.setNegativesAllowed(false)
+    qty = @scene.pbChooseNumber(helptext,params)
+    if qty < 3
+      if qty > -1
+        pokemon.shinyR=qty
+        pbHardRefresh
+        pbDisplay(_INTL("Changed Red Channel !"))
+      end
+    end
+    helptext = pbDisplay(_INTL("GreenChannel (0-2)"))
+    params = ChooseNumberParams.new
+    params.setMaxDigits(1)
+    params.setRange(0, 2)
+    params.setDefaultValue(pokemon.shinyG?)
+    params.setInitialValue(pokemon.shinyG?)
+    params.setCancelValue(pokemon.shinyG?)
+    params.setNegativesAllowed(false)
+    qty = @scene.pbChooseNumber(helptext,params)
+    if qty < 3
+      if qty > -1
+        pokemon.shinyG=qty
+        pbHardRefresh
+        pbDisplay(_INTL("Changed Green Channel !"))
+      end
+    end
+    helptext = pbDisplay(_INTL("BlueChannel (0-2)"))
+    params = ChooseNumberParams.new
+    params.setMaxDigits(1)
+    params.setRange(0, 2)
+    params.setDefaultValue(pokemon.shinyB?)
+    params.setInitialValue(pokemon.shinyB?)
+    params.setCancelValue(pokemon.shinyB?)
+    params.setNegativesAllowed(false)
+    qty = @scene.pbChooseNumber(helptext,params)
+    if qty < 3
+      if qty > -1
+        pokemon.shinyB=qty
+        pbHardRefresh
+        pbDisplay(_INTL("Changed Blue Channel !"))
+      end
+    end
+  end
+
+  #KurayX - KURAYX_ABOUT_SHINIES
+  def pbRerollShiny(selected, heldpoke)
+    pokemon = heldpoke
+    if heldpoke
+      pokemon = heldpoke
+    elsif selected[0] == -1
+      pokemon = @storage.party[selected[1]]
+    else
+      pokemon = @storage.boxes[selected[0]][selected[1]]
+    end
+    newvalue = rand(0..360) - 180
+    pokemon.shinyValue=newvalue
+    pokemon.shinyR=rand(0..2)
+    pokemon.shinyG=rand(0..2)
+    pokemon.shinyB=rand(0..2)
+    pbHardRefresh
+    pbDisplay(_INTL("Re-rolled Shiny Color !"))
+  end
+
+  def pbKurayNoEvo(selected, heldpoke)
+    pokemon = heldpoke
+    if heldpoke
+      pokemon = heldpoke
+    elsif selected[0] == -1
+      pokemon = @storage.party[selected[1]]
+    else
+      pokemon = @storage.boxes[selected[0]][selected[1]]
+    end
+    if pokemon.kuray_no_evo? == 0
+      pokemon.kuray_no_evo=1
+      pbDisplay(_INTL("Pokemon evolution locked !"))
+    else
+      pokemon.kuray_no_evo=0
+      pbDisplay(_INTL("Pokemon evolution unlocked !"))
+    end
+  end
+
+  #KurayX
+  def pbExport(selected, heldpoke, dodelete=0)
+    directory_name = "ExportedPokemons"
+    Dir.mkdir(directory_name) unless File.exists?(directory_name)
+    pokemon = heldpoke
+    if heldpoke
+      pokemon = heldpoke
+    elsif selected[0] == -1
+      pokemon = @storage.party[selected[1]]
+    else
+      pokemon = @storage.boxes[selected[0]][selected[1]]
+    end
+    addincra = 0
+    importname = directory_name + "/" + pokemon.speciesName + "-" + pokemon.name + "-" + pokemon.personalID.to_s + "-" + pokemon.gender.to_s + "-" + pokemon.level.to_s
+    classyname = importname
+    while File.exists?(importname + ".json")
+      importname = classyname + "(" + addincra.to_s + ")"
+      addincra += 1
+      if addincra > 9999
+        break
+      end
+    end
+    # importname = directory_name + "/" + pokemon.speciesName + "-" + pokemon.name + "-" + pokemon.gender + "-" + pokemon.shiny? + "-" + pokemon.totalhp + "-" + pokemon.level + ".pkm"
+    
+    # Marshal not working anymore !
+    # File.open(importname + ".pkm", 'wb') { |f| f.write(Marshal.dump(pokemon)) }
+    File.open(importname + ".json", 'w') { |f| f.write(pokemon.to_json) }
+    # File.open(importname + ".json3", 'w') { |f| f.write(pokemon.to_s) }
+    # File.open(importname + ".json2", 'w') { |f| f.write(pokemon.self) }
+    if dodelete == 1
+      if heldpoke
+        @heldpkmn = nil
+      else
+        @storage.pbDelete(selected[0], selected[1])
+      end
+      pbHardRefresh
+    end
+    pbDisplay(_INTL("Pokemon Exported !"))
+  end
+
+  #KurayX
+  def pbExportAll(selected, heldpoke, dodelete=0)
+    directory_name = "ExportedPokemons"
+    Dir.mkdir(directory_name) unless File.exists?(directory_name)
+    for j in 0...@storage.maxBoxes
+      if @storage[j].empty?
+        next
+      end
+      for k in 0..29
+        if @storage[j, k]
+          pokemon = @storage[j, k]
+          addincra = 0
+          importname = directory_name + "/" + pokemon.speciesName + "-" + pokemon.name + "-" + pokemon.personalID.to_s + "-" + pokemon.gender.to_s + "-" + pokemon.level.to_s
+          classyname = importname
+          while File.exists?(importname + ".json")
+            importname = classyname + "(" + addincra.to_s + ")"
+            addincra += 1
+            if addincra > 9999
+              break
+            end
+          end
+          File.open(importname + ".json", 'w') { |f| f.write(pokemon.to_json) }
+        end
+      end
+    end
+    for j in 0..5
+      if @storage.party[j]
+        pokemon = @storage.party[j]
+        addincra = 0
+        importname = directory_name + "/" + pokemon.speciesName + "-" + pokemon.name + "-" + pokemon.personalID.to_s + "-" + pokemon.gender.to_s + "-" + pokemon.level.to_s
+        classyname = importname
+        while File.exists?(importname + ".json")
+          importname = classyname + "(" + addincra.to_s + ")"
+          addincra += 1
+          if addincra > 9999
+            break
+          end
+        end
+        File.open(importname + ".json", 'w') { |f| f.write(pokemon.to_json) }
+      end
+    end
+    pbDisplay(_INTL("All Pokemons Exported !"))
+  end
+
+  #KurayX
+  def pbImportJson(selected, heldpoke)
+    directory_name = "ExportedPokemons"
+    Dir.mkdir(directory_name) unless File.exists?(directory_name)
+    importname = directory_name + "/" + "Exported.json"
+    if File.file?(importname)
+      if selected[0] == -1
+        pokemon = @storage.party[selected[1]]
+        importdata = File.read(importname)
+        pokemon.load_json(eval(importdata))
+        @storage.pbImportKuray(selected[0], selected[1], pokemon)
+        pbHardRefresh
+        pbDisplay(_INTL("Pokemon Imported !"))
+      else
+        # pokemon = @storage.boxes[selected[0]][selected[1]]
+        pokemon = Pokemon.new(:BULBASAUR, 1)
+        importdata = File.read(importname)
+        pokemon.load_json(eval(importdata))
+        @storage.pbImportKuray(selected[0], selected[1], pokemon)
+        pbHardRefresh
+        pbDisplay(_INTL("Pokemon Imported !"))
+      end
+    else
+      pbPlayBuzzerSE
+      pbDisplay(_INTL("'Exported.json' not found !"))
+    end
   end
 
   def pbSummary(selected, heldpoke)
@@ -1516,7 +2192,7 @@ class PokemonStorageScene
       [_INTL("Exit"), 446, 326, 2, buttonbase, buttonshadow, 1],
     ])
     pokemon = nil
-    if @screen.pbHeldPokemon && !@screen.fusionMode
+    if @screen.pbHolding? && !@screen.fusionMode
       pokemon = @screen.pbHeldPokemon
     elsif selection >= 0
       pokemon = (party) ? party[selection] : @storage[@storage.currentBox, selection]
@@ -1536,10 +2212,29 @@ class PokemonStorageScene
     ]
     if !pokemon.egg?
       imagepos = []
-      if pokemon.male?
-        textstrings.push([_INTL("♂"), 148, 2, false, Color.new(24, 112, 216), Color.new(136, 168, 208)])
+      #KurayNewSymbolGender
+      kuraygender1t = "♂"
+      kuraygender2t = "♀"
+      # kuraygender3t = "♃"
+      # kuraygender4t = "♄"
+      kuraygender1r = [55, 148, 229]
+      kuraygender1s = [68, 98, 125]
+      kuraygender2r = [229, 55, 203]
+      kuraygender2s = [137, 73, 127]
+      # kuraygender3r = [55, 229, 81]
+      # kuraygender3s = [68, 127, 76]
+      # kuraygender4r = [229, 127, 55]
+      # kuraygender4s = [135, 95, 69]
+      if pokemon.pizza?
+        imagepos.push(["Graphics/Pictures/Storage/gender4", 136, 9])
+        # textstrings.push([_INTL(kuraygender4t), 148, 2, false, Color.new(kuraygender4r[0], kuraygender4r[1], kuraygender4r[2]), Color.new(kuraygender4s[0], kuraygender4s[1], kuraygender4s[2])])
+      elsif pokemon.male?
+        textstrings.push([_INTL(kuraygender1t), 148, 2, false, Color.new(kuraygender1r[0], kuraygender1r[1], kuraygender1r[2]), Color.new(kuraygender1s[0], kuraygender1s[1], kuraygender1s[2])])
       elsif pokemon.female?
-        textstrings.push([_INTL("♀"), 148, 2, false, Color.new(248, 56, 32), Color.new(224, 152, 144)])
+        textstrings.push([_INTL(kuraygender2t), 148, 2, false, Color.new(kuraygender2r[0], kuraygender2r[1], kuraygender2r[2]), Color.new(kuraygender2s[0], kuraygender2s[1], kuraygender2s[2])])
+      elsif pokemon.genderless?
+        imagepos.push(["Graphics/Pictures/Storage/gender3", 136, 15])
+        # textstrings.push([_INTL(kuraygender3t), 148, 2, false, Color.new(kuraygender3r[0], kuraygender3r[1], kuraygender3r[2]), Color.new(kuraygender3s[0], kuraygender3s[1], kuraygender3s[2])])
       end
       imagepos.push(["Graphics/Pictures/Storage/overlay_lv", 6, 246])
       textstrings.push([pokemon.level.to_s, 28, 228, false, base, shadow])
@@ -1573,14 +2268,40 @@ class PokemonStorageScene
     end
     pbDrawTextPositions(overlay, textstrings)
     @sprites["pokemon"].setPokemonBitmap(pokemon)
+  end
 
-    if pokemon.egg?
-      @sprites["pokemon"].zoom_x = Settings::EGGSPRITE_SCALE
-      @sprites["pokemon"].zoom_y = Settings::EGGSPRITE_SCALE
-    else
-      @sprites["pokemon"].zoom_x = Settings::FRONTSPRITE_SCALE
-      @sprites["pokemon"].zoom_y = Settings::FRONTSPRITE_SCALE
+  def pbUpdateSelectionRect(box, selected)
+    if !@screen.multiSelectRange
+      @sprites["selectionrect"].visible = false
+      return
     end
+
+    displayRect = Rect.new(0, 0, 1, 1)
+
+    if box == -1
+      xvalues = [] # [18, 90, 18, 90, 18, 90]
+      yvalues = [] # [2, 18, 66, 82, 130, 146]
+      for i in 0...Settings::MAX_PARTY_SIZE
+        xvalues.push(@sprites["boxparty"].x + 18 + 72 * (i % 2))
+        yvalues.push(@sprites["boxparty"].y + 2 + 16 * (i % 2) + 64 * (i / 2))
+      end
+      indexes = @screen.getMultiSelection(box, selected)
+      minx = xvalues[indexes[0]]
+      miny = yvalues[indexes[0]] + 16
+      maxx = xvalues[indexes[indexes.length-1]] + 72 - 8
+      maxy = yvalues[indexes[indexes.length-1]] + 64
+      displayRect.set(minx, miny, maxx-minx, maxy-miny)
+    else
+      indexRect = @screen.getSelectionRect(box, selected)
+      displayRect.x = @sprites["box"].x + 10 + (48 * indexRect.x)
+      displayRect.y = @sprites["box"].y + 30 + (48 * indexRect.y) + 16
+      displayRect.width = indexRect.width * 48 + 16
+      displayRect.height = indexRect.height * 48
+    end
+
+    @sprites["selectionrect"].bitmap.clear
+    @sprites["selectionrect"].bitmap.fill_rect(displayRect.x, displayRect.y, displayRect.width, displayRect.height, Color.new(0, 255, 0, 100))
+    @sprites["selectionrect"].visible = true
   end
 
   def update
@@ -1608,29 +2329,45 @@ class PokemonStorageScreen
   attr_reader :scene
   attr_reader :storage
   attr_accessor :heldpkmn
+  attr_accessor :multiheldpkmn
   attr_accessor :fusionMode
+  attr_accessor :multiSelectRange
 
   def initialize(scene, storage)
     @scene = scene
     @storage = storage
     @pbHeldPokemon = nil
+    @multiheldpkmn = []
   end
 
+  #KurayX - KURAYX_ABOUT_SHINIES
+  def pbChooseNumber(helptext,maximum,initnum=1)
+    return UIHelper.pbChooseNumber(@sprites["helpwindow"],helptext,maximum,initnum) { pbUpdate }
+  end
+
+  #KurayX - KURAYX_ABOUT_SHINIES(except pc functionnalities that are in cmd calls)
   def pbStartScreen(command)
     @heldpkmn = nil
+    @multiheldpkmn = []
     if command == 0 # Organise
       @scene.pbStartBox(self, command)
       loop do
         selected = @scene.pbSelectBox(@storage.party)
         if selected == nil
-          if pbHeldPokemon
+          if pbHolding?
             pbDisplay(_INTL("You're holding a Pokémon!"))
+            next
+          end
+          if @multiSelectRange
+            pbPlayCancelSE
+            @multiSelectRange = nil
+            @scene.pbUpdateSelectionRect(0, 0)
             next
           end
           next if pbConfirm(_INTL("Continue Box operations?"))
           break
         elsif selected[0] == -3 # Close box
-          if pbHeldPokemon
+          if pbHolding?
             pbDisplay(_INTL("You're holding a Pokémon!"))
             next
           end
@@ -1644,8 +2381,58 @@ class PokemonStorageScreen
         else
           pokemon = @storage[selected[0], selected[1]]
           heldpoke = pbHeldPokemon
-          next if !pokemon && !heldpoke
-          if @scene.quickswap
+          if @scene.cursormode == "multiselect"
+            if pbMultiHeldPokemon.length > 0
+              pbPlaceMulti(selected[0], selected[1])
+            elsif !@multiSelectRange
+              pbPlayDecisionSE
+              @multiSelectRange = [selected[1], nil]
+              @scene.pbUpdateSelectionRect(selected[0], selected[1])
+              next
+            elsif !@multiSelectRange[1]
+              @multiSelectRange[1] = selected[1]
+
+              pokemonCount = 0
+              for index in getMultiSelection(selected[0], nil)
+                pokemonCount += 1 if @storage[selected[0], index]
+              end
+
+              if pokemonCount == 0
+                pbPlayCancelSE
+                @multiSelectRange = nil
+                @scene.pbUpdateSelectionRect(selected[0], selected[1])
+                next
+              end
+
+              commands = []
+              cmdMove = -1
+              cmdRelease = -1
+              cmdCancel = -1
+              cmdExport = -1
+
+              helptext = _INTL("Selected {1} Pokémon.", pokemonCount)
+
+              commands[cmdMove = commands.length] = _INTL("Move")
+              commands[cmdRelease = commands.length] = _INTL("Release")
+              commands[cmdExport = commands.length] = _INTL("Export") if $DEBUG
+              commands[cmdCancel = commands.length] = _INTL("Cancel")
+
+              command = pbShowCommands(helptext, commands)
+
+              if command == cmdMove
+                pbHoldMulti(selected[0], selected[1])
+              elsif command == cmdRelease
+                pbReleaseMulti(selected[0])
+              elsif cmdExport >= 0 && command == cmdExport # Export
+                pbExportSelected(selected[0])
+              end
+
+              @multiSelectRange = nil
+              @scene.pbUpdateSelectionRect(selected[0], selected[1])
+            end
+          elsif !pokemon && !heldpoke
+            next
+          elsif @scene.cursormode == "quickswap"
             if @heldpkmn
               (pokemon) ? pbSwap(selected) : pbPlace(selected)
             else
@@ -1667,6 +2454,13 @@ class PokemonStorageScreen
               cmdDebug = -1
               cmdCancel = -1
               cmdNickname = -1
+              cmdImportJson = -1
+              cmdExport = -1
+              cmdExportAll = -1
+              cmdShinyReroll = -1
+              cmdShinyChoose = -1
+              cmdEvoLock = -1
+              cmdShinify = -1
               if heldpoke
                 helptext = _INTL("{1} is selected.", heldpoke.name)
                 commands[cmdMove = commands.length] = (pokemon) ? _INTL("Shift") : _INTL("Place")
@@ -1680,14 +2474,30 @@ class PokemonStorageScreen
                   commands[cmdUnfuse = commands.length] = _INTL("Unfuse")
                   commands[cmdReverse = commands.length] = _INTL("Reverse") if $PokemonBag.pbQuantity(:DNAREVERSER) > 0 || $PokemonBag.pbQuantity(:INFINITEREVERSERS) > 0
                 else
-                  commands[cmdFuse = commands.length] = _INTL("Fuse") if !@heldpkmn
+                  commands[cmdFuse = commands.length] = _INTL("Fuse")
                 end
               end
-              commands[cmdNickname = commands.length] = _INTL("Nickname") if !@heldpkmn
+              commands[cmdNickname = commands.length] = _INTL("Nickname")
               commands[cmdWithdraw = commands.length] = (selected[0] == -1) ? _INTL("Store") : _INTL("Withdraw")
               commands[cmdItem = commands.length] = _INTL("Item")
 
               commands[cmdRelease = commands.length] = _INTL("Release")
+              if heldpoke
+                commands[cmdEvoLock = commands.length] = _INTL("Lock Evolution") if ($PokemonSystem.kuray_no_evo == 1 && heldpoke.kuray_no_evo? == 0)
+                commands[cmdEvoLock = commands.length] = _INTL("Unlock Evolution") if ($PokemonSystem.kuray_no_evo == 1 && heldpoke.kuray_no_evo? == 1)
+                commands[cmdShinify = commands.length] = _INTL("Gamble for Shiny (P1000)") if !heldpoke.shiny?
+                commands[cmdShinify = commands.length] = _INTL("Gamble for new Color (P1000)") if heldpoke.shiny?
+              elsif pokemon
+                commands[cmdEvoLock = commands.length] = _INTL("Lock Evolution") if ($PokemonSystem.kuray_no_evo == 1 && pokemon.kuray_no_evo? == 0)
+                commands[cmdEvoLock = commands.length] = _INTL("Unlock Evolution") if ($PokemonSystem.kuray_no_evo == 1 && pokemon.kuray_no_evo? == 1)
+                commands[cmdShinify = commands.length] = _INTL("Gamble for Shiny (P1000)") if !pokemon.shiny?
+                commands[cmdShinify = commands.length] = _INTL("Gamble for new Color (P1000)") if pokemon.shiny?
+              end
+              commands[cmdImportJson = commands.length] = _INTL("Import") if $DEBUG
+              commands[cmdExport = commands.length] = _INTL("Export") if $DEBUG
+              commands[cmdExportAll = commands.length] = _INTL("Export All Pokemons") if $DEBUG
+              commands[cmdShinyReroll = commands.length] = _INTL("Re-roll Shiny Color") if $DEBUG
+              commands[cmdShinyChoose = commands.length] = _INTL("Set Shiny Color") if $DEBUG
               commands[cmdDebug = commands.length] = _INTL("Debug") if $DEBUG
               commands[cmdCancel = commands.length] = _INTL("Cancel")
               command = pbShowCommands(helptext, commands)
@@ -1699,7 +2509,21 @@ class PokemonStorageScreen
                 end
               elsif cmdSummary >= 0 && command == cmdSummary # Summary
                 pbSummary(selected, @heldpkmn)
-              elsif cmdNickname >= 0 && command == cmdNickname # Summary
+              elsif cmdEvoLock >= 0 && command == cmdEvoLock # EvoLock
+                pbKurayNoEvo(selected, @heldpkmn)
+              elsif cmdExport >= 0 && command == cmdExport # Export
+                pbExport(selected, @heldpkmn, 0)
+              elsif cmdExportAll >= 0 && command == cmdExportAll # Export ALL
+                pbExportAll(selected, @heldpkmn, 0)
+              elsif cmdImportJson >= 0 && command == cmdImportJson # Import Json
+                pbImportJson(selected, @heldpkmn)
+              elsif cmdShinyReroll >= 0 && command == cmdShinyReroll # Re-roll Shiny Color
+                pbRerollShiny(selected, @heldpkmn)
+              elsif cmdShinyChoose >= 0 && command == cmdShinyChoose # Set Shiny Color
+                pbDefineShinycolor(selected, @heldpkmn)
+              elsif cmdShinify >= 0 && command == cmdShinify # Shinify
+                pbKuraShinify(selected, @heldpkmn)
+              elsif cmdNickname >= 0 && command == cmdNickname # Rename
                 renamePokemon(selected)
               elsif cmdWithdraw >= 0 && command == cmdWithdraw # Store/Withdraw
                 (selected[0] == -1) ? pbStore(selected, @heldpkmn) : pbWithdraw(selected, @heldpkmn)
@@ -1886,6 +2710,14 @@ class PokemonStorageScreen
     return @heldpkmn
   end
 
+  def pbMultiHeldPokemon
+    return @multiheldpkmn
+  end
+
+  def pbHolding?
+    return @heldpkmn != nil || @multiheldpkmn.length > 0
+  end
+
   def pbWithdraw(selected, heldpoke)
     box = selected[0]
     index = selected[1]
@@ -1932,8 +2764,8 @@ class PokemonStorageScreen
           if heldpoke || selected[0] == -1
             p = (heldpoke) ? heldpoke : @storage[-1, index]
             p.time_form_set = nil
-            #p.form = 0 if p.isSpecies?(:SHAYMIN)
-            #p.heal
+            p.form = 0 if p.isSpecies?(:SHAYMIN)
+            p.heal
           end
           @scene.pbStore(selected, heldpoke, destbox, firstfree)
           if heldpoke
@@ -1967,9 +2799,7 @@ class PokemonStorageScreen
     box = selected[0]
     index = selected[1]
     if @storage[box, index]
-      pbDisplay("Can't place that there.")
-      return
-      echoln _INTL("Position {1},{2} is not empty...", box, index)
+      raise _INTL("Position {1},{2} is not empty...", box, index)
     end
     if box != -1 && index >= @storage.maxPokemon(box)
       pbDisplay("Can't place that there.")
@@ -1982,7 +2812,7 @@ class PokemonStorageScreen
     if box >= 0
       @heldpkmn.time_form_set = nil
       @heldpkmn.form = 0 if @heldpkmn.isSpecies?(:SHAYMIN)
-      #@heldpkmn.heal
+      @heldpkmn.heal
     end
     @scene.pbPlace(selected, @heldpkmn)
     @storage[box, index] = @heldpkmn
@@ -2011,7 +2841,7 @@ class PokemonStorageScreen
     if box >= 0
       @heldpkmn.time_form_set = nil
       @heldpkmn.form = 0 if @heldpkmn.isSpecies?(:SHAYMIN)
-      #@heldpkmn.heal
+      @heldpkmn.heal
     end
     @scene.pbSwap(selected, @heldpkmn)
     tmp = @storage[box, index]
@@ -2055,6 +2885,151 @@ class PokemonStorageScreen
     return
   end
 
+  def pbHoldMulti(box, selectedIndex)
+    selected = getMultiSelection(box, nil)
+    return if selected.length == 0
+    selectedPos = getBoxPosition(box, selectedIndex)
+    ableCount = 0
+    newHeld = []
+    finalSelected = []
+    for index in selected
+      pokemon = @storage[box, index]
+      next if !pokemon
+      ableCount += 1 if pbAble?(pokemon)
+      pos = getBoxPosition(box, index)
+      newHeld.push([pokemon, pos[0] - selectedPos[0], pos[1] - selectedPos[1]])
+      finalSelected.push(index)
+    end
+    if box == -1 && pbAbleCount == ableCount
+      if newHeld.length > 1
+        # For convenience: if you selected every Pokémon in the party, deselect the first one
+        for i in 0...newHeld.length
+          if pbAble?(newHeld[i][0])
+            newHeld.delete_at(i)
+            finalSelected.delete_at(i)
+            break
+          end
+        end
+      else
+        pbPlayBuzzerSE
+        pbDisplay(_INTL("That's your last Pokémon!"))
+        return
+      end
+    end
+    @multiSelectRange = nil
+    @scene.pbUpdateSelectionRect(0, 0)
+    @scene.pbHoldMulti(box, finalSelected, selectedIndex)
+    @multiheldpkmn = newHeld
+    @storage.pbDeleteMulti(box, finalSelected)
+    @scene.pbRefresh
+  end
+
+  def pbPlaceMulti(box, selectedIndex)
+    selectedPos = getBoxPosition(box, selectedIndex)
+    boxWidth = box == -1 ? 2 : PokemonBox::BOX_WIDTH
+    boxHeight = box == -1 ? (Settings::MAX_PARTY_SIZE / 2).ceil : PokemonBox::BOX_HEIGHT
+    if box >= 0
+      for held in @multiheldpkmn
+        heldX = held[1] + selectedPos[0]
+        heldY = held[2] + selectedPos[1]
+        if heldX < 0 || heldX >= PokemonBox::BOX_WIDTH || heldY < 0 || heldY >= PokemonBox::BOX_HEIGHT
+          pbDisplay("Can't place that there.")
+          return
+        end
+        if @storage[box, heldX + heldY * PokemonBox::BOX_WIDTH]
+          pbDisplay("Can't place that there.")
+          return
+        end
+      end
+      @scene.pbPlaceMulti(box, selectedIndex)
+      for held in @multiheldpkmn
+        pokemon = held[0]
+        heldX = held[1] + selectedPos[0]
+        heldY = held[2] + selectedPos[1]
+        pokemon.time_form_set = nil
+        pokemon.form = 0 if pokemon.isSpecies?(:SHAYMIN)
+        pokemon.heal
+        @storage[box, heldX + heldY * PokemonBox::BOX_WIDTH] = pokemon
+      end
+    else
+      partyCount = @storage.party.length
+      if partyCount + @multiheldpkmn.length > Settings::MAX_PARTY_SIZE
+        pbDisplay("Can't place that there.")
+        return
+      end
+      @scene.pbPlaceMulti(box, selectedIndex)
+      for held in @multiheldpkmn
+        pokemon = held[0]
+        pokemon.time_form_set = nil
+        pokemon.form = 0 if pokemon.isSpecies?(:SHAYMIN)
+        pokemon.heal
+        @storage.party.push(pokemon)
+      end
+    end
+    @scene.pbRefresh
+    @multiheldpkmn = []
+  end
+
+  #KurayX
+  def pbExportSelected(box)
+    directory_name = "ExportedPokemons"
+    Dir.mkdir(directory_name) unless File.exists?(directory_name)
+    selected = getMultiSelection(box, nil)
+    return if selected.length == 0
+    for index in selected
+      pokemon = @storage[box, index]
+      addincra = 0
+      importname = directory_name + "/" + pokemon.speciesName + "-" + pokemon.name + "-" + pokemon.personalID.to_s + "-" + pokemon.gender.to_s + "-" + pokemon.level.to_s
+      classyname = importname
+      while File.exists?(importname + ".json")
+        importname = classyname + "(" + addincra.to_s + ")"
+        addincra += 1
+        if addincra > 9999
+          break
+        end
+      end
+      File.open(importname + ".json", 'w') { |f| f.write(pokemon.to_json) }
+    end
+    pbDisplay(_INTL("Pokemons Exported !"))
+  end
+
+  def pbReleaseMulti(box)
+    selected = getMultiSelection(box, nil)
+    return if selected.length == 0
+    ableCount = 0
+    finalReleased = []
+    for index in selected
+      pokemon = @storage[box, index]
+      next if !pokemon
+      if pokemon.egg?
+        pbDisplay(_INTL("You can't release an Egg."))
+        return false
+      elsif pokemon.mail
+        pbDisplay(_INTL("Please remove the mail."))
+        return false
+      end
+      ableCount += 1 if pbAble?(pokemon)
+      finalReleased.push(index)
+    end
+    if box == -1 && pbAbleCount == ableCount
+      pbPlayBuzzerSE
+      pbDisplay(_INTL("That's your last Pokémon!"))
+      return
+    end
+    command = pbShowCommands(_INTL("Release {1} Pokémon?", finalReleased.length), [_INTL("No"), _INTL("Yes")])
+    if command == 1
+      @multiSelectRange = nil
+      @scene.pbUpdateSelectionRect(0, 0)
+      @scene.pbReleaseMulti(box, finalReleased)
+      @storage.pbDeleteMulti(box, finalReleased)
+      @scene.pbRefresh
+      pbDisplay(_INTL("The Pokémon were released."))
+      pbDisplay(_INTL("Bye-bye!"))
+      @scene.pbRefresh
+    end
+    return
+  end
+
   def pbChooseMove(pkmn, helptext, index = 0)
     movenames = []
     for i in pkmn.moves
@@ -2065,6 +3040,41 @@ class PokemonStorageScreen
       end
     end
     return @scene.pbShowCommands(helptext, movenames, index)
+  end
+
+  #KurayX
+  def pbImportJson(selected, heldpoke)
+    @scene.pbImportJson(selected, heldpoke)
+  end
+
+  #KurayX - KURAYX_ABOUT_SHINIES
+  def pbRerollShiny(selected, heldpoke)
+    @scene.pbRerollShiny(selected, heldpoke)
+  end
+
+  #KurayX - KURAYX_ABOUT_SHINIES
+  def pbDefineShinycolor(selected, heldpoke)
+    @scene.pbDefineShinycolor(selected, heldpoke)
+  end
+
+  #KurayX - KURAYX_ABOUT_SHINIES
+  def pbKuraShinify(selected, heldpoke)
+    @scene.pbKuraShinify(selected, heldpoke)
+  end
+
+  #KurayX
+  def pbKurayNoEvo(selected, heldpoke)
+    @scene.pbKurayNoEvo(selected, heldpoke)
+  end
+
+  #KurayX
+  def pbExport(selected, heldpoke, dodelete=0)
+    @scene.pbExport(selected, heldpoke, dodelete)
+  end
+
+  #KurayX
+  def pbExportAll(selected, heldpoke, dodelete=0)
+    @scene.pbExportAll(selected, heldpoke, dodelete)
   end
 
   def pbSummary(selected, heldpoke)
@@ -2109,11 +3119,15 @@ class PokemonStorageScreen
     end
   end
 
+  #KurayBoxesS
   def pbBoxCommands
     commands = [
       _INTL("Jump"),
       _INTL("Wallpaper"),
       _INTL("Name"),
+      _INTL("Buy Box"),
+      _INTL("Sort"),
+      _INTL("Sort (all Boxes)"),
       _INTL("Cancel"),
     ]
     command = pbShowCommands(
@@ -2138,6 +3152,825 @@ class PokemonStorageScreen
       end
     when 2
       @scene.pbBoxName(_INTL("Box name?"), 0, 12)
+    when 3
+      pricenow = @storage.maxBoxes * 300
+      if $Trainer.money < pricenow
+        pbPlayBuzzerSE
+        pbDisplay(_INTL("Not enough Money ! Cost P" + pricenow.to_s))
+      else
+        kuraychoices = [
+          _INTL("Buy! (P" + pricenow.to_s + ")"),
+          _INTL("Nevermind"),
+        ]
+        kuraychoice = pbShowCommands(
+          _INTL("You have P" + $Trainer.money.to_s_formatted), kuraychoices)
+        case kuraychoice
+        when 0
+          $Trainer.money -= pricenow
+          @storage.boxes[@storage.boxes.length] = PokemonBox.new(_INTL("Box {1}",@storage.boxes.length+1),PokemonBox::BOX_SIZE)
+          # @boxnumber += 1
+          pbDisplay(_INTL("Bought a new box !"))
+        end
+      end
+    when 4
+      #Sort Pokemons
+      # box = selected[0]
+      # index = selected[1]
+      # if @storage[box, index]
+      kuraychoices = [
+          _INTL("Sort by Name"),
+          _INTL("Sort by Nickname"),
+          _INTL("Sort by Dex Number"),
+          _INTL("Sort by Level"),
+          _INTL("Sort by HP"),
+          _INTL("Sort by Atk"),
+          _INTL("Sort by Def"),
+          _INTL("Sort by SpA"),
+          _INTL("Sort by SpD"),
+          _INTL("Sort by Spe"),
+          _INTL("Sort by Caught Date"),
+          _INTL("Sort by Shiny"),
+          _INTL("Sort by OT"),
+          _INTL("Sort by Gender"),
+          _INTL("Sort by Ability"),
+          _INTL("Sort by Nature"),
+          _INTL("Sort by Held Item"),
+          _INTL("Sort by 1st Type"),
+          _INTL("Sort by 2nd Type"),
+          _INTL("Sort by Caught Map"),
+          _INTL("Sort by Happiness"),
+          _INTL("Sort by EXP"),
+          _INTL("Sort by Markings"),
+          _INTL("Sort by Total IVs"),
+          _INTL("Sort by Total EVs"),
+          _INTL("Nevermind"),
+        ]
+      kuraychoice = pbShowCommands(
+        _INTL("Sort box how ?"), kuraychoices)
+      cansort = 0
+      sortingkuray = []
+      case kuraychoice
+      when 0 # by name
+        for k in 0..29
+          if @storage[@storage.currentBox, k]
+            pokekuray = @storage[@storage.currentBox, k]
+            cansort = 1
+            sortingkuray.append([pokekuray.speciesName, k])
+          end
+        end
+      when 1 # by nickname
+        for k in 0..29
+          if @storage[@storage.currentBox, k]
+            pokekuray = @storage[@storage.currentBox, k]
+            cansort = 1
+            sortingkuray.append([pokekuray.name, k])
+          end
+        end
+      when 2 # by dexnum
+        for k in 0..29
+          if @storage[@storage.currentBox, k]
+            pokekuray = @storage[@storage.currentBox, k]
+            cansort = 1
+            sortingkuray.append([pokekuray.dexNum, k])
+          end
+        end
+      when 3 # by level
+        for k in 0..29
+          if @storage[@storage.currentBox, k]
+            pokekuray = @storage[@storage.currentBox, k]
+            cansort = 1
+            sortingkuray.append([pokekuray.level, k])
+          end
+        end
+      when 4 # by HP
+        for k in 0..29
+          if @storage[@storage.currentBox, k]
+            pokekuray = @storage[@storage.currentBox, k]
+            cansort = 1
+            sortingkuray.append([pokekuray.totalhp, k])
+          end
+        end
+      when 5 # by atk
+        for k in 0..29
+          if @storage[@storage.currentBox, k]
+            pokekuray = @storage[@storage.currentBox, k]
+            cansort = 1
+            sortingkuray.append([pokekuray.attack, k])
+          end
+        end
+      when 6 # by def
+        for k in 0..29
+          if @storage[@storage.currentBox, k]
+            pokekuray = @storage[@storage.currentBox, k]
+            cansort = 1
+            sortingkuray.append([pokekuray.defense, k])
+          end
+        end
+      when 7 # by spA
+        for k in 0..29
+          if @storage[@storage.currentBox, k]
+            pokekuray = @storage[@storage.currentBox, k]
+            cansort = 1
+            sortingkuray.append([pokekuray.spatk, k])
+          end
+        end
+      when 8 # by spD
+        for k in 0..29
+          if @storage[@storage.currentBox, k]
+            pokekuray = @storage[@storage.currentBox, k]
+            cansort = 1
+            sortingkuray.append([pokekuray.spdef, k])
+          end
+        end
+      when 9 # by spe
+        for k in 0..29
+          if @storage[@storage.currentBox, k]
+            pokekuray = @storage[@storage.currentBox, k]
+            cansort = 1
+            sortingkuray.append([pokekuray.speed, k])
+          end
+        end
+      when 10 # by received
+        for k in 0..29
+          if @storage[@storage.currentBox, k]
+            pokekuray = @storage[@storage.currentBox, k]
+            cansort = 1
+            sortingkuray.append([pokekuray.timeReceived, k])
+          end
+        end
+      when 11 # by shiny
+        for k in 0..29
+          if @storage[@storage.currentBox, k]
+            pokekuray = @storage[@storage.currentBox, k]
+            if pokekuray.shiny?
+              shinykur = pokekuray.shinyValue?
+              if shinykur < 10
+                shinykur = '00' + shinykur.to_s
+              elsif shinykur < 100
+                shinykur = '0' + shinykur.to_s
+              end
+              reskur = pokekuray.shinyR?.to_s + pokekuray.shinyG?.to_s + pokekuray.shinyB?.to_s + shinykur.to_s
+              shinykur = reskur.to_i
+            else
+              shinykur = 0
+            end
+            cansort = 1
+            sortingkuray.append([shinykur, k])
+          end
+        end
+      when 12 # by OT
+        for k in 0..29
+          if @storage[@storage.currentBox, k]
+            pokekuray = @storage[@storage.currentBox, k]
+            cansort = 1
+            if pokekuray.owner.name.empty?
+              sortingkuray.append(["0", k])
+            else
+              sortingkuray.append([pokekuray.owner.name, k])
+            end
+          end
+        end
+      when 13 # by gender
+        for k in 0..29
+          if @storage[@storage.currentBox, k]
+            pokekuray = @storage[@storage.currentBox, k]
+            cansort = 1
+            if pokekuray.pizza?
+              actualgender = 3
+            else
+              actualgender = pokekuray.gender
+            end
+            sortingkuray.append([actualgender, k])
+          end
+        end
+      when 14 # by ability
+        for k in 0..29
+          if @storage[@storage.currentBox, k]
+            pokekuray = @storage[@storage.currentBox, k]
+            cansort = 1
+            sortingkuray.append([pokekuray.ability.name, k])
+          end
+        end
+      when 15 # by nature
+        for k in 0..29
+          if @storage[@storage.currentBox, k]
+            pokekuray = @storage[@storage.currentBox, k]
+            cansort = 1
+            sortingkuray.append([pokekuray.nature.name, k])
+          end
+        end
+      when 16 # by item
+        for k in 0..29
+          if @storage[@storage.currentBox, k]
+            pokekuray = @storage[@storage.currentBox, k]
+            cansort = 1
+            if pokekuray.item
+              sortingkuray.append([pokekuray.item.name, k])
+            else
+              sortingkuray.append(["0", k])
+            end
+          end
+        end
+      when 17 # by first type
+        for k in 0..29
+          if @storage[@storage.currentBox, k]
+            pokekuray = @storage[@storage.currentBox, k]
+            cansort = 1
+            kuraytype = GameData::Type.get(pokekuray.type1).id_number
+            sortingkuray.append([kuraytype, k])
+          end
+        end
+      when 18 # by last type
+        for k in 0..29
+          if @storage[@storage.currentBox, k]
+            pokekuray = @storage[@storage.currentBox, k]
+            cansort = 1
+            kuraytype = GameData::Type.get(pokekuray.type2).id_number
+            sortingkuray.append([kuraytype, k])
+          end
+        end
+      when 19 # by obtain map
+        for k in 0..29
+          if @storage[@storage.currentBox, k]
+            pokekuray = @storage[@storage.currentBox, k]
+            cansort = 1
+            sortingkuray.append([pokekuray.obtain_map, k])
+          end
+        end
+      when 20 # by happiness
+        for k in 0..29
+          if @storage[@storage.currentBox, k]
+            pokekuray = @storage[@storage.currentBox, k]
+            cansort = 1
+            sortingkuray.append([pokekuray.happiness, k])
+          end
+        end
+      when 21 # by exp
+        for k in 0..29
+          if @storage[@storage.currentBox, k]
+            pokekuray = @storage[@storage.currentBox, k]
+            cansort = 1
+            sortingkuray.append([pokekuray.exp, k])
+          end
+        end
+      when 22 # by markings
+        for k in 0..29
+          if @storage[@storage.currentBox, k]
+            pokekuray = @storage[@storage.currentBox, k]
+            cansort = 1
+            sortingkuray.append([pokekuray.markings, k])
+          end
+        end
+      when 23 # by IVS
+        for k in 0..29
+          if @storage[@storage.currentBox, k]
+            pokekuray = @storage[@storage.currentBox, k]
+            sumivs = pokekuray.iv[:HP] + pokekuray.iv[:ATTACK] + pokekuray.iv[:DEFENSE] + pokekuray.iv[:SPECIAL_ATTACK] + pokekuray.iv[:SPECIAL_DEFENSE] + pokekuray.iv[:SPEED]
+            cansort = 1
+            sortingkuray.append([sumivs, k])
+          end
+        end
+      when 24 # by EVS
+        for k in 0..29
+          if @storage[@storage.currentBox, k]
+            pokekuray = @storage[@storage.currentBox, k]
+            sumivs = pokekuray.ev[:HP] + pokekuray.ev[:ATTACK] + pokekuray.ev[:DEFENSE] + pokekuray.ev[:SPECIAL_ATTACK] + pokekuray.ev[:SPECIAL_DEFENSE] + pokekuray.ev[:SPEED]
+            cansort = 1
+            sortingkuray.append([sumivs, k])
+          end
+        end
+        # pbDisplay(_INTL("Sorted"))
+      end
+      if cansort == 1
+        sorted = 0
+        kuraychoices = [
+            _INTL("Normal Order"),
+            _INTL("Reverse Order"),
+            _INTL("Nevermind"),
+          ]
+        kuraychoice = pbShowCommands(
+          _INTL("Sort box how ?"), kuraychoices)
+        case kuraychoice
+        when 0 # by normal
+          # sortingkuray.sort!
+          sortingkuray = sortingkuray.sort_by { |h| h[0]}
+          sorted = 1
+        when 1 # by reverse
+          sortingkuray = sortingkuray.sort_by { |h| h[0]}
+          sortingkuray = sortingkuray.reverse
+          sorted = 1
+        end
+        if sorted == 1
+          copytmp = []
+          for k in 0..29
+            copytmp.push(@storage[@storage.currentBox, k])
+            @storage[@storage.currentBox, k] = nil
+          end
+          for k in 0..sortingkuray.size-1
+            dealwith = sortingkuray[k, 1].flatten
+            @storage[@storage.currentBox, k] = copytmp[dealwith[1].to_i]
+          end
+          pbHardRefresh
+          # @scene.pbRefresh
+          # pbRefresh
+          pbDisplay(_INTL("Pokemons sorted!"))
+        end
+      end
+    when 5
+      #Sort Pokemons
+      # box = selected[0]
+      # index = selected[1]
+      # if @storage[box, index]
+      kuraychoices = [
+          _INTL("Sort by Name"),
+          _INTL("Sort by Nickname"),
+          _INTL("Sort by Dex Number"),
+          _INTL("Sort by Level"),
+          _INTL("Sort by HP"),
+          _INTL("Sort by Atk"),
+          _INTL("Sort by Def"),
+          _INTL("Sort by SpA"),
+          _INTL("Sort by SpD"),
+          _INTL("Sort by Spe"),
+          _INTL("Sort by Caught Date"),
+          _INTL("Sort by Shiny"),
+          _INTL("Sort by OT"),
+          _INTL("Sort by Gender"),
+          _INTL("Sort by Ability"),
+          _INTL("Sort by Nature"),
+          _INTL("Sort by Held Item"),
+          _INTL("Sort by 1st Type"),
+          _INTL("Sort by 2nd Type"),
+          _INTL("Sort by Caught Map"),
+          _INTL("Sort by Happiness"),
+          _INTL("Sort by EXP"),
+          _INTL("Sort by Markings"),
+          _INTL("Sort by Total IVs"),
+          _INTL("Sort by Total EVs"),
+          _INTL("Nevermind"),
+        ]
+      kuraychoice = pbShowCommands(
+        _INTL("Sort boxes how ?"), kuraychoices)
+      cansort = 0
+      sortingkuray = []
+      case kuraychoice
+      when 0 # by name
+        kurayid = 0
+        for j in 0...@storage.maxBoxes
+          if @storage[j].empty?
+            next
+          end
+          for k in 0..29
+            if @storage[j, k]
+              pokekuray = @storage[j, k]
+              cansort = 1
+              sortingkuray.append([pokekuray.speciesName, kurayid])
+              kurayid += 1
+            end
+          end
+        end
+      when 1 # by nickname
+        kurayid = 0
+        for j in 0...@storage.maxBoxes
+          if @storage[j].empty?
+            next
+          end
+          for k in 0..29
+            if @storage[j, k]
+              pokekuray = @storage[j, k]
+              cansort = 1
+              sortingkuray.append([pokekuray.name, kurayid])
+              kurayid += 1
+            end
+          end
+        end
+      when 2 # by dexnum
+        kurayid = 0
+        for j in 0...@storage.maxBoxes
+          if @storage[j].empty?
+            next
+          end
+          for k in 0..29
+            if @storage[j, k]
+              pokekuray = @storage[j, k]
+              cansort = 1
+              sortingkuray.append([pokekuray.dexNum, kurayid])
+              kurayid += 1
+            end
+          end
+        end
+      when 3 # by level
+        kurayid = 0
+        for j in 0...@storage.maxBoxes
+          if @storage[j].empty?
+            next
+          end
+          for k in 0..29
+            if @storage[j, k]
+              pokekuray = @storage[j, k]
+              cansort = 1
+              sortingkuray.append([pokekuray.level, kurayid])
+              kurayid += 1
+            end
+          end
+        end
+      when 4 # by HP
+        kurayid = 0
+        for j in 0...@storage.maxBoxes
+          if @storage[j].empty?
+            next
+          end
+          for k in 0..29
+            if @storage[j, k]
+              pokekuray = @storage[j, k]
+              cansort = 1
+              sortingkuray.append([pokekuray.totalhp, kurayid])
+              kurayid += 1
+            end
+          end
+        end
+      when 5 # by atk
+        kurayid = 0
+        for j in 0...@storage.maxBoxes
+          # if @storage[j].length 
+          if @storage[j].empty?
+            next
+          end
+          for k in 0..29
+            if @storage[j, k]
+              pokekuray = @storage[j, k]
+              cansort = 1
+              sortingkuray.append([pokekuray.attack, kurayid])
+              kurayid += 1
+            end
+          end
+        end
+      when 6 # by def
+        kurayid = 0
+        for j in 0...@storage.maxBoxes
+          if @storage[j].empty?
+            next
+          end
+          for k in 0..29
+            if @storage[j, k]
+              pokekuray = @storage[j, k]
+              cansort = 1
+              sortingkuray.append([pokekuray.defense, kurayid])
+              kurayid += 1
+            end
+          end
+        end
+      when 7 # by spA
+        kurayid = 0
+        for j in 0...@storage.maxBoxes
+          if @storage[j].empty?
+            next
+          end
+          for k in 0..29
+            if @storage[j, k]
+              pokekuray = @storage[j, k]
+              cansort = 1
+              sortingkuray.append([pokekuray.spatk, kurayid])
+              kurayid += 1
+            end
+          end
+        end
+      when 8 # by spD
+        kurayid = 0
+        for j in 0...@storage.maxBoxes
+          if @storage[j].empty?
+            next
+          end
+          for k in 0..29
+            if @storage[j, k]
+              pokekuray = @storage[j, k]
+              cansort = 1
+              sortingkuray.append([pokekuray.spdef, kurayid])
+              kurayid += 1
+            end
+          end
+        end
+      when 9 # by spe
+        kurayid = 0
+        for j in 0...@storage.maxBoxes
+          if @storage[j].empty?
+            next
+          end
+          for k in 0..29
+            if @storage[j, k]
+              pokekuray = @storage[j, k]
+              cansort = 1
+              sortingkuray.append([pokekuray.speed, kurayid])
+              kurayid += 1
+            end
+          end
+        end
+      when 10 # by received
+        kurayid = 0
+        for j in 0...@storage.maxBoxes
+          if @storage[j].empty?
+            next
+          end
+          for k in 0..29
+            if @storage[j, k]
+              pokekuray = @storage[j, k]
+              cansort = 1
+              sortingkuray.append([pokekuray.timeReceived, kurayid])
+              kurayid += 1
+            end
+          end
+        end
+      when 11 # by shiny
+        kurayid = 0
+        for j in 0...@storage.maxBoxes
+          if @storage[j].empty?
+            next
+          end
+          for k in 0..29
+            if @storage[j, k]
+              pokekuray = @storage[j, k]
+              if pokekuray.shiny?
+                shinykur = pokekuray.shinyValue?
+                if shinykur < 10
+                  shinykur = '00' + shinykur.to_s
+                elsif shinykur < 100
+                  shinykur = '0' + shinykur.to_s
+                end
+                reskur = pokekuray.shinyR?.to_s + pokekuray.shinyG?.to_s + pokekuray.shinyB?.to_s + shinykur.to_s
+                shinykur = reskur.to_i
+              else
+                shinykur = 0
+              end
+              cansort = 1
+              sortingkuray.append([shinykur, kurayid])
+              kurayid += 1
+            end
+          end
+        end
+      when 12 # by OT
+        kurayid = 0
+        for j in 0...@storage.maxBoxes
+          if @storage[j].empty?
+            next
+          end
+          for k in 0..29
+            if @storage[j, k]
+              pokekuray = @storage[j, k]
+              cansort = 1
+              if pokekuray.owner.name.empty?
+                sortingkuray.append(["0", kurayid])
+              else
+                sortingkuray.append([pokekuray.owner.name, kurayid])
+              end
+              kurayid += 1
+            end
+          end
+        end
+      when 13 # by gender
+        kurayid = 0
+        for j in 0...@storage.maxBoxes
+          if @storage[j].empty?
+            next
+          end
+          for k in 0..29
+            if @storage[j, k]
+              pokekuray = @storage[j, k]
+              cansort = 1
+              if pokekuray.pizza?
+                actualgender = 3
+              else
+                actualgender = pokekuray.gender
+              end
+              sortingkuray.append([actualgender, kurayid])
+              kurayid += 1
+            end
+          end
+        end
+      when 14 # by ability
+        kurayid = 0
+        for j in 0...@storage.maxBoxes
+          if @storage[j].empty?
+            next
+          end
+          for k in 0..29
+            if @storage[j, k]
+              pokekuray = @storage[j, k]
+              cansort = 1
+              sortingkuray.append([pokekuray.ability.name, kurayid])
+              kurayid += 1
+            end
+          end
+        end
+      when 15 # by nature
+        kurayid = 0
+        for j in 0...@storage.maxBoxes
+          if @storage[j].empty?
+            next
+          end
+          for k in 0..29
+            if @storage[j, k]
+              pokekuray = @storage[j, k]
+              cansort = 1
+              sortingkuray.append([pokekuray.nature.name, kurayid])
+              kurayid += 1
+            end
+          end
+        end
+      when 16 # by item
+        kurayid = 0
+        for j in 0...@storage.maxBoxes
+          if @storage[j].empty?
+            next
+          end
+          for k in 0..29
+            if @storage[j, k]
+              pokekuray = @storage[j, k]
+              cansort = 1
+              if pokekuray.item
+                sortingkuray.append([pokekuray.item.name, kurayid])
+              else
+                sortingkuray.append(["0", kurayid])
+              end
+              kurayid += 1
+            end
+          end
+        end
+      when 17 # by 1 type
+        kurayid = 0
+        for j in 0...@storage.maxBoxes
+          if @storage[j].empty?
+            next
+          end
+          for k in 0..29
+            if @storage[j, k]
+              pokekuray = @storage[j, k]
+              cansort = 1
+              kuraytype = GameData::Type.get(pokekuray.type1).id_number
+              sortingkuray.append([kuraytype, kurayid])
+              kurayid += 1
+            end
+          end
+        end
+      when 18 # by 2 type
+        kurayid = 0
+        for j in 0...@storage.maxBoxes
+          if @storage[j].empty?
+            next
+          end
+          for k in 0..29
+            if @storage[j, k]
+              pokekuray = @storage[j, k]
+              cansort = 1
+              kuraytype = GameData::Type.get(pokekuray.type2).id_number
+              sortingkuray.append([kuraytype, kurayid])
+              kurayid += 1
+            end
+          end
+        end
+      when 19 # by obtain map
+        kurayid = 0
+        for j in 0...@storage.maxBoxes
+          if @storage[j].empty?
+            next
+          end
+          for k in 0..29
+            if @storage[j, k]
+              pokekuray = @storage[j, k]
+              cansort = 1
+              sortingkuray.append([pokekuray.obtain_map, kurayid])
+              kurayid += 1
+            end
+          end
+        end
+      when 20 # by happiness
+        kurayid = 0
+        for j in 0...@storage.maxBoxes
+          if @storage[j].empty?
+            next
+          end
+          for k in 0..29
+            if @storage[j, k]
+              pokekuray = @storage[j, k]
+              cansort = 1
+              sortingkuray.append([pokekuray.happiness, kurayid])
+              kurayid += 1
+            end
+          end
+        end
+      when 21 # by EXP
+        kurayid = 0
+        for j in 0...@storage.maxBoxes
+          if @storage[j].empty?
+            next
+          end
+          for k in 0..29
+            if @storage[j, k]
+              pokekuray = @storage[j, k]
+              cansort = 1
+              sortingkuray.append([pokekuray.exp, kurayid])
+              kurayid += 1
+            end
+          end
+        end
+      when 22 # by markings
+        kurayid = 0
+        for j in 0...@storage.maxBoxes
+          if @storage[j].empty?
+            next
+          end
+          for k in 0..29
+            if @storage[j, k]
+              pokekuray = @storage[j, k]
+              cansort = 1
+              sortingkuray.append([pokekuray.markings, kurayid])
+              kurayid += 1
+            end
+          end
+        end
+      when 23 # by IVs
+        kurayid = 0
+        for j in 0...@storage.maxBoxes
+          if @storage[j].empty?
+            next
+          end
+          for k in 0..29
+            if @storage[j, k]
+              pokekuray = @storage[j, k]
+              cansort = 1
+              sumivs = pokekuray.iv[:HP] + pokekuray.iv[:ATTACK] + pokekuray.iv[:DEFENSE] + pokekuray.iv[:SPECIAL_ATTACK] + pokekuray.iv[:SPECIAL_DEFENSE] + pokekuray.iv[:SPEED]
+              cansort = 1
+              sortingkuray.append([sumivs, kurayid])
+              kurayid += 1
+            end
+          end
+        end
+      when 24 # by EVs
+        kurayid = 0
+        for j in 0...@storage.maxBoxes
+          if @storage[j].empty?
+            next
+          end
+          for k in 0..29
+            if @storage[j, k]
+              pokekuray = @storage[j, k]
+              sumivs = pokekuray.ev[:HP] + pokekuray.ev[:ATTACK] + pokekuray.ev[:DEFENSE] + pokekuray.ev[:SPECIAL_ATTACK] + pokekuray.ev[:SPECIAL_DEFENSE] + pokekuray.ev[:SPEED]
+              cansort = 1
+              sortingkuray.append([sumivs, kurayid])
+              kurayid += 1
+            end
+          end
+        end
+        # pbDisplay(_INTL("Sorted"))
+      end
+      if cansort == 1
+        sorted = 0
+        kuraychoices = [
+            _INTL("Normal Order"),
+            _INTL("Reverse Order"),
+            _INTL("Nevermind"),
+          ]
+        kuraychoice = pbShowCommands(
+          _INTL("Sort boxes how ?"), kuraychoices)
+        case kuraychoice
+        when 0 # by normal
+          # sortingkuray.sort!
+          sortingkuray = sortingkuray.sort_by { |h| h[0]}
+          sorted = 1
+        when 1 # by reverse
+          sortingkuray = sortingkuray.sort_by { |h| h[0]}
+          sortingkuray = sortingkuray.reverse
+          sorted = 1
+        end
+        if sorted == 1
+          copytmp = []
+          # copytmp = @storage.boxes
+          # @storage.undefineboxes
+          for j in 0...@storage.maxBoxes
+            for k in 0..29
+              copytmp.push(*@storage[j, k])
+              @storage[j, k] = nil
+            end
+          end
+          boxhere = 0
+          boxcheck = -1
+          for k in 0..sortingkuray.size-1
+            if boxcheck > 28
+              boxhere += 1
+              boxcheck = -1
+            end
+            boxcheck += 1
+            dealwith = sortingkuray[k, 1].flatten
+            @storage[boxhere, boxcheck] = copytmp[dealwith[1].to_i]
+          end
+          pbHardRefresh
+          # @scene.pbRefresh
+          # pbRefresh
+          pbDisplay(_INTL("Pokemons sorted!"))
+        end
+      end
+    # when 6
+    #   @storage.deleteboxes
+    #   pbDisplay(_INTL("Boxes deleted !"))
     end
   end
 
@@ -2203,7 +4036,7 @@ class PokemonStorageScreen
   #
 
   def pbFuseFromPC(selected, heldpoke)
-    box = selected[0]
+      box = selected[0]
       index = selected[1]
       poke_body = @storage[box, index]
       poke_head = heldpoke
@@ -2212,6 +4045,7 @@ class PokemonStorageScreen
           pbDisplay(_INTL("{1} is already fused!", heldpoke.name))
           return
         end
+        p selected
         if(heldpoke.egg?)
           pbDisplay(_INTL("It's impossible to fuse an egg!"))
           return
@@ -2320,8 +4154,7 @@ class PokemonStorageScreen
 
 
         if (Kernel.pbConfirmMessage(_INTL("Fuse the two Pokémon?")))
-          playingBGM = $game_system.getPlayingBGM
-          pbFuse(selectedHead, selectedBase, @fusionItem)
+          pbFuse(selectedHead, selectedBase, isSuperSplicer)
           if canDeleteItem(@fusionItem)
             $PokemonBag.pbDeleteItem(@fusionItem)
           end
@@ -2334,7 +4167,6 @@ class PokemonStorageScreen
           @scene.setFusing(false)
           @fusionMode = false
           @scene.sprites["box"].enableFusions()
-          pbBGMPlay(playingBGM)
           return
         else
           # print "fusion cancelled"
@@ -2377,17 +4209,27 @@ class PokemonStorageScreen
     index = selected[1]
     pokemon = @storage[box, index]
 
-    if pbConfirm(_INTL("Unfuse {1}?", pokemon.name))
-      item = selectSplicer()
-      return if item == nil
-      isSuperSplicer = isSuperSplicer?(item)
-      if pbUnfuse(pokemon, @scene, isSuperSplicer, selected)
-        if canDeleteItem(item)
-          $PokemonBag.pbDeleteItem(item)
-        end
+    #Kuray No Confirm on Unfuse
+    item = selectSplicer()
+    return if item == nil
+    isSuperSplicer = isSuperSplicer?(item)
+    if pbUnfuse(pokemon, @scene, isSuperSplicer, selected)
+      if canDeleteItem(item)
+        $PokemonBag.pbDeleteItem(item)
       end
-      @scene.pbHardRefresh
     end
+    @scene.pbHardRefresh
+    # if pbConfirm(_INTL("Unfuse {1}?", pokemon.name))
+    #   item = selectSplicer()
+    #   return if item == nil
+    #   isSuperSplicer = isSuperSplicer?(item)
+    #   if pbUnfuse(pokemon, @scene, isSuperSplicer, selected)
+    #     if canDeleteItem(item)
+    #       $PokemonBag.pbDeleteItem(item)
+    #     end
+    #   end
+    #   @scene.pbHardRefresh
+    # end
   end
 
   def selectSplicer()
@@ -2425,4 +4267,49 @@ class PokemonStorageScreen
     return nil
   end
 
+  def getBoxPosition(box, index)
+    boxWidth = box == -1 ? 2 : PokemonBox::BOX_WIDTH
+    return index % boxWidth, (index.to_f / boxWidth).floor
+  end
+
+  def getBoxIndex(box, x, y)
+    boxWidth = box == -1 ? 2 : PokemonBox::BOX_WIDTH
+    return x + y * boxWidth
+  end
+
+  def getSelectionRect(box, currentSelected)
+    rangeEnd = (currentSelected != nil ? currentSelected : @multiSelectRange[1])
+
+    if !@multiSelectRange || !@multiSelectRange[0] || !rangeEnd
+      return nil
+    end
+
+    boxWidth = box == -1 ? 2 : PokemonBox::BOX_WIDTH
+
+    ax = @multiSelectRange[0] % boxWidth
+    ay = (@multiSelectRange[0].to_f / boxWidth).floor
+    bx = rangeEnd % boxWidth
+    by = (rangeEnd.to_f / boxWidth).floor
+
+    minx = [ax, bx].min
+    miny = [ay, by].min
+    maxx = [ax, bx].max
+    maxy = [ay, by].max
+
+    return Rect.new(minx, miny, maxx-minx+1, maxy-miny+1)
+  end
+
+  def getMultiSelection(box, currentSelected)
+    rect = getSelectionRect(box, currentSelected)
+
+    ret = []
+
+    for j in (rect.y)..(rect.y+rect.height-1)
+      for i in (rect.x)..(rect.x+rect.width-1)
+        ret.push(getBoxIndex(box, i, j))
+      end
+    end
+
+    return ret
+  end
 end

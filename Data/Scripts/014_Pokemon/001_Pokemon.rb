@@ -3,14 +3,11 @@
 # The player's party Pokémon are stored in the array $Trainer.party.
 #===============================================================================
 class Pokemon
-  attr_accessor :spriteform_body
-  attr_accessor :spriteform_head
-
   # @return [Symbol] this Pokémon's species
   attr_reader :species
   # If defined, this Pokémon's form will be this value even if a MultipleForms
   # handler tries to say otherwise.
-  # @return [Integer, nil] this Pokémon's formspriteform
+  # @return [Integer, nil] this Pokémon's form
   attr_accessor :forced_form
   # If defined, is the time (in Integer form) when this Pokémon's form was set.
   # @return [Integer, nil] the time this Pokémon's form was set
@@ -21,10 +18,6 @@ class Pokemon
   attr_accessor :exp_when_fused_head
   attr_accessor :exp_when_fused_body
   attr_accessor :exp_gained_since_fused
-
-  attr_accessor :hat
-  attr_accessor :hat_x
-  attr_accessor :hat_y
 
   # @return [Integer] the number of steps until this Pokémon hatches, 0 if this Pokémon is not an egg
   attr_accessor :steps_to_hatch
@@ -43,6 +36,22 @@ class Pokemon
   attr_accessor :body_shiny
   attr_accessor :debug_shiny
   attr_accessor :natural_shiny
+  #KurayX - KURAYX_ABOUT_SHINIES
+  attr_accessor :head_shinyhue
+  attr_accessor :body_shinyhue
+  attr_accessor :head_shinyr
+  attr_accessor :body_shinyr
+  attr_accessor :head_shinyg
+  attr_accessor :body_shinyg
+  attr_accessor :head_shinyb
+  attr_accessor :body_shinyb
+  #KurayX - KURAYX_ABOUT_SHINIES
+  attr_accessor :shinyValue
+  attr_accessor :shinyR
+  attr_accessor :shinyG
+  attr_accessor :shinyB
+  attr_accessor :kuray_no_evo
+  attr_accessor :kuraygender
 
   # The index of this Pokémon's ability (0, 1 are natural abilities, 2+ are
   # hidden abilities)as defined for its species/form. An ability may not be
@@ -51,6 +60,7 @@ class Pokemon
   attr_writer :ability_index
   attr_accessor :body_original_ability_index
   attr_accessor :head_original_ability_index
+
 
   # @return [Array<Pokemon::Move>] the moves known by this Pokémon
   attr_accessor :moves
@@ -115,68 +125,8 @@ class Pokemon
   # Maximum number of moves a Pokémon can know at once
   MAX_MOVES = 4
 
-  S_CHANCE_VALIDATOR = 16
-
-  def print_all_attributes
-    echoln("Spriteform Body: #{@spriteform_body}")
-    echoln("Spriteform Head: #{@spriteform_head}")
-    echoln("Species: #{@species}")
-    echoln("Forced Form: #{@forced_form}")
-    echoln("Time Form Set: #{@time_form_set}")
-    echoln("Experience: #{@exp}")
-    echoln("EXP When Fused Head: #{@exp_when_fused_head}")
-    echoln("EXP When Fused Body: #{@exp_when_fused_body}")
-    echoln("EXP Gained Since Fused: #{@exp_gained_since_fused}")
-    echoln("Hat: #{@hat}")
-    echoln("Hat X: #{@hat_x}")
-    echoln("Hat Y: #{@hat_y}")
-    echoln("Steps to Hatch: #{@steps_to_hatch}")
-    echoln("HP: #{@hp}")
-    echoln("Status: #{@status}")
-    echoln("Status Count: #{@statusCount}")
-    echoln("Glitter: #{@glitter}")
-    echoln("Head Shiny: #{@head_shiny}")
-    echoln("Body Shiny: #{@body_shiny}")
-    echoln("Debug Shiny: #{@debug_shiny}")
-    echoln("Natural Shiny: #{@natural_shiny}")
-
-    echoln("Calculated ability: #{@ability}")
-    echoln("Abilities hash: #{getAbilityList()}")
-
-    echoln("Ability Index: #{@ability_index}")
-    echoln("Body Original Ability Index: #{@body_original_ability_index}")
-    echoln("Head Original Ability Index: #{@head_original_ability_index}")
-
-    move1, move2, move3, move4 = "", "", "", ""
-
-    move1 = @moves[0].id if @moves[0]
-    move2 = @moves[1].id if @moves[1]
-    move3 = @moves[2].id if @moves[2]
-    move4 = @moves[3].id if @moves[3]
-
-    echoln("Moves: #{move1} #{move2} #{move3} #{move4}")
-    echoln("First Moves: #{@first_moves}")
-    echoln("Ribbons: #{@ribbons}")
-    echoln("Cool: #{@cool}, Beauty: #{@beauty}, Cute: #{@cute}, Smart: #{@smart}, Tough: #{@tough}, Sheen: #{@sheen}")
-    echoln("Pokerus: #{@pokerus}")
-    echoln("Happiness: #{@happiness}")
-    echoln("Poke Ball: #{@poke_ball}")
-    echoln("Markings: #{@markings}")
-    echoln("IV: #{@iv}")
-    echoln("IV Maxed: #{@ivMaxed}")
-    echoln("EV: #{@ev}")
-    echoln("Total HP: #{@totalhp}, Attack: #{@attack}, Defense: #{@defense}, Sp. Attack: #{@spatk}, Sp. Defense: #{@spdef}, Speed: #{@speed}")
-    echoln("Owner: #{@owner}")
-    echoln("Obtain Method: #{@obtain_method}")
-    echoln("Obtain Map: #{@obtain_map}")
-    echoln("Obtain Text: #{@obtain_text}")
-    echoln("Obtain Level: #{@obtain_level}")
-    echoln("Hatched Map: #{@hatched_map}")
-    echoln("Fused: #{@fused}")
-    echoln("Personal ID: #{@personalID}")
-    echoln("Hidden Power Type: #{@hiddenPowerType}")
-    # Add other attribute print statements here
-  end
+  # S_CHANCE_VALIDATOR = 16
+  S_CHANCE_VALIDATOR = 160
 
   def self.play_cry(species, form = 0, volume = 90, pitch = 100)
     GameData::Species.play_cry_from_species(species, form, volume, pitch)
@@ -193,8 +143,7 @@ class Pokemon
   end
 
   def species_data
-    @species_data = GameData::Species.get(@species)
-    return @species_data
+    return GameData::Species.get_species_form(@species, form_simple)
   end
 
   #=============================================================================
@@ -229,7 +178,7 @@ class Pokemon
       return isSpecies?(check_species)
     end
     bodySpecies = getBodyID(species)
-    checkSpeciesId = getID(nil, check_species)
+    checkSpeciesId = getID(nil,check_species)
     return bodySpecies == checkSpeciesId
   end
 
@@ -238,15 +187,236 @@ class Pokemon
       return isSpecies?(check_species)
     end
     headSpecies = getHeadID(species)
-    checkSpeciesId = getID(nil, check_species)
+    checkSpeciesId = getID(nil,check_species)
     return headSpecies == checkSpeciesId
   end
 
   def shiny=(value)
-    @shiny = value
-    if value && Settings::SHINY_POKEMON_CHANCE != S_CHANCE_VALIDATOR
-      @debug_shiny = true
+    @shiny=value
+    #KurayX - KURAYX_ABOUT_SHINIES
+    # if value && Settings::SHINY_POKEMON_CHANCE != S_CHANCE_VALIDATOR
+      # @debug_shiny=true
+    # end
+  end
+
+  def kuray_no_evo=(value)
+    @kuray_no_evo=value
+  end
+
+  def kuray_no_evo?
+    if @kuray_no_evo
+      return @kuray_no_evo
+    else
+      return 0
     end
+  end
+
+  #KurayX - KURAYX_ABOUT_GENDER
+  def kuraygender=(value)
+    @kuraygender=value
+  end
+
+  #KurayX - KURAYX_ABOUT_SHINIES
+  def shinyValue=(value)
+    @shinyValue=value
+  end
+
+  #KurayX - KURAYX_ABOUT_SHINIES
+  def shinyR=(value)
+    @shinyR=value
+  end
+
+  #KurayX - KURAYX_ABOUT_SHINIES
+  def shinyG=(value)
+    @shinyG=value
+  end
+
+  #KurayX - KURAYX_ABOUT_SHINIES
+  def shinyB=(value)
+    @shinyB=value
+  end
+
+  #KurayX - KURAYX_ABOUT_GENDER
+  def kuraygender?
+    if @kuraygender
+      return @kuraygender
+    else
+      @kuraygender=rand(65536)
+      return @kuraygender
+    end
+  end
+
+  #KurayX - KURAYX_ABOUT_SHINIES
+  def shinyValue?
+    if @shinyValue
+      return @shinyValue
+    else
+      @shinyValue=rand(0..360)-180
+      return @shinyValue
+    end
+  end
+
+  #KurayX - KURAYX_ABOUT_SHINIES
+  def shinyR?
+    if @shinyR
+      return @shinyR
+    else
+      @shinyR=rand(0..2)
+      return @shinyR
+    end
+  end
+
+  #KurayX - KURAYX_ABOUT_SHINIES
+  def shinyG?
+    if @shinyG
+      return @shinyG
+    else
+      @shinyG=rand(0..2)
+      return @shinyG
+    end
+  end
+
+  #KurayX - KURAYX_ABOUT_SHINIES
+  def shinyB?
+    if @shinyB
+      return @shinyB
+    else
+      @shinyB=rand(0..2)
+      return @shinyB
+    end
+  end
+
+  ############
+  #KurayX##### - KURAYX_ABOUT_SHINIES
+  def head_shinyhue?
+    if @head_shinyhue
+      return @head_shinyhue
+    else
+      @head_shinyhue=rand(0..360)-180
+      return @head_shinyhue
+    end
+  end
+
+  def body_shinyhue?
+    if @body_shinyhue
+      return @body_shinyhue
+    else
+      @body_shinyhue=rand(0..360)-180
+      return @body_shinyhue
+    end
+  end
+
+  def head_shinyr?
+    if @head_shinyr
+      return @head_shinyr
+    else
+      @head_shinyr=rand(0..2)
+      return @head_shinyr
+    end
+  end
+
+  def body_shinyr?
+    if @body_shinyr
+      return @body_shinyr
+    else
+      @body_shinyr=rand(0..2)
+      return @body_shinyr
+    end
+  end
+
+  def head_shinyg?
+    if @head_shinyg
+      return @head_shinyg
+    else
+      @head_shinyg=rand(0..2)
+      return @head_shinyg
+    end
+  end
+
+  def body_shinyg?
+    if @body_shinyg
+      return @body_shinyg
+    else
+      @body_shinyg=rand(0..2)
+      return @body_shinyg
+    end
+  end
+
+  def head_shinyb?
+    if @head_shinyb
+      return @head_shinyb
+    else
+      @head_shinyb=rand(0..2)
+      return @head_shinyb
+    end
+  end
+
+  def body_shinyb?
+    if @body_shinyb
+      return @body_shinyb
+    else
+      @body_shinyb=rand(0..2)
+      return @body_shinyb
+    end
+  end
+
+  def body_shinya
+    return @body_shinya
+  end
+
+  def body_shinyb
+    return @body_shinyb
+  end
+
+  def body_shinyc
+    return @body_shinyc
+  end
+
+  def body_shinyhue
+    return @body_shinyhue
+  end
+
+  def head_shinya
+    return @head_shinya
+  end
+
+  def head_shinyb
+    return @head_shinyb
+  end
+
+  def head_shinyc
+    return @head_shinyc
+  end
+
+  def head_shinyhue
+    return @head_shinyhue
+  end
+  #KurayX##### - KURAYX_ABOUT_SHINIES
+  ############
+
+  #KurayX - KURAYX_ABOUT_GENDER
+  def kuraygender
+    return @kuraygender
+  end
+
+  #KurayX - KURAYX_ABOUT_SHINIES
+  def shinyValue
+    return @shinyValue
+  end
+
+  #KurayX - KURAYX_ABOUT_SHINIES
+  def shinyR
+    return @shinyR
+  end
+
+  #KurayX - KURAYX_ABOUT_SHINIES
+  def shinyG
+    return @shinyG
+  end
+
+  #KurayX - KURAYX_ABOUT_SHINIES
+  def shinyB
+    return @shinyB
   end
 
   def naturalShiny?
@@ -265,11 +435,9 @@ class Pokemon
     return @head_shiny
   end
 
-
   def isFusionOf(check_species)
     return hasBodyOf?(check_species) || hasHeadOf?(check_species)
   end
-
 
   def dexNum
     return species_data.id_number
@@ -293,36 +461,6 @@ class Pokemon
     calc_form = MultipleForms.call("getForm", self)
     self.form = calc_form if calc_form != nil && calc_form != @form
     return @form
-  end
-
-  def changeFormSpecies(oldForm, newForm)
-    is_already_old_form = self.isFusionOf(oldForm) #A 466
-    is_already_new_form = self.isFusionOf(newForm) #P
-
-    #reverse the fusion if it's a meloA and meloP fusion
-    # There's probably a smarter way to do this but laziness lol
-    if is_already_old_form && is_already_new_form
-      if self.species_data.get_body_species() == oldForm
-        changeSpeciesSpecific(self, getFusedPokemonIdFromSymbols(newForm, oldForm))
-      else
-        changeSpeciesSpecific(self, getFusedPokemonIdFromSymbols(oldForm, newForm))
-      end
-    else
-      changeSpecies(self, oldForm, newForm) if is_already_old_form
-      changeSpecies(self, newForm, oldForm) if is_already_new_form
-    end
-
-    calc_stats
-  end
-
-  def changeSpecies(pokemon, speciesToReplace, newSpecies)
-    if pokemon.isFusion?()
-      replaceFusionSpecies(pokemon, speciesToReplace, newSpecies)
-    else
-      changeSpeciesSpecific(pokemon, newSpecies)
-    end
-    $Trainer.pokedex.set_seen(pokemon.species)
-    $Trainer.pokedex.set_owned(pokemon.species)
   end
 
   def form_simple
@@ -363,7 +501,58 @@ class Pokemon
   # @return [Integer] this Pokémon's level
   def level
     @level = growth_rate.level_from_exp(@exp) if !@level
+    #Kurayx LevelCAP
+    if $PokemonSystem.kuraylevelcap != 0
+      levelcap = getkuraylevelcap()
+      if @iv
+        calc_stats_sp(levelcap)
+      end
+      return levelcap if @level > levelcap
+    end
+    if @iv
+      calc_stats_sp(@level)
+    end
     return @level
+  end
+
+
+  #Kurayx LevelCAP
+  # Recalculates this Pokémon's stats.
+  def calc_stats_sp(kuraylevel)
+    base_stats = self.baseStats
+    this_level = kuraylevel
+    this_IV = self.calcIV
+
+    if $game_switches[SWITCH_NO_LEVELS_MODE]
+      this_level = Settings::NO_LEVEL_MODE_LEVEL
+    end
+
+    # Format stat multipliers due to nature
+    nature_mod = {}
+    GameData::Stat.each_main { |s| nature_mod[s.id] = 100 }
+    this_nature = self.nature_for_stats
+    if this_nature
+      this_nature.stat_changes.each { |change| nature_mod[change[0]] += change[1] }
+    end
+    # Calculate stats
+    stats = {}
+    GameData::Stat.each_main do |s|
+      if s.id == :HP
+        stats[s.id] = calcHP(base_stats[s.id], this_level, this_IV[s.id], @ev[s.id])
+      else
+        stats[s.id] = calcStat(base_stats[s.id], this_level, this_IV[s.id], @ev[s.id], nature_mod[s.id])
+      end
+    end
+    hpDiff = @totalhp - @hp
+    #@totalhp = stats[:HP]
+    @totalhp = self.ability == :WONDERGUARD ? 1 : stats[:HP]
+    calculated_hp = @totalhp - hpDiff
+    @hp = calculated_hp > 0 ? calculated_hp : 0
+    @attack = stats[:ATTACK]
+    @defense = stats[:DEFENSE]
+    @spatk = stats[:SPECIAL_ATTACK]
+    @spdef = stats[:SPECIAL_DEFENSE]
+    @speed = stats[:SPEED]
   end
 
   # Sets this Pokémon's level. The given level must be between 1 and the
@@ -485,7 +674,6 @@ class Pokemon
     if @ability == :MULTITYPE && species_data.type1 == :NORMAL
       return getHeldPlateType()
     end
-    return @type1 if @type1
     return species_data.type1
   end
 
@@ -496,14 +684,6 @@ class Pokemon
     end
     sp_data = species_data
     return sp_data.type2 || sp_data.type1
-  end
-
-  def type1=(value)
-    @type1 = value
-  end
-
-  def type2=(value)
-    @type2 = value
   end
 
   # @return [Array<Symbol>] an array of this Pokémon's types
@@ -570,6 +750,11 @@ class Pokemon
     return self.gender == 0;
   end
 
+  # @return [Boolean] whether this Pokémon is male
+  def pizza?
+    return self.kuraygender? < 256;
+  end
+
   # @return [Boolean] whether this Pokémon is female
   def female?
     return self.gender == 1;
@@ -587,6 +772,8 @@ class Pokemon
     return [:AlwaysMale, :AlwaysFemale, :Genderless].include?(gender_ratio)
   end
 
+
+
   #=============================================================================
   # Shininess
   #=============================================================================
@@ -601,13 +788,13 @@ class Pokemon
       is_shiny = d < Settings::SHINY_POKEMON_CHANCE
       if is_shiny
         @shiny = true
-        @natural_shiny = true
+        @natural_shiny=true
       end
 
     end
     if @shiny && Settings::SHINY_POKEMON_CHANCE != S_CHANCE_VALIDATOR
-      @debug_shiny = true
-      @natural_shiny = false
+      @debug_shiny=true
+      @natural_shiny=false
     end
     return @shiny
   end
@@ -620,10 +807,6 @@ class Pokemon
   def ability_index
     @ability_index = (@personalID & 1) if !@ability_index
     return @ability_index
-  end
-
-  def forced_ability
-    return @ability
   end
 
   # @return [GameData::Ability, nil] an Ability object corresponding to this Pokémon's ability
@@ -803,7 +986,24 @@ class Pokemon
 
   # Returns the list of moves this Pokémon can learn by levelling up.
   # @return [Array<Array<Integer,Symbol>>] this Pokémon's move list, where every element is [level, move ID]
+  #KurayX Makes it so it also takes the pre-evo's moves.
   def getMoveList
+    kuraymoves = species_data.moves
+    kuraychecking = species
+    while true
+      checkspecie = GameData::Species.get(kuraychecking).get_previous_species
+      if checkspecie.to_s == kuraychecking.to_s
+        break
+      end
+      kurayoldmoves = GameData::Species.get(checkspecie).moves
+      kuraymoves.push(*kurayoldmoves)
+      kuraychecking = checkspecie
+    end
+    return kuraymoves
+  end
+
+  #KurayX Prevent duplication of asking again and again if pokemon should learn this move
+  def getMLStandard
     return species_data.moves
   end
 
@@ -898,9 +1098,9 @@ class Pokemon
       body_species_id = getBasePokemonID(species)
       head_species = GameData::Species.get(head_species_id)
       body_species = GameData::Species.get(body_species_id)
-      return move_data && (pokemon_can_learn_move(head_species, move_data) || pokemon_can_learn_move(body_species, move_data))
+      return move_data && (pokemon_can_learn_move(head_species,move_data) || pokemon_can_learn_move(body_species,move_data))
     else
-      return move_data && pokemon_can_learn_move(species_data, move_data)
+      return move_data && pokemon_can_learn_move(species_data,move_data)
     end
   end
 
@@ -1161,53 +1361,11 @@ class Pokemon
   #=============================================================================
   # Checks whether this Pokemon can evolve because of levelling up.
   # @return [Symbol, nil] the ID of the species to evolve into
-  def prompt_evolution_choice(body_evolution, head_evolution)
-    current_body = @species_data.body_pokemon
-    current_head = @species_data.head_pokemon
-
-    choices = [
-      #_INTL("Evolve both!"),
-      _INTL("Evolve head!"),
-      _INTL("Evolve body!"),
-      _INTL("Don't evolve")
-    ]
-    choice = pbMessage(_INTL('Both halves of {1} are ready to evolve!', self.name), choices, 0)
-    # if choice == 0  #EVOLVE BOTH
-    #   newspecies = getFusionSpecies(body_evolution,head_evolution)
-    if choice == 0 #EVOLVE HEAD
-      newspecies = getFusionSpecies(current_body, head_evolution)
-    elsif choice == 1 #EVOLVE BODY
-      newspecies = getFusionSpecies(body_evolution, current_head)
-    else
-      newspecies = nil
-    end
-    return newspecies
-  end
-
   def check_evolution_on_level_up
-
-    if @species_data.is_a?(GameData::FusedSpecies)
-      body = self.species_data.body_pokemon
-      head = self.species_data.head_pokemon
-
-      body_evolution = check_evolution_internal(@species_data.body_pokemon) { |pkmn, new_species, method, parameter|
-        success = GameData::Evolution.get(method).call_level_up(pkmn, parameter)
-        next (success) ? new_species : nil
-      }
-      head_evolution = check_evolution_internal(@species_data.head_pokemon) { |pkmn, new_species, method, parameter|
-        success = GameData::Evolution.get(method).call_level_up(pkmn, parameter)
-        next (success) ? new_species : nil
-      }
-      if body_evolution && head_evolution
-        return prompt_evolution_choice(body_evolution, head_evolution)
-      end
-    end
-
     return check_evolution_internal { |pkmn, new_species, method, parameter|
       success = GameData::Evolution.get(method).call_level_up(pkmn, parameter)
       next (success) ? new_species : nil
     }
-
   end
 
   # Checks whether this Pokemon can evolve because of using an item on it.
@@ -1244,13 +1402,11 @@ class Pokemon
   # which will provide either a GameData::Species ID (the species to evolve
   # into) or nil (keep checking).
   # @return [Symbol, nil] the ID of the species to evolve into
-  def check_evolution_internal(species = nil)
+  def check_evolution_internal
     return nil if egg? || shadowPokemon?
     return nil if hasItem?(:EVERSTONE)
     return nil if hasAbility?(:BATTLEBOND)
-    species = species_data if !species
-
-    species.get_evolutions(true).each do |evo|
+    species_data.get_evolutions(true).each do |evo|
       # [new_species, method, parameter, boolean]
       next if evo[3] # Prevolution
       ret = yield self, evo[0], evo[1], evo[2] # pkmn, new_species, method, parameter
@@ -1294,19 +1450,6 @@ class Pokemon
     return ((((base * 2 + iv + (ev / 4)) * level / 100).floor + 5) * nat / 100).floor
   end
 
-  def adjust_level_for_base_stats_mode()
-    nb_badges = $Trainer.badge_count
-    this_level = ((nb_badges * Settings::NO_LEVEL_MODE_LEVEL_INCR) + Settings::NO_LEVEL_MODE_LEVEL_BASE).ceil
-    if this_level > Settings::MAXIMUM_LEVEL
-      this_level = Settings::MAXIMUM_LEVEL
-    end
-    return this_level
-  end
-
-  def adjustHPForWonderGuard(stats)
-    return self.ability == :WONDERGUARD ? 1 : stats[:HP]
-  end
-
   # Recalculates this Pokémon's stats.
   def calc_stats
     base_stats = self.baseStats
@@ -1314,7 +1457,7 @@ class Pokemon
     this_IV = self.calcIV
 
     if $game_switches[SWITCH_NO_LEVELS_MODE]
-      this_level = adjust_level_for_base_stats_mode()
+      this_level = Settings::NO_LEVEL_MODE_LEVEL
     end
 
     # Format stat multipliers due to nature
@@ -1335,7 +1478,7 @@ class Pokemon
     end
     hpDiff = @totalhp - @hp
     #@totalhp = stats[:HP]
-    @totalhp = adjustHPForWonderGuard(stats)
+    @totalhp = self.ability == :WONDERGUARD ? 1 : stats[:HP]
     calculated_hp = @totalhp - hpDiff
     @hp = calculated_hp > 0 ? calculated_hp : 0
     @attack = stats[:ATTACK]
@@ -1369,6 +1512,154 @@ class Pokemon
     return ret
   end
 
+  #KurayX
+  def as_json(options={})
+    {
+      "species" => @species,
+      "form" => @form,
+      "forced_form" => @forced_form,
+      "time_form_set" => @time_form_set,
+      "exp" => @exp,
+      "level" => @level,
+      "steps_to_hatch" => @steps_to_hatch,
+      "heal_status" => heal_status,
+      "gender" => @gender,
+      "shiny" => @shiny,
+      "kuraygender" => @kuraygender,
+      "shinyValue" => @shinyValue,
+      "shinyR" => @shinyR,
+      "shinyG" => @shinyG,
+      "shinyB" => @shinyB,
+      "ability_index" => @ability_index,
+      "ability" => @ability,
+      "nature" => @nature,
+      "nature_for_stats" => @nature_for_stats,
+      "item" => @item,
+      "mail" => @mail,
+      "cool" => @cool,
+      "beauty" => @beauty,
+      "cute" => @cute,
+      "smart" => @smart,
+      "tough" => @tough,
+      "sheen" => @sheen,
+      "pokerus" => @pokerus,
+      "name" => @name,
+      "happiness" => @happiness,
+      "poke_ball" => @poke_ball,
+      "markings" => @markings,
+      "iv" => @iv,
+      "ivMaxed" => @ivMaxed,
+      "ev" => @ev,
+      "hiddenPowerType" => @hiddenPowerType,
+      "glitter" => @glitter,
+      "obtain_method" => @obtain_method,
+      "obtain_map" => @obtain_map,
+      "obtain_level" => @obtain_level,
+      "obtain_text" => @obtain_text,
+      "hatched_map" => @hatched_map,
+      "timeReceived" => @timeReceived,
+      "timeEggHatched" => @timeEggHatched,
+      "fused" => @fused,
+      "personalID" => @personalID,
+      "hp" => @hp,
+      "totalhp" => @totalhp,
+      "first_moves" => @first_moves.clone,
+      "owner" => @owner.as_json,
+      "head_shiny" => @head_shiny,
+      "body_shiny" => @body_shiny,
+      "head_shinyhue" => @head_shinyhue,
+      "body_shinyhue" => @body_shinyhue,
+      "head_shinyr" => @head_shinyr,
+      "body_shinyr" => @body_shinyr,
+      "head_shinyg" => @head_shinyg,
+      "body_shinyg" => @body_shinyg,
+      "head_shinyb" => @head_shinyb,
+      "body_shinyb" => @body_shinyb,
+      "kuray_no_evo" => @kuray_no_evo,
+      "ribbons" => @ribbons.clone
+    }
+  end
+
+  #KurayX
+  def to_json(*options)
+    current = as_json(*options)
+    checkmoves = []
+    @moves.each_with_index { |m, i| checkmoves[i] = m.as_json }
+    current['moves'] = checkmoves
+    return current
+  end
+
+  #KurayX
+  def load_json(jsonparse)
+    @species = jsonparse['species']
+    @form = jsonparse['form']
+    @forced_form = jsonparse['forced_form']
+    @time_form_set = jsonparse['time_form_set']
+    @exp = jsonparse['exp']
+    @level = jsonparse['level']
+    @steps_to_hatch = jsonparse['steps_to_hatch']
+    @heal_status = jsonparse['heal_status']
+    @gender = jsonparse['gender']
+    @shiny = jsonparse['shiny']
+    @kuraygender = jsonparse['kuraygender']
+    @shinyValue = jsonparse['shinyValue']
+    @shinyR = jsonparse['shinyR']
+    @shinyG = jsonparse['shinyG']
+    @shinyB = jsonparse['shinyB']
+    @ability_index = jsonparse['ability_index']
+    @ability = jsonparse['ability']
+    @nature = jsonparse['nature']
+    @nature_for_stats = jsonparse['nature_for_stats']
+    @item = jsonparse['item']
+    @mail = jsonparse['mail']
+    @cool = jsonparse['cool']
+    @beauty = jsonparse['beauty']
+    @cute = jsonparse['cute']
+    @smart = jsonparse['smart']
+    @tough = jsonparse['tough']
+    @sheen = jsonparse['sheen']
+    @pokerus = jsonparse['pokerus']
+    @name = jsonparse['name']
+    @happiness = jsonparse['happiness']
+    @poke_ball = jsonparse['poke_ball']
+    @markings = jsonparse['markings']
+    @iv = jsonparse['iv']
+    @ivMaxed = jsonparse['ivMaxed']
+    @ev = jsonparse['ev']
+    @hiddenPowerType = jsonparse['hiddenPowerType']
+    @glitter = jsonparse['glitter']
+    @obtain_method = jsonparse['obtain_method']
+    @obtain_map = jsonparse['obtain_map']
+    @obtain_level = jsonparse['obtain_level']
+    @obtain_text = jsonparse['obtain_text']
+    @hatched_map = jsonparse['hatched_map']
+    @timeReceived = jsonparse['timeReceived']
+    @timeEggHatched = jsonparse['timeEggHatched']
+    @fused = jsonparse['fused']
+    @personalID = jsonparse['personalID']
+    @hp = jsonparse['hp']
+    @totalhp = jsonparse['totalhp']
+    @first_moves = jsonparse['first_moves']
+    @owner.load_json(jsonparse['owner'])
+    @ribbons = jsonparse['ribbons']
+    @head_shiny = jsonparse['head_shiny']
+    @body_shiny = jsonparse['body_shiny']
+    @head_shinyhue = jsonparse['head_shinyhue']
+    @head_shinyr = jsonparse['head_shinyr']
+    @head_shinyg = jsonparse['head_shinyg']
+    @head_shinyb = jsonparse['head_shinyb']
+    @body_shinyhue = jsonparse['body_shinyhue']
+    @body_shinyr = jsonparse['body_shinyr']
+    @body_shinyg = jsonparse['body_shinyg']
+    @body_shinyb = jsonparse['body_shinyb']
+    @kuray_no_evo = jsonparse['kuray_no_evo']
+    # jsonparse['moves'].split('},')
+    @moves = []
+    jsonparse['moves'].each_with_index { |m, i| @moves.push(Pokemon::Move.new(m['id'])) }
+    jsonparse['moves'].each_with_index { |m, i| @moves[i].load_json(m) }
+  end
+
+  #KurayX - KURAYX_ABOUT_SHINIES
   # Creates a new Pokémon object.
   # @param species [Symbol, String, Integer] Pokémon species
   # @param level [Integer] Pokémon level
@@ -1376,9 +1667,9 @@ class Pokemon
   # @param withMoves [TrueClass, FalseClass] whether the Pokémon should have moves
   # @param rechech_form [TrueClass, FalseClass] whether to auto-check the form
   def initialize(species, level, owner = $Trainer, withMoves = true, recheck_form = true)
-    @species_data = GameData::Species.get(species)
-    @species = @species_data.species
-    @form = @species_data.form
+    species_data = GameData::Species.get(species)
+    @species = species_data.species
+    @form = species_data.form
     @forced_form = nil
     @time_form_set = nil
     self.level = level
@@ -1386,13 +1677,16 @@ class Pokemon
     heal_status
     @gender = nil
     @shiny = nil
+    #KurayX - KURAYX_ABOUT_SHINIES
+    @shinyValue = rand(0..360) - 180
+    @kuraygender = rand(65536)
+    @shinyR = rand(0..2)
+    @shinyG = rand(0..2)
+    @shinyB = rand(0..2)
     @ability_index = nil
-    @ability2_index = nil
-
     @ability = nil
-    @ability2 = nil
-
     @nature = nil
+    @kuray_no_evo = 0
     @nature_for_stats = nil
     @item = nil
     @mail = nil
@@ -1408,14 +1702,14 @@ class Pokemon
     @sheen = 0
     @pokerus = 0
     @name = nil
-    @happiness = @species_data.happiness
+    @happiness = species_data.happiness
     @poke_ball = :POKEBALL
     @markings = 0
     @iv = {}
     @ivMaxed = {}
     @ev = {}
     @hiddenPowerType = nil
-    @glitter = nil
+    @glitter=nil
     GameData::Stat.each_main do |s|
       @iv[s.id] = rand(IV_STAT_LIMIT + 1)
       @ev[s.id] = 0
@@ -1439,13 +1733,6 @@ class Pokemon
     @personalID = rand(2 ** 16) | rand(2 ** 16) << 16
     @hp = 1
     @totalhp = 1
-    @spriteform_body = nil
-    @spriteform_head = nil
-
-    @hat = nil
-    @hat_x = 0
-    @hat_y = 0
-
     calc_stats
     if @form == 0 && recheck_form
       f = MultipleForms.call("getFormOnCreation", self)

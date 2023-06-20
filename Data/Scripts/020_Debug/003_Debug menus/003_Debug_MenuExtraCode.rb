@@ -10,7 +10,6 @@ end
 def pbWarpToMapId
   params = ChooseNumberParams.new
   params.setRange(1,pbMapTree().length)
-  params.setDefaultValue($game_map.map_id)
   map_id = pbMessageChooseNumber("map id?",params)
   return [map_id,0,0]
 end
@@ -269,10 +268,11 @@ def pbDebugDayCare
         leveldiff = pkmn.level-initlevel
         textpos.push(["#{pkmn.name} (#{pkmn.speciesName})",8+i*Graphics.width/2,y,0,base,shadow])
         y += 32
+        #KurayNewSymbolGender
         if pkmn.male?
-          textpos.push([_INTL("Male ♂"),8+i*Graphics.width/2,y,0,Color.new(128,192,248),shadow])
+          textpos.push([_INTL("Male ♂"),8+i*Graphics.width/2,y,0,Color.new(55, 148, 229),shadow])
         elsif pkmn.female?
-          textpos.push([_INTL("Female ♀"),8+i*Graphics.width/2,y,0,Color.new(248,96,96),shadow])
+          textpos.push([_INTL("Female ♀"),8+i*Graphics.width/2,y,0,Color.new(229, 55, 203),shadow])
         else
           textpos.push([_INTL("Genderless"),8+i*Graphics.width/2,y,0,base,shadow])
         end

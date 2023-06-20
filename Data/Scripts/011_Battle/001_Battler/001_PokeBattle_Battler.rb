@@ -12,6 +12,8 @@ class PokeBattle_Battler
   attr_accessor :item_id
   attr_accessor :moves
   attr_accessor :gender
+  #KurayX_About_GENDER
+  attr_accessor :kuraygender
   attr_accessor :iv
   attr_accessor :attack
   attr_accessor :spatk
@@ -178,6 +180,30 @@ class PokeBattle_Battler
     return self.species
   end
 
+  #KurayX_About_GENDER
+  def displayGenderPizza
+    if $PokemonSystem.shenanigans && $PokemonSystem.shenanigans == 1
+      return false
+    elsif @effects[PBEffects::Illusion]
+      if @effects[PBEffects::Illusion].kuraygender
+        kuraythegender = @effects[PBEffects::Illusion].kuraygender
+      else
+        kuraythegender = rand(65536)
+      end
+    else
+      if @pokemon.kuraygender
+        kuraythegender = @pokemon.kuraygender
+      else
+        kuraythegender = rand(65536)
+      end
+    end
+    if kuraythegender < 256
+      return true
+    else
+      return false
+    end
+  end
+
   def displayGender
     return @effects[PBEffects::Illusion].gender if @effects[PBEffects::Illusion]
     return self.gender
@@ -317,11 +343,6 @@ class PokeBattle_Battler
   def isFusionOf(check_species)
     return @pokemon.isFusionOf(check_species)
   end
-
-  def isFusion?()
-    return @pokemon.isFusion?()
-  end
-
 
   # Returns the active types of this Pokémon. The array should not include the
   # same type more than once, and should not include any invalid type numbers

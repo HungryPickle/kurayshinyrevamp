@@ -213,11 +213,25 @@ class PokemonEncounters
   # Returns whether a wild encounter should be turned into a double wild
   # encounter.
   def have_double_wild_battle?
+    if !$PokemonSystem.force_double_wild
+      $PokemonSystem.force_double_wild = 0
+    end
     return false if $PokemonTemp.forceSingleBattle
     return false if pbInSafari?
     return true if $PokemonGlobal.partner
     return false if $Trainer.able_pokemon_count <= 1
     return true if $game_player.pbTerrainTag.double_wild_encounters && rand(100) < 30
+    return true if $PokemonSystem.force_double_wild > 0
+    return false
+  end
+  def have_triple_wild_battle?
+    if !$PokemonSystem.force_double_wild
+      $PokemonSystem.force_double_wild = 0
+    end
+    return false if $PokemonTemp.forceSingleBattle
+    return false if pbInSafari?
+    return false if $Trainer.able_pokemon_count <= 2
+    return true if $PokemonSystem.force_double_wild > 1
     return false
   end
 
@@ -272,6 +286,7 @@ class PokemonEncounters
   # For the current map, randomly chooses a species and level from the encounter
   # list for the given encounter type. Returns nil if there are none defined.
   # A higher chance_rolls makes this method prefer rarer encounter slots.
+  #KurayX
   def choose_wild_pokemon(enc_type, chance_rolls = 1)
     if !enc_type || !GameData::EncounterType.exists?(enc_type)
       raise ArgumentError.new(_INTL("Encounter type {1} does not exist", enc_type))
@@ -293,7 +308,9 @@ class PokemonEncounters
       if favored_type
         new_enc_list = []
         enc_list.each do |enc|
+          #KurayX Github
           species_data = GameData::Species.get(enc[1])
+          # species_data = GameData::Species.get(enc[0])
           t1 = species_data.type1
           t2 = species_data.type2
           new_enc_list.push(enc) if t1 == favored_type || t2 == favored_type
@@ -442,7 +459,15 @@ def pbEncounter(enc_type)
   encounter1 = $PokemonEncounters.choose_wild_pokemon(enc_type)
   encounter1 = EncounterModifier.trigger(encounter1)
   return false if !encounter1
-  if $PokemonEncounters.have_double_wild_battle?
+  if $PokemonEncounters.have_triple_wild_battle?
+    encounter3 = $PokemonEncounters.choose_wild_pokemon(enc_type)
+    encounter3 = EncounterModifier.trigger(encounter3)
+    encounter2 = $PokemonEncounters.choose_wild_pokemon(enc_type)
+    encounter2 = EncounterModifier.trigger(encounter2)
+    return false if !encounter2
+    return false if !encounter3
+    pbTripleWildBattle(encounter1[0], encounter1[1], encounter2[0], encounter2[1], encounter3[0], encounter3[1])
+  elsif $PokemonEncounters.have_double_wild_battle?
     encounter2 = $PokemonEncounters.choose_wild_pokemon(enc_type)
     encounter2 = EncounterModifier.trigger(encounter2)
     return false if !encounter2
