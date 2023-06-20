@@ -52,7 +52,8 @@ class PokemonEggHatch_Scene
     pbFadeInAndShow(@sprites)
   end
 
-  def pbMain
+  #KurayX sent hatched to PC asking
+  def pbMain(eggindex)
     pbBGMPlay("Evolution")
     # Egg animation
     updateScene(Graphics.frame_rate*15/10)
@@ -113,15 +114,14 @@ class PokemonEggHatch_Scene
       @pokemon.name = nickname
       @nicknamed = true
     end
-
-    if !$Trainer.pokedex.owned?(@pokemon.species)
-      $Trainer.pokedex.register(@pokemon)
-      $Trainer.pokedex.set_owned(@pokemon.species)
-      pbMessage(_INTL("{1}'s data was added to the Pokédex", @pokemon.name))
-      pbShowPokedex(@pokemon.species)
+    #KurayX sent hatched to PC asking
+    if pbConfirmMessage(
+      _INTL("Do you wish to send {1} to the PC?", @pokemon.name)) { update }
+      $PokemonStorage.pbStoreCaught(@pokemon)
+      $Trainer.party[eggindex] = nil
+      $Trainer.party.compact!
+      pbMessage(_INTL("{1} was sent to the PC.", @pokemon.name)) { update }
     end
-    nb_eggs_hatched = pbGet(VAR_NB_EGGS_HATCHED)
-    pbSet(VAR_NB_EGGS_HATCHED,nb_eggs_hatched+1)
   end
 
   def pbEndScene
@@ -180,9 +180,10 @@ class PokemonEggHatchScreen
     @scene=scene
   end
 
-  def pbStartScreen(pokemon)
+  #KurayX sent hatched to PC asking
+  def pbStartScreen(pokemon, eggindex)
     @scene.pbStartScene(pokemon)
-    @scene.pbMain
+    @scene.pbMain(eggindex)
     @scene.pbEndScene
   end
 end
@@ -190,17 +191,20 @@ end
 #===============================================================================
 #
 #===============================================================================
-def pbHatchAnimation(pokemon)
+#KurayX sent hatched to PC asking
+def pbHatchAnimation(pokemon, eggindex)
   pbMessage(_INTL("Huh?\1"))
   pbFadeOutInWithMusic {
     scene=PokemonEggHatch_Scene.new
     screen=PokemonEggHatchScreen.new(scene)
-    screen.pbStartScreen(pokemon)
+    #KurayX sent hatched to PC asking
+    screen.pbStartScreen(pokemon, eggindex)
   }
   return true
 end
 
-def pbHatch(pokemon)
+#KurayX sent hatched to PC asking
+def pbHatch(pokemon, eggindex)
   speciesname = pokemon.speciesName
   pokemon.name           = nil
   pokemon.owner          = Pokemon::Owner.new_from_trainer($Trainer)
@@ -210,13 +214,16 @@ def pbHatch(pokemon)
   pokemon.hatched_map    = $game_map.map_id
   if player_on_hidden_ability_map
     chosenAbility = pokemon.getAbilityList.sample #format: [[:ABILITY, index],...]
-    #pokemon.ability = chosenAbility[0]
+    pokemon.ability = chosenAbility[0]
     pokemon.ability_index = chosenAbility[1]
   end
 
 
+  $Trainer.pokedex.register(pokemon)
+  $Trainer.pokedex.set_owned(pokemon.species)
   pokemon.record_first_moves
-  if !pbHatchAnimation(pokemon)
+  #KurayX sent hatched to PC asking
+  if !pbHatchAnimation(pokemon, eggindex)
     pbMessage(_INTL("Huh?\1"))
     pbMessage(_INTL("...\1"))
     pbMessage(_INTL("... .... .....\1"))
@@ -226,15 +233,24 @@ def pbHatch(pokemon)
                                     0, Pokemon::MAX_NAME_SIZE, "", pokemon)
       pokemon.name = nickname
     end
+    #KurayX sent hatched to PC asking
+    if pbConfirmMessage(
+      _INTL("Do you wish to send {1} to the PC?", pokemon.name))
+      $PokemonStorage.pbStoreCaught(pokemon)
+      $Trainer.party[eggindex] = nil
+      $Trainer.party.compact!
+      pbMessage(_INTL("{1} was sent to the PC.", pokemon.name))
+    end
   end
-
 end
 
+#KurayX sent hatched to PC asking
 Events.onStepTaken += proc { |_sender,_e|
+  egglocation = -1
   for egg in $Trainer.party
+    egglocation += 1
     next if egg.steps_to_hatch <= 0
     egg.steps_to_hatch -= 1
-    egg.steps_to_hatch -= 1 if isWearingClothes(CLOTHES_BREEDER)
     for i in $Trainer.pokemon_party
       next if !i.hasAbility?(:FLAMEBODY) && !i.hasAbility?(:MAGMAARMOR)
       egg.steps_to_hatch -= 1
@@ -242,7 +258,7 @@ Events.onStepTaken += proc { |_sender,_e|
     end
     if egg.steps_to_hatch <= 0
       egg.steps_to_hatch = 0
-      pbHatch(egg)
+      pbHatch(egg, egglocation)
     end
   end
 }
