@@ -980,45 +980,45 @@ class SpriteHash
   end
 end
 
-class ByteWriter
-  def initialize(filename)
-    @file = File.new(filename, "wb")
-  end
-
-  def <<(*data)
-    write(*data)
-  end
-
-  def write(*data)
-    data.each do |e|
-      if e.is_a?(Array)
-        e.each { |item| write(item) }
-      elsif e.is_a?(Numeric)
-        @file.putc e
-      else
-        raise "Invalid data for writing."
-      end
-    end
-  end
-
-  def write_int(int)
-    self << ByteWriter.to_bytes(int)
-  end
-
-  def close
-    @file.close
-    @file = nil
-  end
-
-  def self.to_bytes(int)
-    return [
-      (int >> 24) & 0xFF,
-      (int >> 16) & 0xFF,
-      (int >> 8) & 0xFF,
-      int & 0xFF
-    ]
-  end
-end
+# class ByteWriter
+#   def initialize(filename)
+#     @file = File.new(filename, "wb")
+#   end
+#
+#   def <<(*data)
+#     write(*data)
+#   end
+#
+#   def write(*data)
+#     data.each do |e|
+#       if e.is_a?(Array)
+#         e.each { |item| write(item) }
+#       elsif e.is_a?(Numeric)
+#         @file.putc e
+#       else
+#         raise "Invalid data for writing."
+#       end
+#     end
+#   end
+#
+#   def write_int(int)
+#     self << ByteWriter.to_bytes(int)
+#   end
+#
+#   def close
+#     @file.close
+#     @file = nil
+#   end
+#
+#   def self.to_bytes(int)
+#     return [
+#       (int >> 24) & 0xFF,
+#       (int >> 16) & 0xFF,
+#       (int >> 8) & 0xFF,
+#       int & 0xFF
+#     ]
+#   end
+# end
 
 class Bitmap
   def save_to_png(filename)
@@ -1057,12 +1057,9 @@ class Bitmap
         data << px.alpha
       end
     end
-
     # Zlib deflation
-    smoldata = Zlib::Deflate.deflate(data.pack("C*"))
-    smoldata = smoldata.bytes
-
-    # Data chunk length
+    smoldata = Zlib::Deflate.deflate(data.pack("C*")).bytes.map
+    # data chunk length
     f.write_int smoldata.size
     # IDAT
     f << [0x49, 0x44, 0x41, 0x54]
@@ -1077,11 +1074,9 @@ class Bitmap
     f << [0x49, 0x45, 0x4E, 0x44]
     # CRC32 checksum
     f.write_int Zlib::crc32([0x49, 0x45, 0x4E, 0x44].pack("C*"))
-
     f.close
     return nil
   end
-
 end
 
 # Stand-alone methods
@@ -1116,6 +1111,185 @@ def hideBlk(n = 16)
   $blk = nil
   $blkVp.dispose
   $blkVp = nil
+end
+
+
+#Kurayx LevelCAP
+def getkuraylevelcap()
+  if $game_switches[SWITCH_BEAT_MT_SILVER]
+    return Settings::MAXIMUM_LEVEL
+  elsif $PokemonSystem.kuraylevelcap == 1
+    #Easy
+    if $game_switches[SWITCH_GOT_BADGE_16]
+      return 92
+      #HT 87
+    elsif $game_switches[SWITCH_GOT_BADGE_15]
+      return 88
+      #HT 76
+    elsif $game_switches[SWITCH_GOT_BADGE_14]
+      return 84
+      #HT 75
+    elsif $game_switches[SWITCH_GOT_BADGE_13]
+      return 82
+      #HT 74
+    elsif $game_switches[SWITCH_GOT_BADGE_12]
+      return 80
+      #HT 73
+    elsif $game_switches[SWITCH_GOT_BADGE_11]
+      return 78
+      #HT 72
+    elsif $game_switches[SWITCH_GOT_BADGE_10]
+      return 76
+      #HT 71
+    elsif $game_switches[SWITCH_GOT_BADGE_9]
+      return 75
+      #HT 70
+    elsif $game_switches[SWITCH_BEAT_THE_LEAGUE]
+      return 72
+      #HT 64
+    elsif $game_switches[SWITCH_GOT_BADGE_8]
+      return 69
+      #HT 65
+    elsif $game_switches[SWITCH_GOT_BADGE_7]
+      return 66
+      #HT 62
+    elsif $game_switches[SWITCH_GOT_BADGE_6]
+      return 64
+      #HT 59
+    elsif $game_switches[SWITCH_GOT_BADGE_5]
+      return 56
+      #HT 50
+    elsif $game_switches[SWITCH_GOT_BADGE_4]
+      return 52
+      #HT 47
+    elsif $game_switches[SWITCH_GOT_BADGE_3]
+      return 46
+      #HT 41
+    elsif $game_switches[SWITCH_GOT_BADGE_2]
+      return 32
+      #HT 28
+    elsif $game_switches[SWITCH_GOT_BADGE_1]
+      return 28
+      #HT 25
+    else
+      return 16
+      #HT 14
+    end
+  elsif $PokemonSystem.kuraylevelcap == 2
+    #Normal
+    if $game_switches[SWITCH_GOT_BADGE_16]
+      return 86
+      #HT 87
+    elsif $game_switches[SWITCH_GOT_BADGE_15]
+      return 75
+      #HT 76
+    elsif $game_switches[SWITCH_GOT_BADGE_14]
+      return 74
+      #HT 75
+    elsif $game_switches[SWITCH_GOT_BADGE_13]
+      return 73
+      #HT 74
+    elsif $game_switches[SWITCH_GOT_BADGE_12]
+      return 72
+      #HT 73
+    elsif $game_switches[SWITCH_GOT_BADGE_11]
+      return 71
+      #HT 72
+    elsif $game_switches[SWITCH_GOT_BADGE_10]
+      return 70
+      #HT 71
+    elsif $game_switches[SWITCH_GOT_BADGE_9]
+      return 69
+      #HT 70
+    elsif $game_switches[SWITCH_BEAT_THE_LEAGUE]
+      return 63
+      #HT 64
+    elsif $game_switches[SWITCH_GOT_BADGE_8]
+      return 62
+      #HT 65
+    elsif $game_switches[SWITCH_GOT_BADGE_7]
+      return 61
+      #HT 62
+    elsif $game_switches[SWITCH_GOT_BADGE_6]
+      return 58
+      #HT 59
+    elsif $game_switches[SWITCH_GOT_BADGE_5]
+      return 49
+      #HT 50
+    elsif $game_switches[SWITCH_GOT_BADGE_4]
+      return 46
+      #HT 47
+    elsif $game_switches[SWITCH_GOT_BADGE_3]
+      return 40
+      #HT 41
+    elsif $game_switches[SWITCH_GOT_BADGE_2]
+      return 27
+      #HT 28
+    elsif $game_switches[SWITCH_GOT_BADGE_1]
+      return 24
+      #HT 25
+    else
+      return 13
+      #HT 14
+    end
+  else
+    #HARD
+    if $game_switches[SWITCH_GOT_BADGE_16]
+      return 82
+      #HT 87
+    elsif $game_switches[SWITCH_GOT_BADGE_15]
+      return 72
+      #HT 76
+    elsif $game_switches[SWITCH_GOT_BADGE_14]
+      return 71
+      #HT 75
+    elsif $game_switches[SWITCH_GOT_BADGE_13]
+      return 70
+      #HT 74
+    elsif $game_switches[SWITCH_GOT_BADGE_12]
+      return 69
+      #HT 73
+    elsif $game_switches[SWITCH_GOT_BADGE_11]
+      return 68
+      #HT 72
+    elsif $game_switches[SWITCH_GOT_BADGE_10]
+      return 67
+      #HT 71
+    elsif $game_switches[SWITCH_GOT_BADGE_9]
+      return 66
+      #HT 70
+    elsif $game_switches[SWITCH_BEAT_THE_LEAGUE]
+      return 61
+      #HT 64
+    elsif $game_switches[SWITCH_GOT_BADGE_8]
+      return 60
+      #HT 65
+    elsif $game_switches[SWITCH_GOT_BADGE_7]
+      return 58
+      #HT 62
+    elsif $game_switches[SWITCH_GOT_BADGE_6]
+      return 55
+      #HT 59
+    elsif $game_switches[SWITCH_GOT_BADGE_5]
+      return 47
+      #HT 50
+    elsif $game_switches[SWITCH_GOT_BADGE_4]
+      return 44
+      #HT 47
+    elsif $game_switches[SWITCH_GOT_BADGE_3]
+      return 38
+      #HT 41
+    elsif $game_switches[SWITCH_GOT_BADGE_2]
+      return 25
+      #HT 28
+    elsif $game_switches[SWITCH_GOT_BADGE_1]
+      return 22
+      #HT 25
+    else
+      return 11
+      #HT 14
+    end
+  end
 end
 
 # Returns the percentage of exp the Pokémon has compared to the next level

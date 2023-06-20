@@ -181,7 +181,7 @@ class PokemonTrade_Scene
     pbDisposeSpriteHash(@sprites)
     @viewport.dispose
     newspecies = @pokemon2.check_evolution_on_trade(@pokemon)
-    if newspecies
+    if newspecies && (@pokemon2.kuray_no_evo? == 0 || $PokemonSystem.kuray_no_evo == 0)
       evo = PokemonEvolutionScene.new
       evo.pbStartScreen(@pokemon2,newspecies)
       evo.pbEvolution(false)
@@ -219,10 +219,6 @@ def pbStartTrade(pokemonIndex,newpoke,nickname,trainerName,trainerGender=0,saveg
   Kernel.Autosave if savegame
 
   myPokemon = $Trainer.party[pokemonIndex]
-  heldItem = myPokemon.item
-  echoln heldItem
-  $PokemonBag.pbStoreItem(heldItem, 1) if heldItem
-
   opponent = NPCTrainer.new(trainerName,trainerGender)
   opponent.id = $Trainer.make_foreign_ID
   yourPokemon = nil

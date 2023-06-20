@@ -23,6 +23,7 @@ class PokeBattle_FakeBattler
   def totalhp;        return @pokemon.totalhp; end
   def displayGender;  return @pokemon.gender;  end
   def shiny?;         return @pokemon.shiny?;  end
+  def kuraygender?;         return @pokemon.kuraygender?;  end
   alias isShiny? shiny?
 
   def isSpecies?(check_species)
@@ -41,6 +42,24 @@ class PokeBattle_FakeBattler
   alias isPrimal? primal?
   def captured;       return false; end
   def captured=(value); end
+
+  #KurayX_About_GENDER
+  def displayGenderPizza
+    if $PokemonSystem.shenanigans && $PokemonSystem.shenanigans == 1
+      return false
+    else
+      if @pokemon.kuraygender?
+        kuraythegender = @pokemon.kuraygender?
+      else
+        kuraythegender = rand(65536)
+      end
+    end
+    if kuraythegender < 256
+      return true
+    else
+      return false
+    end
+  end
 
   def owned?
     return $Trainer.owned?(pokemon.species)
@@ -150,7 +169,7 @@ class ThrowBaitAnimation < PokeBattle_Animation
     # Show Pokémon jumping before eating the bait
     delay = ball.totalDuration+3
     2.times do
-      battler.setSE(delay,"Player jump")
+      battler.setSE(delay,"player jump")
       battler.moveDelta(delay,3,0,-16)
       battler.moveDelta(delay+4,3,0,16)
       delay = battler.totalDuration+1

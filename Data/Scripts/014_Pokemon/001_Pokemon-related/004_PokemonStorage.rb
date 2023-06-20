@@ -76,6 +76,23 @@ class PokemonStorage
     @fusionItem=nil
   end
 
+  #Kuray Allow to clean boxes
+  # def undefineboxes
+  #   numberboxes = @boxes.length+1
+  #   @boxes = []
+  #   for i in 0...numberboxes
+  #     @boxes[i] = PokemonBox.new(_INTL("Box {1}",i+1),PokemonBox::BOX_SIZE)
+  #     @boxes[i].background = i % BASICWALLPAPERQTY
+  #   end
+  # end
+
+  #Kuray Delete boxes
+  # def deleteboxes
+  #   while @boxes.length > 30
+  #     @boxes.pop()
+  #   end
+  # end
+
   def allWallpapers
     return [
        # Basic wallpapers
@@ -89,7 +106,32 @@ class PokemonStorage
        _INTL("Distortion"),_INTL("Contest"),_INTL("Nostalgic 2"),_INTL("Croagunk"),
        _INTL("Trio 2"),_INTL("PikaPika 2"),_INTL("Legend 2"),_INTL("Team Galactic 2"),
        _INTL("Heart"),_INTL("Soul"),_INTL("Big Brother"),_INTL("Pokéathlon"),
-       _INTL("Trio 3"),_INTL("Spiky Pika"),_INTL("Kimono Girl"),_INTL("Revival")
+       _INTL("Trio 3"),_INTL("Spiky Pika"),_INTL("Kimono Girl"),_INTL("Revival"),
+       #KurayX
+       _INTL("Fire Light"),_INTL("Fire Dark"),_INTL("Water Light"),_INTL("Water Dark"),_INTL("Grass Light"),_INTL("Grass Dark"),
+       _INTL("Electric Light"),_INTL("Electric Dark"),_INTL("Ground Light"),_INTL("Ground Dark"),_INTL("Flying Light"),_INTL("Flying Dark"),
+       _INTL("Psychic Light"),_INTL("Psychic Dark"),_INTL("Dark Light"),_INTL("Dark Dark"),_INTL("Fighting Light"),_INTL("Fighting Dark"),
+       _INTL("Rock Light"),_INTL("Rock Dark"),_INTL("Steel Light"),_INTL("Steel Dark"),_INTL("Ghost Light"),_INTL("Ghost Dark"),_INTL("Bug Light"),
+       _INTL("Bug Dark"),_INTL("Dragon Light"),_INTL("Dragon Dark"),_INTL("Fairy Light"),_INTL("Fairy Dark"),_INTL("Ice Light"),_INTL("Ice Dark"),
+       _INTL("Poison Light"),_INTL("Poison Dark"),_INTL("Normal Light"),_INTL("Normal Dark"),_INTL("PMD Sand"),_INTL("PMD Snow"),_INTL("PMD Altar"),
+       _INTL("PMD Trees"),_INTL("PMD Sharpedo Bluff"),_INTL("PMD Altar 2"),_INTL("PMD Time Stop"),_INTL("PMD Waterfall"),_INTL("PMD Time Tower"),
+       _INTL("PMD Time Tower 2"),_INTL("PMD Guild"),_INTL("PMD Time Stop 2"),_INTL("PMD Sky"),_INTL("PMD Friends Space"),_INTL("PMD Friends Space 2"),
+       _INTL("PMD Primal"),_INTL("PMD Tower"),_INTL("PMD Evolution"),_INTL("PMD Fire"),_INTL("PMD Mystery"),_INTL("PMD Night"),_INTL("PMD Cliff"),
+       _INTL("PMD Worldview"),_INTL("Snowy"),_INTL("Poison"),_INTL("Dark Rural"),_INTL("Marathon"),_INTL("Gothic"),_INTL("Black Gradient"),_INTL("Yveltal"),
+       _INTL("Plain Light"),_INTL("Plain Dark"),_INTL("Beach Sand"),_INTL("Blue Gradient"),_INTL("Night"),_INTL("Trade"),_INTL("Arid"),_INTL("City Path"),
+       _INTL("Book"),_INTL("Cobwebs"),_INTL("Mt. Coronet"),_INTL("Altar"),_INTL("Slowpoke Well"),_INTL("Tin Tower"),_INTL("Search Light"),_INTL("Search Dark"),
+       _INTL("Mewtwo Lab"),_INTL("Team Rocket 1"),_INTL("Team Rocket 2"),_INTL("Team Flare"),_INTL("Coral"),_INTL("Training"),_INTL("Dream Space"),_INTL("School"),
+       _INTL("Underwater"),_INTL("Underwater 2"),_INTL("Chess"),_INTL("Rainbow Plain"),_INTL("Mushrooms"),_INTL("Plain Pathway"),_INTL("Mountain"),_INTL("Shiny Blue"),
+       _INTL("Shiny Red"),_INTL("Shiny Green"),_INTL("Shiny Purple"),_INTL("Minecraft Rails"),_INTL("Minecraft Rails 2"),_INTL("Infernal"),_INTL("Insectoid"),
+       _INTL("Halloween"),_INTL("Neon"),_INTL("Obscuros"),_INTL("Japan"),_INTL("Norse"),_INTL("Oblivion"),_INTL("Rainbow"),_INTL("River"),_INTL("Sunset"),_INTL("Shadow"),
+       _INTL("Soulfire"),_INTL("Temple"),_INTL("Sweet Shop"),_INTL("Anubis"),_INTL("Dark"),_INTL("Demonic"),_INTL("Ethereal"),_INTL("Forest"),_INTL("Gembound"),
+       _INTL("Snow Game"),_INTL("Mega Evolution"),_INTL("Golden Night"),_INTL("Milotic Style"),_INTL("X & Y"),_INTL("Steampunk"),_INTL("Synthwave Neon"),
+       _INTL("Xerneas"),_INTL("Charged Steel"),_INTL("Reshiram & Zekrom"),_INTL("Kyurems"),_INTL("Beautiful Underwater"),
+       #KurayX2
+       _INTL("Synthwave Sunset"),_INTL("Team Magma"),_INTL("Team Aqua"),_INTL("Victini"),_INTL("Weezing/Kyogre"),_INTL("Star Snow"),_INTL("Dark Graphs"),
+       _INTL("Purple Geometry"),_INTL("RGBY Squares"),_INTL("RIP"),_INTL("RIP 2"),_INTL("Pizza"),_INTL("Fusing Chart"),_INTL("Roaring Reshigon"),
+       _INTL("Arcade Academy"),_INTL("Windows XP"),_INTL("Doggy XP"),_INTL("Mewtwo Strikes"),_INTL("Pikachu Sad"),_INTL("Ash Ded"),_INTL("Shadow Lugia"),
+       _INTL("Primal Dialga"),_INTL("Bluescreen"),_INTL("Bluescreen 2")
     ]
   end
 
@@ -101,6 +143,7 @@ class PokemonStorage
   def isAvailableWallpaper?(i)
     @unlockedWallpapers = [] if !@unlockedWallpapers
     return true if i<BASICWALLPAPERQTY
+    return true if i>39
     return true if @unlockedWallpapers[i]
     return false
   end
@@ -174,6 +217,35 @@ class PokemonStorage
     end
   end
 
+  #Kuray
+  def pbImportKuray(boxDst,indexDst,importpoke)
+    if indexDst<0 && boxDst<self.maxBoxes
+      found = false
+      for i in 0...maxPokemon(boxDst)
+        next if self[boxDst,i]
+        found = true
+        indexDst = i
+        break
+      end
+      return false if !found
+    end
+    if boxDst==-1   # Copying into party
+      return false if party_full?
+      self.party[self.party.length] = importpoke.clone
+      # self.party[self.party.length] = importpoke
+      self.party.compact!
+    else   # Copying into box
+      pkmn = importpoke.clone
+      # pkmn = importpoke
+      raise "Trying to copy nil to storage" if !pkmn
+      pkmn.time_form_set = nil
+      pkmn.form          = 0 if pkmn.isSpecies?(:SHAYMIN)
+      pkmn.heal
+      self[boxDst,indexDst] = pkmn
+    end
+    return true
+  end
+
   def pbCopy(boxDst,indexDst,boxSrc,indexSrc)
     if indexDst<0 && boxDst<self.maxBoxes
       found = false
@@ -194,7 +266,7 @@ class PokemonStorage
       raise "Trying to copy nil to storage" if !pkmn
       pkmn.time_form_set = nil
       pkmn.form          = 0 if pkmn.isSpecies?(:SHAYMIN)
-           #pkmn.heal
+      pkmn.heal
       self[boxDst,indexDst] = pkmn
     end
     return true
@@ -217,7 +289,7 @@ class PokemonStorage
         if box>=0
           pkmn.time_form_set = nil if pkmn.time_form_set
           pkmn.form          = 0 if pkmn.isSpecies?(:SHAYMIN)
-          #pkmn.heal
+          pkmn.heal
         end
         self[box,i] = pkmn
         return true
@@ -229,8 +301,8 @@ class PokemonStorage
   def pbStoreCaught(pkmn)
     if @currentBox>=0
       pkmn.time_form_set = nil
-      #pkmn.form          = 0 if pkmn.isSpecies?(:SHAYMIN)
-      #pkmn.heal
+      pkmn.form          = 0 if pkmn.isSpecies?(:SHAYMIN)
+      pkmn.heal
     end
     for i in 0...maxPokemon(@currentBox)
       if self[@currentBox,i]==nil
@@ -255,6 +327,14 @@ class PokemonStorage
       self[box,index] = nil
       self.party.compact! if box==-1
     end
+  end
+
+  #By Sylvi (multi)
+  def pbDeleteMulti(box,indexes)
+    for index in indexes
+      self[box,index] = nil
+    end
+    self.party.compact! if box==-1
   end
 
   def clear

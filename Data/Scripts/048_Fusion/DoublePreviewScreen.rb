@@ -102,19 +102,20 @@ class DoublePreviewScreen
     pbUpdateSpriteHash(@sprites)
   end
 
-  def draw_window(dexNumber, level, x, y)
+  def draw_window(dexNumber, level, x, y, shiny, shinyV, shinyR, shinyG, shinyB)
     body_pokemon = getBodyID(dexNumber)
     head_pokemon = getHeadID(dexNumber, body_pokemon)
 
-    # picturePath = getPicturePath(head_pokemon, body_pokemon)
-    # bitmap = AnimatedBitmap.new(picturePath)
-    spriteLoader = BattleSpriteLoader.new
-    bitmap = spriteLoader.load_fusion_sprite(head_pokemon,body_pokemon)
+    picturePath = getPicturePath(head_pokemon, body_pokemon)
+    bitmap = AnimatedBitmap.new(picturePath)
+    if shiny && $PokemonSystem.kuraynormalshiny != 1
+      bitmap.pbGiveFinaleColor(shinyR, shinyG, shinyB, shinyV)
+    end
     bitmap.scale_bitmap(Settings::FRONTSPRITE_SCALE)
-    pif_sprite = spriteLoader.obtain_fusion_pif_sprite(head_pokemon,body_pokemon)
+
     #hasCustom = picturePath.include?("CustomBattlers")
-    #hasCustom = customSpriteExistsBase(body_pokemon,head_pokemon)
-    hasCustom = customSpriteExists(body_pokemon,head_pokemon)
+    hasCustom = customSpriteExistsBase(body_pokemon,head_pokemon)
+
     previewwindow = PictureWindow.new(bitmap)
     previewwindow.x = x
     previewwindow.y = y
@@ -122,18 +123,20 @@ class DoublePreviewScreen
 
     drawFusionInformation(dexNumber, level, x)
 
-    if !$Trainer.seen?(dexNumber)
-      if pif_sprite.local_path()
-        previewwindow.picture.pbSetColor(170, 200, 250, 200)  #blue
-      elsif hasCustom
-        previewwindow.picture.pbSetColor(150, 255, 150, 200)  #green
+    if !$Trainer.seen?(dexNumber) && $PokemonSystem.kurayfusepreview != 1
+      if hasCustom
+        previewwindow.picture.pbSetColor(150, 255, 150, 200)
       else
-        previewwindow.picture.pbSetColor(255, 255, 255, 200)  #white
+        previewwindow.picture.pbSetColor(255, 255, 255, 200)
       end
     end
     return previewwindow
   end
 
+
+  def getPicturePath(head_pokemon, body_pokemon)
+    return  get_fusion_sprite_path(head_pokemon,body_pokemon)
+  end
 
   def drawFusionInformation(fusedDexNum, level, x = 0)
     viewport = Viewport.new(0, 0, Graphics.width, Graphics.height)

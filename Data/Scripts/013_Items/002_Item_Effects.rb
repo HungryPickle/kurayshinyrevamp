@@ -244,7 +244,7 @@ ItemHandlers::UseInField.copy(:BICYCLE, :RACEBIKE)
 
 ItemHandlers::UseInField.add(:OLDROD, proc { |item|
   notCliff = $game_map.passable?($game_player.x, $game_player.y, $game_player.direction, $game_player)
-  if !$game_player.pbFacingTerrainTag.can_fish || (!$PokemonGlobal.surfing && !notCliff) || $PokemonGlobal.surfing
+  if !$game_player.pbFacingTerrainTag.can_fish || (!$PokemonGlobal.surfing && !notCliff)
     pbMessage(_INTL("Can't use that here."))
     next 0
   end
@@ -257,7 +257,7 @@ ItemHandlers::UseInField.add(:OLDROD, proc { |item|
 
 ItemHandlers::UseInField.add(:GOODROD, proc { |item|
   notCliff = $game_map.passable?($game_player.x, $game_player.y, $game_player.direction, $game_player)
-  if !$game_player.pbFacingTerrainTag.can_fish || (!$PokemonGlobal.surfing && !notCliff) || $PokemonGlobal.surfing
+  if !$game_player.pbFacingTerrainTag.can_fish || (!$PokemonGlobal.surfing && !notCliff)
     pbMessage(_INTL("Can't use that here."))
     next 0
   end
@@ -270,7 +270,7 @@ ItemHandlers::UseInField.add(:GOODROD, proc { |item|
 
 ItemHandlers::UseInField.add(:SUPERROD, proc { |item|
   notCliff = $game_map.passable?($game_player.x, $game_player.y, $game_player.direction, $game_player)
-  if !$game_player.pbFacingTerrainTag.can_fish || (!$PokemonGlobal.surfing && !notCliff) || $PokemonGlobal.surfing
+  if !$game_player.pbFacingTerrainTag.can_fish || (!$PokemonGlobal.surfing && !notCliff)
     pbMessage(_INTL("Can't use that here."))
     next 0
   end
@@ -358,7 +358,7 @@ ItemHandlers::UseOnPokemon.addIf(proc { |item| GameData::Item.get(item).is_evolu
                                      next false
                                    end
                                    newspecies = pkmn.check_evolution_on_use_item(item)
-                                   if newspecies
+                                   if newspecies && (pkmn.kuray_no_evo? == 0 || $PokemonSystem.kuray_no_evo == 0)
                                      pbFadeOutInWithMusic {
                                        evo = PokemonEvolutionScene.new
                                        evo.pbStartScreen(pkmn, newspecies)
@@ -784,18 +784,11 @@ ItemHandlers::UseOnPokemon.add(:SWIFTWING, proc { |item, pkmn, scene|
   next true
 })
 
-def can_use_rare_candy(pkmn)
-  return false if pkmn.level >= GameData::GrowthRate.max_level || pkmn.shadowPokemon?
-  return false if $PokemonSystem.level_caps==1 && pokemonExceedsLevelCap(pkmn)
-  return true
-end
-
 ItemHandlers::UseOnPokemon.add(:RARECANDY, proc { |item, pkmn, scene|
-  if !(can_use_rare_candy(pkmn))
+  if pkmn.level >= GameData::GrowthRate.max_level || pkmn.shadowPokemon?
     scene.pbDisplay(_INTL("It won't have any effect."))
     next false
   end
-  pbSet(VAR_STAT_RARE_CANDY,pbGet(VAR_STAT_RARE_CANDY)+1)
   pbChangeLevel(pkmn, pkmn.level + 1, scene)
   scene.pbHardRefresh
   next true
@@ -1076,21 +1069,9 @@ ItemHandlers::UseOnPokemon.add(:ABILITYCAPSULE, proc { |item, pkmn, scene|
                            pkmn.name, newabilname))
     pkmn.ability_index = newabil
     pkmn.ability = GameData::Ability.get((newabil == 0) ? abil1 : abil2).id
-
-    #pkmn.ability = GameData::Ability.get((newabil == 0) ? abil1 : abil2).id
 	  scene.pbHardRefresh
     scene.pbDisplay(_INTL("{1}'s Ability changed to {2}!", pkmn.name, newabilname))
     next true
   end
   next false
-})
-
-
-# ItemHandlers::UseInField.add(:REGITABLET, proc { |item|
-#   pbCommonEvent(COMMON_EVENT_REGI_TABLET)
-#   next true
-# })
-
-ItemHandlers::UseFromBag.add(:POKERADAR, proc { |item|
-  next (pbCanUsePokeRadar?) ? 2 : 0
 })

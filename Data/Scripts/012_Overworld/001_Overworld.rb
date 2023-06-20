@@ -42,11 +42,6 @@ def pbBatteryLow?
   return false
 end
 
-def pbOnBattery?
-  pstate = System.power_state
-  return pstate[:discharging]
-end
-
 Events.onMapUpdate += proc { |_sender, _e|
   if !$PokemonTemp.batterywarning && pbBatteryLow?
     if !$game_temp.in_menu && !$game_temp.in_battle &&
@@ -209,9 +204,11 @@ def isFusedEncounter
   return (rand(chance) == 0)
 end
 
+
+
 def getEncounter(encounter_type)
   encounter = $PokemonEncounters.choose_wild_pokemon(encounter_type)
-  if $game_switches[SWITCH_RANDOM_WILD] #wild poke random activated
+  if $game_switches[SWITCH_RANDOM_WILD]  #wild poke random activated
     if $game_switches[SWITCH_WILD_RANDOM_GLOBAL] && encounter != nil
       encounter[0] = getRandomizedTo(encounter[0])
     end
@@ -243,7 +240,13 @@ def pbBattleOnStepTaken(repel_active)
 
   encounter = EncounterModifier.trigger(encounter)
   if $PokemonEncounters.allow_encounter?(encounter, repel_active)
-    if $PokemonEncounters.have_double_wild_battle?
+    if $PokemonEncounters.have_triple_wild_battle?
+      encounter3 = $PokemonEncounters.choose_wild_pokemon(encounter_type)
+      encounter3 = EncounterModifier.trigger(encounter3)
+      encounter2 = $PokemonEncounters.choose_wild_pokemon(encounter_type)
+      encounter2 = EncounterModifier.trigger(encounter2)
+      pbTripleWildBattle(encounter[0], encounter[1], encounter2[0], encounter2[1], encounter3[0], encounter3[1])
+    elsif $PokemonEncounters.have_double_wild_battle?
       encounter2 = $PokemonEncounters.choose_wild_pokemon(encounter_type)
       encounter2 = EncounterModifier.trigger(encounter2)
       pbDoubleWildBattle(encounter[0], encounter[1], encounter2[0], encounter2[1])
@@ -276,6 +279,8 @@ Events.onMapChanging += proc { |_sender, e|
   $game_screen.weather(:None, 0, 0)
 }
 
+
+
 # Set up various data related to the new map
 Events.onMapChange += proc { |_sender, e|
   old_map_ID = e[0] # previous map ID, is 0 if no map ID
@@ -288,10 +293,10 @@ Events.onMapChange += proc { |_sender, e|
   $PokemonGlobal.visitedMaps[$game_map.map_id] = true
   next if old_map_ID == 0 || old_map_ID == $game_map.map_id
 
-  if !new_map_metadata || !new_map_metadata.weather
-    $game_screen.weather(:None, 0, 0)
-    next
-  end
+   if !new_map_metadata || !new_map_metadata.weather
+     $game_screen.weather(:None, 0, 0)
+     next
+   end
   map_infos = pbLoadMapInfos
   if $game_map.name == map_infos[old_map_ID].name
     old_map_metadata = GameData::MapMetadata.try_get(old_map_ID)
@@ -303,42 +308,22 @@ Events.onMapChange += proc { |_sender, e|
     $game_screen.weather(:None, 0, 0)
     next
   end
-
-  echoln new_weather
-
-  $game_screen.weather(new_weather[0], 3, 0) if rand(100) < new_weather[1]
+  $game_screen.weather(new_weather[0], 9, 0) if rand(100) < new_weather[1]
 }
 
-# Events.onMapChange += proc { |_sender, e|
-#   next if !Settings::SEVII_ROAMING.include?($game_map.map_id)
-#   new_map_ID = e[0]
-#   new_map_metadata = GameData::MapMetadata.try_get(new_map_ID)
-#   next if new_map_metadata && new_map_metadata.weather
-#   feebas_map = $PokemonGlobal.roamPosition[4]
-#   if $game_map.map_id == feebas_map
-#     $game_screen.weather(:Rain, 4, 0)
-#   else
-#     $game_screen.weather(:None, 0, 0)
-#   end
-# }
+Events.onMapChange += proc { |_sender, e|
+  next if !Settings::SEVII_ROAMING.include?($game_map.map_id)
+  new_map_ID = e[0]
+  new_map_metadata = GameData::MapMetadata.try_get(new_map_ID)
+  next if new_map_metadata && new_map_metadata.weather
+  feebas_map = $PokemonGlobal.roamPosition[4]
+  if $game_map.map_id == feebas_map
+    $game_screen.weather(:Rain, 4, 0)
+  else
+    $game_screen.weather(:None, 0, 0)
+  end
+}
 
-#    [:ENTEI, 50, 350, 1, "Legendary Birds",ROAMING_AREAS,:Sunny],
-# Events.onMapChange += proc { |_sender, e|
-#   next if $game_screen.weather_type != :None
-#   currently_roaming = $PokemonGlobal.roamPosition.keys
-#   currently_roaming.each do |roamer_id|
-#     roamerOnCurrentMap = $PokemonGlobal.roamPosition[roamer_id] == $game_map.map_id
-#     echoln _INTL("{1} is on map {2}",roamer_id,$game_map.map_id)
-#     echoln $PokemonGlobal.roamPokemon
-#     if roamerOnCurrentMap
-#       next if $PokemonGlobal.roamPokemonCaught[roamer_id]
-#       weather = Settings::ROAMING_SPECIES[roamer_id][6]
-#       $game_screen.weather(weather, 4, 0)
-#       next
-#     end
-#
-#   end
-# }
 
 Events.onMapSceneChange += proc { |_sender, e|
   scene = e[0]
@@ -354,7 +339,7 @@ Events.onMapSceneChange += proc { |_sender, e|
   end
   # Display darkness circle on dark maps
   map_metadata = GameData::MapMetadata.try_get($game_map.map_id)
-  if map_metadata && map_metadata.dark_map || (darknessEffectOnCurrentMap())
+  if map_metadata && map_metadata.dark_map
     $PokemonTemp.darknessSprite = DarknessSprite.new
     scene.spriteset.addUserSprite($PokemonTemp.darknessSprite)
     if $PokemonGlobal.flashUsed
@@ -599,8 +584,7 @@ def pbMoveRoute(event, commands, waitComplete = false)
   return route
 end
 
-def
-pbWait(numFrames)
+def pbWait(numFrames)
   numFrames.times do
     Graphics.update
     Input.update
@@ -820,24 +804,19 @@ def pbItemBall(item, quantity = 1, item_name = "", canRandom = true)
   move = item.move
   if $PokemonBag.pbStoreItem(item, quantity) # If item can be picked up
     meName = (item.is_key_item?) ? "Key item get" : "Item get"
-    text_color = item.is_key_item? ? "\\c[3]" : "\\c[1]"
-
     if item == :LEFTOVERS
       pbMessage(_INTL("\\me[{1}]You found some \\c[1]{2}\\c[0]!\\wtnp[30]", meName, itemname))
     elsif item.is_machine? # TM or HM
       pbMessage(_INTL("\\me[{1}]You found \\c[1]{2} {3}\\c[0]!\\wtnp[30]", meName, itemname, GameData::Move.get(move).name))
     elsif quantity > 1
-      pbMessage(_INTL("\\me[{1}]You found {2} #{text_color}{3}\\c[0]!\\wtnp[30]", meName, quantity, itemname))
+      pbMessage(_INTL("\\me[{1}]You found {2} \\c[1]{3}\\c[0]!\\wtnp[30]", meName, quantity, itemname))
     elsif itemname.starts_with_vowel?
-      pbMessage(_INTL("\\me[{1}]You found an #{text_color}{2}\\c[0]!\\wtnp[30]", meName, itemname))
+      pbMessage(_INTL("\\me[{1}]You found an \\c[1]{2}\\c[0]!\\wtnp[30]", meName, itemname))
     else
-      pbMessage(_INTL("\\me[{1}]You found a #{text_color}{2}\\c[0]!\\wtnp[30]", meName, itemname))
+      pbMessage(_INTL("\\me[{1}]You found a \\c[1]{2}\\c[0]!\\wtnp[30]", meName, itemname))
     end
     pbMessage(_INTL("You put the {1} away\\nin the <icon=bagPocket{2}>\\c[1]{3} Pocket\\c[0].",
                     itemname, pocket, PokemonBag.pocketNames()[pocket]))
-
-    promptRegisterItem(item)
-    updatePinkanBerryDisplay()
     return true
   end
   # Can't add the item
@@ -860,7 +839,7 @@ end
 # Being given an item
 #===============================================================================
 
-def pbReceiveItem(item, quantity = 1, item_name = "", music = nil, canRandom = true)
+def pbReceiveItem(item, quantity = 1, item_name = "", music = nil, canRandom=true)
   #item_name -> pour donner un autre nom à l'item. Pas encore réimplémenté et surtout là pour éviter que ça plante quand des events essaient de le faire
   canRandom = false if !$game_switches[SWITCH_RANDOM_ITEMS_GENERAL]
   original_item = GameData::Item.get(item)
@@ -883,52 +862,44 @@ def pbReceiveItem(item, quantity = 1, item_name = "", music = nil, canRandom = t
   pocket = item.pocket
   move = item.move
   meName = (item.is_key_item?) ? "Key item get" : "Item get"
-  text_color = item.is_key_item? ? "\\c[3]" : "\\c[1]"
   if item == :LEFTOVERS
     pbMessage(_INTL("\\me[{1}]You obtained some \\c[1]{2}\\c[0]!\\wtnp[30]", meName, itemname))
   elsif item.is_machine? # TM or HM
-    # if $game_switches[SWITCH_RANDOMIZE_GYMS_SEPARATELY] && $game_switches[SWITCH_RANDOMIZED_GYM_TYPES] && $game_variables[VAR_CURRENT_GYM_TYPE] > -1
-    #   item = GameData::Item.get(randomizeGymTM(item))
-    # end
+    if $game_switches[SWITCH_RANDOMIZE_GYMS_SEPARATELY] && $game_switches[SWITCH_RANDOMIZED_GYM_TYPES] && $game_variables[VAR_CURRENT_GYM_TYPE]>-1
+      item=randomizeGymTM(item)
+    end
     pbMessage(_INTL("\\me[{1}]You obtained \\c[1]{2} {3}\\c[0]!\\wtnp[30]", meName, itemname, GameData::Move.get(move).name))
   elsif quantity > 1
-    pbMessage(_INTL("\\me[{1}]You obtained {2} #{text_color}{3}\\c[0]!\\wtnp[30]", meName, quantity, itemname))
+    pbMessage(_INTL("\\me[{1}]You obtained {2} \\c[1]{3}\\c[0]!\\wtnp[30]", meName, quantity, itemname))
   elsif itemname.starts_with_vowel?
-    pbMessage(_INTL("\\me[{1}]You obtained an #{text_color}{2}\\c[0]!\\wtnp[30]", meName, itemname))
+    pbMessage(_INTL("\\me[{1}]You obtained an \\c[1]{2}\\c[0]!\\wtnp[30]", meName, itemname))
   else
-    pbMessage(_INTL("\\me[{1}]You obtained a #{text_color}{2}\\c[0]!\\wtnp[30]", meName, itemname))
+    pbMessage(_INTL("\\me[{1}]You obtained a \\c[1]{2}\\c[0]!\\wtnp[30]", meName, itemname))
   end
-  promptRegisterItem(item)
   if $PokemonBag.pbStoreItem(item, quantity) # If item can be added
     pbMessage(_INTL("You put the {1} away\\nin the <icon=bagPocket{2}>\\c[1]{3} Pocket\\c[0].",
                     itemname, pocket, PokemonBag.pocketNames()[pocket]))
-    updatePinkanBerryDisplay()
     return true
   end
   return false # Can't add the item
 end
 
-def promptRegisterItem(item)
-  if item.is_key_item? && pbCanRegisterItem?(item)
-    if pbConfirmMessage(_INTL("Would you like to register the \\c[3]{1}\\c[0] in the quick actions menu?",item.name))
-      $PokemonBag.pbRegisterItem(item)
-      pbMessage(_INTL("\\se[{1}]The \\c[3]{2}\\c[0] was registered!", "GUI trainer card open", item.name))
-    end
-  end
-end
+
+
+
 
 def randomizeGymTM(old_item)
   gym_index = pbGet(VAR_CURRENT_GYM_TYPE)
   type_id = pbGet(VAR_GYM_TYPES_ARRAY)[gym_index]
-  idx = 0
+  idx=0
   if $Trainer.badge_count >= 3
-    idx = 1
+    idx=1
   end
   if $Trainer.badge_count >= 6
-    idx = 2
+    idx=2
   end
   if $Trainer.badge_count >= 8
-    idx = 3
+    idx=3
   end
   typed_tms_array = Settings::RANDOMIZED_GYM_TYPE_TM[type_id]
   return old_item if !typed_tms_array
