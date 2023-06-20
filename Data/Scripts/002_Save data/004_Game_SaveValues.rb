@@ -2,7 +2,7 @@
 
 SaveData.register(:player) do
   ensure_class :Player
-  save_value { $Trainer }
+  save_value { $Trainer.clone.make_vanilla } #Sylvi Items
   load_value { |value| $Trainer = value }
   new_game_value {
     trainer_type = nil   # Get the first defined trainer type as a placeholder
@@ -87,7 +87,7 @@ end
 
 SaveData.register(:global_metadata) do
   ensure_class :PokemonGlobalMetadata
-  save_value { $PokemonGlobal }
+  save_value { $PokemonGlobal.clone.make_vanilla } #Sylvi Items
   load_value { |value| $PokemonGlobal = value }
   new_game_value { PokemonGlobalMetadata.new }
   from_old_format { |old_format| old_format[11] }
@@ -103,7 +103,7 @@ end
 
 SaveData.register(:bag) do
   ensure_class :PokemonBag
-  save_value { $PokemonBag }
+  save_value { $PokemonBag.clone.make_vanilla } #Sylvi Items
   load_value { |value| $PokemonBag = value }
   new_game_value { PokemonBag.new }
   from_old_format { |old_format| old_format[13] }
@@ -111,7 +111,7 @@ end
 
 SaveData.register(:storage_system) do
   ensure_class :PokemonStorage
-  save_value { $PokemonStorage }
+  save_value { $PokemonStorage.clone.make_vanilla } #Sylvi Items
   load_value { |value| $PokemonStorage = value }
   new_game_value { PokemonStorage.new }
   from_old_format { |old_format| old_format[14] }
@@ -132,4 +132,32 @@ SaveData.register(:game_version) do
   save_value { Settings::GAME_VERSION }
   load_value { |value| $game_version = value }
   new_game_value { Settings::GAME_VERSION }
+end
+
+
+#Sylvi Items
+#===============================================================================
+
+SaveData.register(:kuray_player) do
+  vanilla_value :player
+  ensure_class :Player
+  save_value { $Trainer }
+end
+
+SaveData.register(:kuray_global_metadata) do
+  vanilla_value :global_metadata
+  ensure_class :PokemonGlobalMetadata
+  save_value { $PokemonGlobal }
+end
+
+SaveData.register(:kuray_bag) do
+  vanilla_value :bag
+  ensure_class :PokemonBag
+  save_value { $PokemonBag }
+end
+
+SaveData.register(:kuray_storage_system) do
+  vanilla_value :storage_system
+  ensure_class :PokemonStorage
+  save_value { $PokemonStorage }
 end

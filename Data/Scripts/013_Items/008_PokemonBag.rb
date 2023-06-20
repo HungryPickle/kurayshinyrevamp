@@ -13,7 +13,6 @@ class PokemonBag
   end
 
   def initialize
-    @descending_sort=false
     @lastpocket = 1
     @pockets    = []
     @choices    = []
@@ -41,36 +40,6 @@ class PokemonBag
       end
       @pockets = newpockets
     end
-  end
-
-  def sort_pocket_alphabetically()
-    current_pocket = @pockets[@lastpocket]
-    sorted = current_pocket.sort_by do |item|
-      GameData::Item.get(item[0]).name
-    end
-    sorted.reverse! if @descending_sort
-
-    @descending_sort = !@descending_sort
-    @pockets[@lastpocket] = sorted
-  end
-
-  def sort_pocket_by_quantity()
-    current_pocket = @pockets[@lastpocket]
-    sorted = current_pocket.sort_by do |item|
-      if @descending_sort
-        -item[1]
-      else
-        item[1]
-      end
-    end
-    @descending_sort = !@descending_sort
-    @pockets[@lastpocket] = sorted
-  end
-
-  def sort_pocket_by_last_used()
-  end
-
-  def sort_pocket_by_frequent_use()
   end
 
   def clear
@@ -213,6 +182,28 @@ class PokemonBag
     @registeredIndex = [0, 0, 1] if !@registeredIndex
     return @registeredIndex
   end
+
+  #Sylvi Items
+  def cloneItems(pockets, registeredItems)
+    @pockets = pockets.map { |pocket| pocket.clone }
+    @registeredItems = registeredItems.clone
+  end
+
+  #Sylvi Items
+  def clone
+    ret = super
+    ret.cloneItems(@pockets, @registeredItems)
+    return ret
+  end
+
+  #Sylvi Items
+  def make_vanilla
+    @pockets.each do |pocket|
+      pocket.delete_if { |slot| item = GameData::Item.try_get(slot[0]); item && item.modded? }
+    end
+    @registeredItems.delete_if { |item| item = GameData::Item.try_get(item); item && item.modded? }
+    return self
+  end
 end
 
 
@@ -234,6 +225,11 @@ class PCItemStorage
 
   def [](i)
     return @items[i]
+  end
+
+  #Sylvi Items
+  def []=(i,value)
+    @items[i] = value
   end
 
   def length
@@ -274,6 +270,20 @@ class PCItemStorage
   def pbDeleteItem(item, qty = 1)
     item = GameData::Item.get(item).id
     return ItemStorageHelper.pbDeleteItem(@items, item, qty)
+  end
+
+  #Sylvi Items
+  def clone
+    ret = PCItemStorage.new
+    @items.each_index { |i| ret[i] = [@items[i][0], @items[i][1]] }
+    return ret
+  end
+
+  #Sylvi Items
+  def make_vanilla
+    @items.delete_if { |slot| item = GameData::Item.try_get(slot[0]); item && item.modded? }
+    @items.compact!
+    return self
   end
 end
 

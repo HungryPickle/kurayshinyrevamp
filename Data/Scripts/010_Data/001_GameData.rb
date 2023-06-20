@@ -17,11 +17,6 @@ module GameData
       validate other => [Symbol, self, String, Integer]
       other = other.id if other.is_a?(self)
       other = other.to_sym if other.is_a?(String)
-
-      if self == GameData::Species
-        return !get(other).nil?
-      end
-
       return !self::DATA[other].nil?
     end
 
@@ -29,33 +24,12 @@ module GameData
     # @return [self]
     def get(other)
       validate other => [Symbol, self, String, Integer]
-
       return other if other.is_a?(self)
       other = other.to_sym if other.is_a?(String)
-
-      if other.to_s.match?(/\AB\d+H\d+\z/)
-        species = GameData::FusedSpecies.new(other)
-        return species
-      end
-
-      if other.is_a?(Integer) && self == GameData::Species
-        if other > NB_POKEMON
-          body_id = getBodyID(other)
-          head_id = getHeadID(other, body_id)
-          pokemon_id = getFusedPokemonIdFromDexNum(body_id, head_id)
-          return GameData::FusedSpecies.new(pokemon_id)
-        end
-      end
-
-      if !self::DATA.has_key?(other)
-        #echoln _INTL("Unknown ID {1}.", other)
-        return self::get(:PIKACHU)
-      end
-
-      #if other == :Species
-
-      #     end
-
+#      if other.is_a?(Integer)
+#        p "Please switch to symbols, thanks."
+#      end
+      raise "Unknown ID #{other}." unless self::DATA.has_key?(other)
       return self::DATA[other]
     end
 
@@ -66,23 +40,9 @@ module GameData
       validate other => [Symbol, self, String, Integer]
       return other if other.is_a?(self)
       other = other.to_sym if other.is_a?(String)
-
-      if other.to_s.match?(/\AB\d+H\d+\z/)
-        species = GameData::FusedSpecies.new(other)
-        return species
-      end
-      if other.is_a?(Integer) && self == GameData::Species
-        if other > NB_POKEMON
-          body_id = getBodyID(other)
-          head_id = getHeadID(other, body_id)
-          pokemon_id = getFusedPokemonIdFromDexNum(body_id, head_id)
-          return GameData::FusedSpecies.new(pokemon_id)
-        end
-      end
-
-      #      if other.is_a?(Integer)
-      #        p "Please switch to symbols, thanks."
-      #      end
+#      if other.is_a?(Integer)
+#        p "Please switch to symbols, thanks."
+#      end
       return (self::DATA.has_key?(other)) ? self::DATA[other] : nil
     end
 
@@ -266,8 +226,30 @@ module GameData
     TrainerType.load
     Trainer.load
     TrainerModern.load
-    TrainerExpert.load
     Metadata.load
     MapMetadata.load
+
+    #Sylvi Items
+
+    # I just put item data here unless we get a better system for this
+    # Use ID numbers 1000 and above!!
+    # https://essentialsdocs.fandom.com/wiki/Defining_an_item?oldid=1031#PBS_file_%22items.txt%22
+
+    #Item.register({
+    #  :id               => :MARIO,
+    #  :id_number        => 1000,
+    #  :name             => "Mario",
+    #  :name_plural      => "Marios",
+    #  :pocket           => 1,
+    #  :price            => 1000,
+    #  :description      => "A Mario.",
+    #  :field_use        => 1,
+    #  :battle_use       => 0,
+    #  :type             => 7,
+    #  :move             => nil
+    #})
+    #MessageTypes.set(MessageTypes::Items,            1000, "Mario")
+    #MessageTypes.set(MessageTypes::ItemPlurals,      1000, "Marios")
+    #MessageTypes.set(MessageTypes::ItemDescriptions, 1000, "A Mario.")
   end
 end

@@ -195,6 +195,24 @@ class PokemonGlobalMetadata
       $Trainer.seen_storage_creator = value
     end
   end
+
+  #Sylvi Items
+  alias _overworld_clone clone
+  def clone
+    ret = _overworld_clone
+    ret.pcItemStorage = @pcItemStorage.clone
+    ret.partner = [@partner[0], @partner[1], @partner[2], @partner[3].clone] if @partner
+    ret.mailbox = @mailbox.clone
+    return ret
+  end
+
+  #Sylvi Items
+  def make_vanilla
+    @pcItemStorage.make_vanilla if @pcItemStorage
+    @partner[3].map! { |pkmn| pkmn.clone.make_vanilla } if @partner
+    @mailbox.delete_if { |mail| item = GameData::Item.try_get(mail.item); item && item.modded? } if @mailbox
+    return self
+  end
 end
 
 
