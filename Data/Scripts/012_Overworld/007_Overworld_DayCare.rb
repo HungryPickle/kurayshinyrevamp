@@ -215,7 +215,7 @@ def pbDayCareGenerateEgg
     movemother = father
   end
   # Initial Moves
-  initialmoves = egg.getMoveList
+  initialmoves = egg.getMLStandard
   for k in initialmoves
     if k[0] <= Settings::EGG_LEVEL
       moves.push(k[1])
@@ -395,7 +395,7 @@ Events.onStepTaken += proc { |_sender,_e|
     pkmn.exp += 1   # Gain Exp
     next if pkmn.level==oldlevel
     pkmn.calc_stats
-    movelist = pkmn.getMoveList
+    movelist = pkmn.getMLStandard
     for i in movelist
       pkmn.learn_move(i[1]) if i[0]==pkmn.level   # Learned a new move
     end
