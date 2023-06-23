@@ -744,24 +744,43 @@ class PokeBattle_Move_09F < PokeBattle_Move
       }
     elsif @id == :MULTIATTACK
       @itemTypes = {
-         :FIGHTINGMEMORY => :FIGHTING,
-         :FLYINGMEMORY   => :FLYING,
-         :POISONMEMORY   => :POISON,
-         :GROUNDMEMORY   => :GROUND,
-         :ROCKMEMORY     => :ROCK,
-         :BUGMEMORY      => :BUG,
-         :GHOSTMEMORY    => :GHOST,
-         :STEELMEMORY    => :STEEL,
-         :FIREMEMORY     => :FIRE,
-         :WATERMEMORY    => :WATER,
-         :GRASSMEMORY    => :GRASS,
-         :ELECTRICMEMORY => :ELECTRIC,
-         :PSYCHICMEMORY  => :PSYCHIC,
-         :ICEMEMORY      => :ICE,
-         :DRAGONMEMORY   => :DRAGON,
-         :DARKMEMORY     => :DARK,
-         :FAIRYMEMORY    => :FAIRY
+         :FISTPLATE   => :FIGHTING,
+         :SKYPLATE    => :FLYING,
+         :TOXICPLATE  => :POISON,
+         :EARTHPLATE  => :GROUND,
+         :STONEPLATE  => :ROCK,
+         :INSECTPLATE => :BUG,
+         :SPOOKYPLATE => :GHOST,
+         :IRONPLATE   => :STEEL,
+         :FLAMEPLATE  => :FIRE,
+         :SPLASHPLATE => :WATER,
+         :MEADOWPLATE => :GRASS,
+         :ZAPPLATE    => :ELECTRIC,
+         :MINDPLATE   => :PSYCHIC,
+         :ICICLEPLATE => :ICE,
+         :DRACOPLATE  => :DRAGON,
+         :DREADPLATE  => :DARK,
+         :PIXIEPLATE  => :FAIRY
       }
+      # @itemTypes = {
+      #    :FIGHTINGMEMORY => :FIGHTING,
+      #    :FLYINGMEMORY   => :FLYING,
+      #    :POISONMEMORY   => :POISON,
+      #    :GROUNDMEMORY   => :GROUND,
+      #    :ROCKMEMORY     => :ROCK,
+      #    :BUGMEMORY      => :BUG,
+      #    :GHOSTMEMORY    => :GHOST,
+      #    :STEELMEMORY    => :STEEL,
+      #    :FIREMEMORY     => :FIRE,
+      #    :WATERMEMORY    => :WATER,
+      #    :GRASSMEMORY    => :GRASS,
+      #    :ELECTRICMEMORY => :ELECTRIC,
+      #    :PSYCHICMEMORY  => :PSYCHIC,
+      #    :ICEMEMORY      => :ICE,
+      #    :DRAGONMEMORY   => :DRAGON,
+      #    :DARKMEMORY     => :DARK,
+      #    :FAIRYMEMORY    => :FAIRY
+      # }
     end
   end
 
@@ -2993,10 +3012,10 @@ class PokeBattle_Move_0EB < PokeBattle_Move
       @battle.pbDisplay(_INTL("But it failed!"))
       return true
     end
-    # if @battle.wildBattle? && target.level>user.level
-    #   @battle.pbDisplay(_INTL("But it failed!"))
-    #   return true
-    # end
+    if @battle.wildBattle? && target.level>user.level
+      @battle.pbDisplay(_INTL("But it failed!"))
+      return true
+    end
     if @battle.trainerBattle?
       canSwitch = false
       @battle.eachInTeamFromBattlerIndex(target.index) do |_pkmn,i|
