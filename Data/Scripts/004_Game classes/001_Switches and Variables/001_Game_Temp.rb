@@ -25,11 +25,11 @@ class Game_Temp
   attr_accessor :fadestate                # for sprite hashes
   attr_accessor :background_bitmap
   attr_accessor :mart_prices
+  attr_accessor :fromkurayshop
   attr_accessor :unimportedSprites
+
   attr_accessor :nb_imported_sprites
   attr_accessor :loading_screen
-  attr_accessor :custom_sprites_list
-  attr_accessor :base_sprites_list
 
   #-----------------------------------------------------------------------------
   # * Object Initialization
@@ -57,9 +57,7 @@ class Game_Temp
     @message_window_showing = false
     @transition_processing  = false
     @mart_prices            = {}
-    @custom_sprites_list    ={}
-    @base_sprites_list    ={}
-
+    @fromkurayshop          = nil
   end
 
   def clear_mart_prices
