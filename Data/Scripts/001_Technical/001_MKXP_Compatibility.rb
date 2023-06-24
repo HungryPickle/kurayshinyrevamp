@@ -5,6 +5,21 @@ Graphics.frame_rate = 40
 
 def pbSetWindowText(string)
   System.set_window_title(string || System.game_title)
+  # System.set_window_title(System.game_title + " | Kuray's Shiny Revamp | Speed: x1")
+end
+
+def kurayRNGforChannels
+  kurayRNG = rand(0..1000)
+  if kurayRNG < 5
+    return rand(0..11)
+  elsif kurayRNG < 205
+    return rand(0..5)
+  else
+    return rand(0..2)
+  end
+  # 0.4% chance to have an inverse (4/1000*100)
+  # 4% chance to have Cyan/Magenta/Yellow (40/1000*100)
+  # change Cyan/Magenta/Yellow to 20%
 end
 
 class Bitmap
