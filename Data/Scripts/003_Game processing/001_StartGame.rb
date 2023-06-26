@@ -47,13 +47,10 @@ module Game
       for pokemon in box.pokemon
         if pokemon != nil
           if !pokemon.egg?
-            pokemon.exp_when_fused_head=nil
-            pokemon.exp_when_fused_body=nil
-            pokemon.exp_gained_since_fused=nil
             pokemon.level = 5
             pokemon.owner.id = $Trainer.id
-            pokemon.ot=$Trainer.name
             pokemon.species = GameData::Species.get(pokemon.species).get_baby_species(false)
+            pokemon.kuraycustomfile = nil
             pokemon.reset_moves
             pokemon.calc_stats
           end
@@ -106,7 +103,6 @@ module Game
     if ngp_storage != nil
       $PokemonStorage = ngp_clean_pc_data(ngp_storage, ngp_trainer.party)
     end
-    onStartingNewGame()
   end
 
   # Loads the game from the given save data and starts the map scene.
@@ -120,7 +116,6 @@ module Game
     $game_map.update
     $PokemonMap.updateMap
     $scene = Scene_Map.new
-    onLoadExistingGame()
   end
 
   # Loads and validates the map. Called when loading a saved game.
