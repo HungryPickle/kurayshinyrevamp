@@ -281,7 +281,6 @@ end
 #
 #===============================================================================
 def pbWriteCup(id, rules)
-  return
   return if !$DEBUG
   trlists = (load_data("Data/trainer_lists.dat") rescue [])
   list = []

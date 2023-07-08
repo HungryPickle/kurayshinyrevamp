@@ -56,9 +56,7 @@ def pbNicknameAndStore(pkmn)
   $Trainer.pokedex.set_seen(pkmn.species)
   $Trainer.pokedex.set_owned(pkmn.species)
   pbNickname(pkmn)
-  promptCaughtPokemonAction(pkmn)
-
-  #pbStorePokemon(pkmn)
+  pbStorePokemon(pkmn)
 end
 
 #===============================================================================

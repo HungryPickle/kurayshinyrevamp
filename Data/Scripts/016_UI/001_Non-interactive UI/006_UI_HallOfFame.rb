@@ -245,7 +245,7 @@ class HallOfFame_Scene
 
   def createTrainerBattler
     @sprites["trainer"] = IconSprite.new(@viewport)
-    @sprites["trainer"].setBitmapDirectly(generate_front_trainer_sprite_bitmap())
+    @sprites["trainer"].setBitmap(GameData::TrainerType.front_sprite_filename($Trainer.trainer_type))
     if !SINGLEROW
       @sprites["trainer"].x = Graphics.width - 96
       @sprites["trainer"].y = 160
@@ -276,9 +276,14 @@ class HallOfFame_Scene
     end
   end
 
-  #Get difficulty for displaying in-game
   def getDifficulty
-    return getDisplayDifficulty()
+    if $game_switches[SWITCH_GAME_DIFFICULTY_EASY]
+      return "Easy"
+    elsif $game_switches[SWITCH_GAME_DIFFICULTY_HARD]
+      return "Hard"
+    else
+      return "Normal"
+    end
   end
 
   def writeTrainerData
@@ -339,7 +344,7 @@ class HallOfFame_Scene
     pbDrawTextPositions(overlay, [[_INTL("Welcome to the Hall of Fame!"),
                                    Graphics.width / 2, Graphics.height - 80, 2, BASECOLOR, SHADOWCOLOR]])
 
-    writeCurrentDate(overlay, 120, Graphics.height - 50)
+    writeCurrentDate(overlay, 120 , Graphics.height - 50)
     writeGameMode(overlay, (Graphics.width / 2) + 100, Graphics.height - 50)
   end
 
@@ -352,14 +357,11 @@ class HallOfFame_Scene
   def writeGameMode(overlay, x, y)
     gameMode = "Classic mode"
     if $game_switches[SWITCH_MODERN_MODE]
-      gameMode = "Remix mode"
-    end
-    if $game_switches[SWITCH_EXPERT_MODE]
-      gameMode = "Expert mode"
+      gameMode = "Modern mode"
     end
     if $game_switches[SWITCH_SINGLE_POKEMON_MODE]
       pokemon_number = pbGet(VAR_SINGLE_POKEMON_MODE)
-      if pokemon_number.is_a?(Integer) && pokemon_number > 0
+      if pokemon_number.is_a?(Integer) && pokemon_number >0
         pokemon = GameData::Species.get(pokemon_number)
         gameMode = pokemon.real_name + " mode"
       else

@@ -6,7 +6,6 @@
 class Scene_Map
   attr_reader :spritesetGlobal
   attr_reader :map_renderer
-  attr_accessor :spritesets
 
   def spriteset
     for i in @spritesets.values
@@ -56,7 +55,6 @@ class Scene_Map
   def autofade(mapid)
     playingBGM = $game_system.playing_bgm
     playingBGS = $game_system.playing_bgs
-    return if playingBGM && playingBGM.name == "ultra_metropolis" && darknessEffectOnMap(mapid)
     return if !playingBGM && !playingBGS
     map = load_data(sprintf("Data/Map%03d.rxdata", mapid))
     if playingBGM && map.autoplay_bgm
@@ -210,11 +208,10 @@ class Scene_Map
         unless $game_system.menu_disabled || $game_player.moving?
           $game_temp.menu_calling = true
           $game_temp.menu_beep = true
-          dayOfWeek = getDayOfTheWeek().to_s
-          $scene.spriteset.addUserSprite(LocationWindow.new($game_map.name+ "\n"+ pbGetTimeNow.strftime("%I:%M %p") + "\n" + dayOfWeek))
+          $scene.spriteset.addUserSprite(LocationWindow.new($game_map.name+ "\n"+ pbGetTimeNow.strftime("%I:%M %p")))
         end
       elsif Input.trigger?(Input::SPECIAL)
-        unless $game_system.menu_disabled || $game_player.moving?
+        unless $game_player.moving?
           $PokemonTemp.keyItemCalling = true
         end
       elsif Input.press?(Input::F9)
@@ -236,10 +233,6 @@ class Scene_Map
         Events.onAction.trigger(self)
       end
     end
-  end
-
-  def reset_player_sprite
-    @spritesetGlobal.playersprite.updateBitmap
   end
 
   def reset_map(fadeout = false)

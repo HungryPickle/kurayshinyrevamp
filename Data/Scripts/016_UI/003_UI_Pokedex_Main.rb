@@ -8,7 +8,6 @@ class Window_Pokedex < Window_DrawableCommand
     @selarrow     = AnimatedBitmap.new("Graphics/Pictures/Pokedex/cursor_list")
     @pokeballOwn  = AnimatedBitmap.new("Graphics/Pictures/Pokedex/icon_own")
     @pokeballSeen = AnimatedBitmap.new("Graphics/Pictures/Pokedex/icon_seen")
-    @allow_arrows_jump=true
     self.baseColor   = Color.new(88,88,80)
     self.shadowColor = Color.new(168,184,184)
     self.windowskin  = nil
@@ -231,8 +230,7 @@ class PokemonPokedex_Scene
     pbUpdateSpriteHash(@sprites)
   end
 
-  def pbStartScene(filter_owned=false)
-    @filter_owned=filter_owned
+  def pbStartScene
     @sliderbitmap       = AnimatedBitmap.new("Graphics/Pictures/Pokedex/icon_slider")
     @typebitmap         = AnimatedBitmap.new(_INTL("Graphics/Pictures/Pokedex/icon_types"))
     @shapebitmap        = AnimatedBitmap.new("Graphics/Pictures/Pokedex/icon_shapes")
@@ -346,7 +344,7 @@ class PokemonPokedex_Scene
   # end
 
 
-  def pbGetDexList(filter_owned=false)
+  def pbGetDexList()
     dexlist=[]
     regionalSpecies=[]
     for i in 1..PBSpecies.maxValue
@@ -355,10 +353,8 @@ class PokemonPokedex_Scene
     for i in 1...PBSpecies.maxValue
       nationalSpecies=i
       if $Trainer.seen?(nationalSpecies)
-        if !filter_owned || $Trainer.owned?(nationalSpecies)
-          species = GameData::Species.get(nationalSpecies)
-          dexlist.push([species.id_number,species.real_name,0,0,i+1,0])
-        end
+        species = GameData::Species.get(nationalSpecies)
+        dexlist.push([species.id_number,species.real_name,0,0,i+1,0])
       end
     end
     return dexlist
@@ -368,7 +364,7 @@ class PokemonPokedex_Scene
     if index == nil
       index = 0
     end
-    dexlist = pbGetDexList(@filter_owned)
+    dexlist = pbGetDexList
     case $PokemonGlobal.pokedexMode
     when MODENUMERICAL
       # Hide the Dex number 0 species if unseen
@@ -1041,12 +1037,7 @@ class PokemonPokedex_Scene
                     _INTL("U"),_INTL("V"),_INTL("W"),_INTL("X"),_INTL("Y"),
                     _INTL("Z")]
     @typeCommands = []
-
-    count = 0
-    GameData::Type.each do |t|
-      @typeCommands.push(t) if !t.pseudo_type && count <= 18
-      count +=1
-    end
+    GameData::Type.each { |t| @typeCommands.push(t) if !t.pseudo_type }
     @typeCommands.sort! { |a, b| a.id_number <=> b.id_number }
     @heightCommands = [1,2,3,4,5,6,7,8,9,10,
                        11,12,13,14,15,16,17,18,19,20,
@@ -1182,7 +1173,7 @@ class PokemonPokedex_Scene
     return 0
   end
 
-  def pbPokedex()
+  def pbPokedex
     pbActivateWindow(@sprites,"pokedex") {
       loop do
         Graphics.update
@@ -1225,9 +1216,9 @@ class PokemonPokedexScreen
     @scene = scene
   end
 
-  def pbStartScreen(filter_owned=false)
-    @scene.pbStartScene(filter_owned)
-    @scene.pbPokedex()
+  def pbStartScreen
+    @scene.pbStartScene
+    @scene.pbPokedex
     @scene.pbEndScene
   end
 end

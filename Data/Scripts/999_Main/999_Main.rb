@@ -75,16 +75,14 @@ def sortCustomBattlers()
     next if !filename.end_with?(".png")
     headNum = filename.split('.')[0]
     oldPath = Settings::CUSTOM_BATTLERS_FOLDER + filename
-    newDir = Settings::CUSTOM_BATTLERS_FOLDER_INDEXED + headNum.to_s
-    newPath = newDir + "/" + filename
+    newPath = Settings::CUSTOM_BATTLERS_FOLDER_INDEXED + headNum.to_s + "/" + filename
     begin
       if File.file?(newPath)
         alreadyExists[oldPath] = newPath
         echo "\nFile " + newPath + " already exists... Skipping."
 
       else
-          Dir.mkdir(newDir) if !Dir.exist?(newDir)
-          File.rename(oldPath, newPath)
+        File.rename(oldPath, newPath)
         $game_temp.nb_imported_sprites+=1
         echo "\nSorted " + filename + " into " + newPath
       end
@@ -146,7 +144,6 @@ def mainFunctionDebug
     Graphics.update
     Graphics.freeze
     #clearTempFolder()
-    createCustomSpriteFolders()
     begin
       sortCustomBattlers()
     rescue

@@ -154,9 +154,7 @@ module GameData
       end
       if $game_switches[SWITCH_RANDOM_GYM_PERSIST_TEAMS] && $PokemonGlobal.randomGymTrainersHash != nil
         if $PokemonGlobal.randomGymTrainersHash[trainerId] != nil && $PokemonGlobal.randomGymTrainersHash[trainerId].length >= $PokemonGlobal.randomTrainersHash[trainerId].length
-          newSpecies = getSpecies($PokemonGlobal.randomGymTrainersHash[trainerId][pokemonIndex])
-          return newSpecies if newSpecies
-          return species
+          return getSpecies($PokemonGlobal.randomGymTrainersHash[trainerId][pokemonIndex])
         end
       end
       new_species = generateRandomGymSpecies(species)
@@ -200,7 +198,6 @@ module GameData
 
     def replace_species_to_randomized(species, trainerId, pokemonIndex)
       return species if $game_switches[SWITCH_FIRST_RIVAL_BATTLE]
-      return species if getDexNumberForSpecies(species) >= Settings::ZAPMOLCUNO_NB
       if isGymBattle() && $game_switches[SWITCH_RANDOMIZE_GYMS_SEPARATELY]
         return replace_species_to_randomized_gym(species, trainerId, pokemonIndex)
       end

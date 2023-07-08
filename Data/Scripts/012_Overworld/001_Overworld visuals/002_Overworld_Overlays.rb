@@ -38,47 +38,7 @@ class LocationWindow
   end
 end
 
-class NightmareSprite < SpriteWrapper
-  attr_reader :radius
 
-  def initialize(viewport=nil)
-    super(viewport)
-    @darkness = BitmapWrapper.new(Graphics.width,Graphics.height)
-    @radius = radiusMin
-    self.bitmap = @darkness
-    self.z      = 99998
-    refresh
-  end
-
-  def dispose
-    @darkness.dispose
-    super
-  end
-
-  def radiusMin; return 64;  end   # Before using Flash
-  def radiusMax; return 176; end   # After using Flash
-
-  def radius=(value)
-    @radius = value
-    refresh
-  end
-
-  def refresh
-    @darkness.fill_rect(0,0,Graphics.width,Graphics.height,Color.new(0,0,0,255))
-    cx = Graphics.width/2
-    cy = Graphics.height/2
-    cradius = @radius
-    numfades = 5
-    for i in 1..numfades
-      for j in cx-cradius..cx+cradius
-        diff2 = (cradius * cradius) - ((j - cx) * (j - cx))
-        diff = Math.sqrt(diff2)
-        @darkness.fill_rect(j,cy-diff,1,diff*2,Color.new(0,0,0,255.0*(numfades-i)/numfades))
-      end
-      cradius = (cradius*0.9).floor
-    end
-  end
-end
 
 #===============================================================================
 # Visibility circle in dark maps
@@ -144,11 +104,6 @@ class LightEffect
     @disposed = false
   end
 
-  def opacity=(value)
-    @light.opacity=value
-    update
-  end
-
   def disposed?
     return @disposed
   end
@@ -190,31 +145,6 @@ class LightEffect_Basic < LightEffect
     return if !@light || !@event
     super
     @light.opacity = 100
-    @light.ox      = 32
-    @light.oy      = 48
-    if (Object.const_defined?(:ScreenPosHelper) rescue false)
-      @light.x      = ScreenPosHelper.pbScreenX(@event)
-      @light.y      = ScreenPosHelper.pbScreenY(@event)
-      @light.zoom_x = ScreenPosHelper.pbScreenZoomX(@event)
-    else
-      @light.x      = @event.screen_x
-      @light.y      = @event.screen_y
-      @light.zoom_x = 1.0
-    end
-    @light.zoom_y = @light.zoom_x
-    @light.tone   = $game_screen.tone
-  end
-end
-
-class LightEffect_GlowPlant < LightEffect
-  def update
-    return if !darknessEffectOnCurrentMap()
-    mt_moon_direction = getMtMoonDirection()
-    #return if $game_player.direction != mt_moon_direction
-    return if !@light || !@event
-    super
-    @light.opacity = $game_player.direction == mt_moon_direction ? 100 : 0
-    @light.opacity = 150 if isInMtMoon()
     @light.ox      = 32
     @light.oy      = 48
     if (Object.const_defined?(:ScreenPosHelper) rescue false)

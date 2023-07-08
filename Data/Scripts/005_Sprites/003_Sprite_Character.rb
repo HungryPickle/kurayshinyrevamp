@@ -1,11 +1,10 @@
 class BushBitmap
   def initialize(bitmap, isTile, depth)
-    @bitmaps = []
-    @bitmap = bitmap
-    @isTile = isTile
+    @bitmaps  = []
+    @bitmap   = bitmap
+    @isTile   = isTile
     @isBitmap = @bitmap.is_a?(Bitmap)
-    @depth = depth
-    @manual_refresh=false
+    @depth    = depth
   end
 
   def dispose
@@ -54,22 +53,14 @@ class BushBitmap
   end
 end
 
-def event_is_trainer(event)
-  return $game_map.events[event.id] && event.name[/trainer\((\d+)\)/i]
-end
+
 
 class Sprite_Character < RPG::Sprite
   attr_accessor :character
 
   def initialize(viewport, character = nil)
     super(viewport)
-    @character = character
-    if darknessEffectOnCurrentMap()
-      if @character.is_a?(Game_Event)
-        $game_map.events[@character.id].erase if event_is_trainer(@character)
-      end
-    end
-
+    @character    = character
     @oldbushdepth = 0
     @spriteoffset = false
     if !character || character == $game_player || (character.name[/reflection/i] rescue false)
@@ -77,11 +68,6 @@ class Sprite_Character < RPG::Sprite
     end
     @surfbase = Sprite_SurfBase.new(self, character, viewport) if character == $game_player
     update
-  end
-
-  def setSurfingPokemon(pokemonSpecies)
-    @surfingPokemon = pokemonSpecies
-    @surfbase.setPokemon(pokemonSpecies) if @surfbase
   end
 
   def groundY
@@ -105,61 +91,17 @@ class Sprite_Character < RPG::Sprite
     super
   end
 
-  def updateBitmap
-    @manual_refresh=true
-  end
-
-  def pbLoadOutfitBitmap(outfitFileName)
-    # Construct the file path for the outfit bitmap based on the given value
-    #outfitFileName = sprintf("Graphics/Outfits/%s", value)
-
-    # Attempt to load the outfit bitmap
-    begin
-      outfitBitmap = RPG::Cache.load_bitmap("", outfitFileName)
-      return outfitBitmap
-    rescue
-      return nil
-    end
-  end
-
-
-  def generateClothedBitmap()
-    return
-  end
-
-  def applyDayNightTone()
-    if @character.is_a?(Game_Event) && @character.name[/regulartone/i]
-      self.tone.set(0, 0, 0, 0)
-    else
-      pbDayNightTint(self)
-    end
-  end
-
-  def updateCharacterBitmap
-    AnimatedBitmap.new('Graphics/Characters/' + @character_name, @character_hue)
-  end
-
-  def should_update?
-    return @tile_id != @character.tile_id ||
-      @character_name != @character.character_name ||
-      @character_hue != @character.character_hue ||
-      @oldbushdepth != @character.bush_depth ||
-      @manual_refresh
-  end
-
-  def refreshOutfit()
-    self.bitmap = getClothedPlayerSprite(true)
-  end
-
   def update
     return if @character.is_a?(Game_Event) && !@character.should_update?
     super
-    if should_update?
-      @manual_refresh=false
-      @tile_id = @character.tile_id
+    if @tile_id != @character.tile_id ||
+       @character_name != @character.character_name ||
+       @character_hue != @character.character_hue ||
+       @oldbushdepth != @character.bush_depth
+      @tile_id        = @character.tile_id
       @character_name = @character.character_name
-      @character_hue = @character.character_hue
-      @oldbushdepth = @character.bush_depth
+      @character_hue  = @character.character_hue
+      @oldbushdepth   = @character.bush_depth
       if @tile_id >= 384
         @charbitmap.dispose if @charbitmap
         @charbitmap = pbGetTileBitmap(@character.map.tileset_name, @tile_id,
@@ -176,14 +118,13 @@ class Sprite_Character < RPG::Sprite
         @character.sprite_size = [@cw, @ch]
       else
         @charbitmap.dispose if @charbitmap
-
-        @charbitmap = updateCharacterBitmap()
-
-        RPG::Cache.retain('Graphics/Characters/', @character_name, @character_hue) if @charbitmapAnimated = true
+        @charbitmap = AnimatedBitmap.new(
+           'Graphics/Characters/' + @character_name, @character_hue)
+        RPG::Cache.retain('Graphics/Characters/', @character_name, @character_hue) if @character == $game_player
+        @charbitmapAnimated = true
         @bushbitmap.dispose if @bushbitmap
         @bushbitmap = nil
-        #@spriteoffset = @character_name[/offset/i]
-        @spriteoffset = @character_name[/fish/i] ||  @character_name[/dive/i] ||  @character_name[/surf/i]
+        @spriteoffset = @character_name[/offset/i]
         @cw = @charbitmap.width / 4
         @ch = @charbitmap.height / 4
         self.ox = @cw / 2
@@ -193,11 +134,7 @@ class Sprite_Character < RPG::Sprite
     @charbitmap.update if @charbitmapAnimated
     bushdepth = @character.bush_depth
     if bushdepth == 0
-      if @character == $game_player
-        self.bitmap = getClothedPlayerSprite()#generateClothedBitmap()
-      else
-        self.bitmap = (@charbitmapAnimated) ? @charbitmap.bitmap : @charbitmap
-      end
+      self.bitmap = (@charbitmapAnimated) ? @charbitmap.bitmap : @charbitmap
     else
       @bushbitmap = BushBitmap.new(@charbitmap, (@tile_id >= 384), bushdepth) if !@bushbitmap
       self.bitmap = @bushbitmap.bitmap
@@ -211,16 +148,20 @@ class Sprite_Character < RPG::Sprite
       self.oy -= @character.bob_height
     end
     if self.visible
-      applyDayNightTone()
+      if @character.is_a?(Game_Event) && @character.name[/regulartone/i]
+        self.tone.set(0, 0, 0, 0)
+      else
+        pbDayNightTint(self)
+      end
     end
-    self.x = @character.screen_x
-    self.y = @character.screen_y
-    self.z = @character.screen_z(@ch)
-    #    self.zoom_x     = Game_Map::TILE_WIDTH / 32.0
-    #    self.zoom_y     = Game_Map::TILE_HEIGHT / 32.0
-    self.opacity = @character.opacity
+    self.x          = @character.screen_x
+    self.y          = @character.screen_y
+    self.z          = @character.screen_z(@ch)
+#    self.zoom_x     = Game_Map::TILE_WIDTH / 32.0
+#    self.zoom_y     = Game_Map::TILE_HEIGHT / 32.0
+    self.opacity    = @character.opacity
     self.blend_type = @character.blend_type
-    #    self.bush_depth = @character.bush_depth
+#    self.bush_depth = @character.bush_depth
     if @character.animation_id != 0
       animation = $data_animations[@character.animation_id]
       animation(animation, true)
