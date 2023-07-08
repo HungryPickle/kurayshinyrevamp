@@ -17,7 +17,7 @@
 class HallOfFame_Scene
   # When true, all pokémon will be in one line
   # When false, all pokémon will be in two lines
-  @singlerow = true
+  SINGLEROW = false
   # Make the pokémon movement ON in hall entry
   ANIMATION = true
   # Speed in pokémon movement in hall entry. Don't use less than 2!
@@ -34,7 +34,7 @@ class HallOfFame_Scene
   # Allow eggs to be show and saved in hall
   ALLOWEGGS = true
   # Remove the hallbars when the trainer sprite appears
-  REMOVEBARS = false
+  REMOVEBARS = true
   # The final fade speed on entry
   FINALFADESPEED = 16
   # Sprites opacity value when them aren't selected
@@ -48,8 +48,7 @@ class HallOfFame_Scene
     @viewport = Viewport.new(0, 0, Graphics.width, Graphics.height)
     @viewport.z = 99999
     # Comment the below line to doesn't use a background
-    bgFile = @singlerow ? "hallfamebg" : "hallfamebg_multiline"
-    addBackgroundPlane(@sprites, "bg", bgFile, @viewport)
+    addBackgroundPlane(@sprites, "bg", "hallfamebg", @viewport)
     @sprites["hallbars"] = IconSprite.new(@viewport)
     @sprites["hallbars"].setBitmap("Graphics/Pictures/hallfamebars")
     @sprites["overlay"] = BitmapSprite.new(Graphics.width, Graphics.height, @viewport)
@@ -62,7 +61,6 @@ class HallOfFame_Scene
   end
 
   def pbStartSceneEntry
-    @singlerow = true
     pbStartScene
     @useMusic = (ENTRYMUSIC && ENTRYMUSIC != "")
     pbBGMPlay(ENTRYMUSIC) if @useMusic
@@ -74,12 +72,9 @@ class HallOfFame_Scene
   end
 
   def pbStartScenePC
-    @singlerow = false
     pbStartScene
     @hallIndex = $PokemonGlobal.hallOfFame.size - 1
-
-    echoln $PokemonGlobal.hallOfFame[-1]
-    @hallEntry = $PokemonGlobal.hallOfFame[-1][:TEAM]
+    @hallEntry = $PokemonGlobal.hallOfFame[-1]
     createBattlers(false)
     pbFadeInAndShow(@sprites) { pbUpdate }
     pbUpdatePC
@@ -131,61 +126,32 @@ class HallOfFame_Scene
       # Clones every pokémon object
       @hallEntry.push($Trainer.party[i].clone) if !$Trainer.party[i].egg? || ALLOWEGGS
     end
-    entryData = {}
-    entryData[:TEAM] = @hallEntry
-    entryData[:DIFFICULTY] = getDifficulty
-    entryData[:MODE] = getCurrentGameMode()
-    entryData[:DATE] = getCurrentDate()
-
-    #Save trainer data (unused for now)
-    entryData[:TRAINER_HAT] = $Trainer.hat
-    entryData[:TRAINER_HAT_COLOR] = $Trainer.hat_color
-    entryData[:TRAINER_HAIR] = $Trainer.hair
-    entryData[:TRAINER_HAIR_COLOR] = $Trainer.hair_color
-    entryData[:TRAINER_CLOTHES] = $Trainer.clothes
-    entryData[:TRAINER_CLOTHES_COLOR] = $Trainer.clothes_color
-    entryData[:TRAINER_SKIN] = $Trainer.skin_tone
-
     # Update the global variables
-    $PokemonGlobal.hallOfFame.push(entryData)
+    $PokemonGlobal.hallOfFame.push(@hallEntry)
     $PokemonGlobal.hallOfFameLastNumber += 1
     $PokemonGlobal.hallOfFame.delete_at(0) if HALLLIMIT > -1 &&
-    $PokemonGlobal.hallOfFame.size > HALLLIMIT
+      $PokemonGlobal.hallOfFame.size > HALLLIMIT
   end
 
   # Return the x/y point position in screen for battler index number
   # Don't use odd numbers!
   def xpointformula(battlernumber)
     ret = 0
-    if !@singlerow
+    if !SINGLEROW
       ret = 92 + 160 * xpositionformula(battlernumber) #32
     else
-      start_position = -16 #-56
-      spacing = 70 # spacing between mons
-      ret = (spacing * (battlernumber / 2) + 48) * (xpositionformula(battlernumber) - 1)
-
-      gap_size = 40 #gap for the trainer sprite in the middle
-      if battlernumber % 2 == 0 #left side
-        ret -= gap_size / 2
-      else
-        ret += gap_size / 2
-      end
-      ret += Graphics.width / 2 + start_position
+      ret = (60 * (battlernumber / 2) + 48) * (xpositionformula(battlernumber) - 1)
+      ret += Graphics.width / 2 - 56
     end
     return ret
   end
 
   def ypointformula(battlernumber)
     ret = 0
-    if !@singlerow
+    if !SINGLEROW
       ret = 92 + 128 * ypositionformula(battlernumber) / 2
     else
-      y_position_base = 125
-      height_increase = 20
-      # Calculate the decrement based on the battlernumber:
-      # Each pair (1-2, 3-4, etc.) will decrease y by 20
-      y_decrement = 40 - height_increase * (battlernumber / 2)
-      ret = y_position_base + y_decrement
+      ret = 96 - 8 * (battlernumber / 2)
     end
     return ret
   end
@@ -193,7 +159,7 @@ class HallOfFame_Scene
   # Returns 0, 1 or 2 as the x/y column value
   def xpositionformula(battlernumber)
     ret = 0
-    if !@singlerow
+    if !SINGLEROW
       ret = (battlernumber / 3 % 2 == 0) ? (19 - battlernumber) % 3 : (19 + battlernumber) % 3
     else
       ret = battlernumber % 2 * 2
@@ -203,7 +169,7 @@ class HallOfFame_Scene
 
   def ypositionformula(battlernumber)
     ret = 0
-    if !@singlerow
+    if !SINGLEROW
       ret = (battlernumber / 3) % 2 * 2
     else
       ret = 1
@@ -255,7 +221,7 @@ class HallOfFame_Scene
         @sprites["pokemon#{i}"].x += (128 - @sprites["pokemon#{i}"].bitmap.width) / 2
         @sprites["pokemon#{i}"].y += (128 - @sprites["pokemon#{i}"].bitmap.height) / 2
       end
-      @sprites["pokemon#{i}"].z = 7 - i if @singlerow
+      @sprites["pokemon#{i}"].z = 7 - i if SINGLEROW
       next if !hide
       # Animation distance calculation
       horizontal = 1 - xpositionformula(i)
@@ -279,15 +245,14 @@ class HallOfFame_Scene
 
   def createTrainerBattler
     @sprites["trainer"] = IconSprite.new(@viewport)
-    @sprites["trainer"].setBitmapDirectly(generate_front_trainer_sprite_bitmap())
-    if !@singlerow
+    @sprites["trainer"].setBitmap(GameData::TrainerType.front_sprite_filename($Trainer.trainer_type))
+    if !SINGLEROW
       @sprites["trainer"].x = Graphics.width - 96
       @sprites["trainer"].y = 160
     else
-      @sprites["trainer"].x = Graphics.width / 2 # - 96
+      @sprites["trainer"].x = Graphics.width / 2
       @sprites["trainer"].y = 178
     end
-    @sprites["trainer"].opacity = 255
     @sprites["trainer"].z = 9
     @sprites["trainer"].ox = @sprites["trainer"].bitmap.width / 2
     @sprites["trainer"].oy = @sprites["trainer"].bitmap.height / 2
@@ -297,23 +262,28 @@ class HallOfFame_Scene
     end
     @xmovement[@battlerIndex] = 0
     @ymovement[@battlerIndex] = 0
-    #if (ANIMATION)#) && !@singlerow) # Trainer Animation
-    startpoint = (Graphics.width / 2) - 200
-    # 2 is the trainer speed
-    @xmovement[@battlerIndex] = (startpoint - @sprites["trainer"].x) / 2
-    @sprites["trainer"].x = startpoint
-    # else
-    #   ENTRYWAITTIME.times do
-    #     Graphics.update
-    #     Input.update
-    #     pbUpdate
-    #   end
-    # end
+    if (ANIMATION && !SINGLEROW) # Trainer Animation
+      startpoint = Graphics.width / 2
+      # 2 is the trainer speed
+      @xmovement[@battlerIndex] = (startpoint - @sprites["trainer"].x) / 2
+      @sprites["trainer"].x = startpoint
+    else
+      ENTRYWAITTIME.times do
+        Graphics.update
+        Input.update
+        pbUpdate
+      end
+    end
   end
 
-  #Get difficulty for displaying in-game
   def getDifficulty
-    return getDisplayDifficulty()
+    if $game_switches[SWITCH_GAME_DIFFICULTY_EASY]
+      return "Easy"
+    elsif $game_switches[SWITCH_GAME_DIFFICULTY_HARD]
+      return "Hard"
+    else
+      return "Normal"
+    end
   end
 
   def writeTrainerData
@@ -374,45 +344,24 @@ class HallOfFame_Scene
     pbDrawTextPositions(overlay, [[_INTL("Welcome to the Hall of Fame!"),
                                    Graphics.width / 2, Graphics.height - 80, 2, BASECOLOR, SHADOWCOLOR]])
 
-    writeDate(overlay, 120, Graphics.height - 50)
+    writeCurrentDate(overlay, 120 , Graphics.height - 50)
     writeGameMode(overlay, (Graphics.width / 2) + 100, Graphics.height - 50)
   end
 
-  def writeWelcomePC
-    overlay = @sprites["overlay"].bitmap
-    overlay.clear
-    pbDrawTextPositions(overlay, [[_INTL("Entered the Hall of Fame!"),
-                                   Graphics.width / 2, Graphics.height - 80, 2, BASECOLOR, SHADOWCOLOR]])
-
-    date = $PokemonGlobal.hallOfFame[@hallIndex][:DATE]
-    mode = $PokemonGlobal.hallOfFame[@hallIndex][:MODE]
-    difficulty = $PokemonGlobal.hallOfFame[@hallIndex][:DIFFICULTY]
-
-    writeDate(overlay, 120, Graphics.height - 50,date) if date
-    writeGameMode(overlay, (Graphics.width / 2) + 100, Graphics.height - 50, mode, difficulty) if mode && difficulty
-  end
-
-  def writeDate(overlay, x, y, timeString = nil)
-    timeString = getCurrentDate() if !timeString
+  def writeCurrentDate(overlay, x, y)
+    currentTime = Time.new
+    timeString = currentTime.year.to_s + "-" + ("%02d" % currentTime.month) + "-" + ("%02d" % currentTime.day)
     pbDrawTextPositions(overlay, [[_INTL("{1}", timeString), x, y, 2, BASECOLOR, SHADOWCOLOR]])
   end
 
-  def getCurrentDate()
-    currentTime = Time.new
-    return currentTime.year.to_s + "-" + ("%02d" % currentTime.month) + "-" + ("%02d" % currentTime.day)
-  end
-
-  def getCurrentGameMode()
+  def writeGameMode(overlay, x, y)
     gameMode = "Classic mode"
     if $game_switches[SWITCH_MODERN_MODE]
-      gameMode = "Remix mode"
-    end
-    if $game_switches[SWITCH_EXPERT_MODE]
-      gameMode = "Expert mode"
+      gameMode = "Modern mode"
     end
     if $game_switches[SWITCH_SINGLE_POKEMON_MODE]
       pokemon_number = pbGet(VAR_SINGLE_POKEMON_MODE)
-      if pokemon_number.is_a?(Integer) && pokemon_number > 0
+      if pokemon_number.is_a?(Integer) && pokemon_number >0
         pokemon = GameData::Species.get(pokemon_number)
         gameMode = pokemon.real_name + " mode"
       else
@@ -425,13 +374,8 @@ class HallOfFame_Scene
     if $game_switches[ENABLED_DEBUG_MODE_AT_LEAST_ONCE] || $DEBUG
       gameMode = "Debug mode"
     end
-    return gameMode
-  end
 
-  def writeGameMode(overlay, x, y, gameMode = nil, difficulty = nil)
-    gameMode = getCurrentGameMode() if !gameMode
-    difficulty = getDifficulty() if !difficulty
-    pbDrawTextPositions(overlay, [[_INTL("{1} ({2})", gameMode, difficulty), x, y, 2, BASECOLOR, SHADOWCOLOR]])
+    pbDrawTextPositions(overlay, [[_INTL("{1} ({2})", gameMode, getDifficulty), x, y, 2, BASECOLOR, SHADOWCOLOR]])
   end
 
   def pbAnimationLoop
@@ -495,20 +439,18 @@ class HallOfFame_Scene
             # Show the welcome message and preparates the trainer
             setPokemonSpritesOpacity(-1)
             writeWelcome
-            createTrainerBattler
             (ENTRYWAITTIME * 2 * Graphics.frame_rate / 20).times do
-              moveSprite(-1)
               Graphics.update
               Input.update
               pbUpdate
             end
-
             while !(waitForInput)
               Graphics.update
               Input.update
               pbUpdate
             end
-            setPokemonSpritesOpacity(-1, OPACITY) # if !@singlerow
+            setPokemonSpritesOpacity(-1, OPACITY) if !SINGLEROW
+            createTrainerBattler
           end
         end
       end
@@ -537,23 +479,16 @@ class HallOfFame_Scene
 
   def pbUpdatePC
     # Change the team
-    if @battlerIndex >= @hallEntry.size + 1
+    if @battlerIndex >= @hallEntry.size
       @hallIndex -= 1
       return false if @hallIndex == -1
-      @hallEntry = $PokemonGlobal.hallOfFame[@hallIndex][:TEAM]
+      @hallEntry = $PokemonGlobal.hallOfFame[@hallIndex]
       @battlerIndex = 0
       createBattlers(false)
-    elsif @battlerIndex == @hallEntry.size
-      for n in 0...@hallEntry.size
-        @sprites["pokemon#{n}"].opacity = 255
-      end
-      echoln @hallEntry
-      writeWelcomePC
-      return true
     elsif @battlerIndex < 0
       @hallIndex += 1
       return false if @hallIndex >= $PokemonGlobal.hallOfFame.size
-      @hallEntry = $PokemonGlobal.hallOfFame[@hallIndex][:TEAM]
+      @hallEntry = $PokemonGlobal.hallOfFame[@hallIndex]
       @battlerIndex = @hallEntry.size - 1
       createBattlers(false)
     end
@@ -619,37 +554,9 @@ class PokemonGlobalMetadata
   # Number necessary if hallOfFame array reach in its size limit
   attr_writer :hallOfFameLastNumber
 
-  #
-  # [{:TEAM:[], :DATE:string, :MODE:string, :DIFFICULTY:string}]
-  #
   def hallOfFame
     @hallOfFame = [] if !@hallOfFame
-    if @hallOfFame.size > 0 && @hallOfFame[0].is_a?(Array)
-      echoln "converting hall of fame"
-      convertedHallOfFame = []
-      @hallOfFame.each do |team|
-        hallOfFame = {}
-        hallOfFame[:TEAM] = team
-        hallOfFame[:DATE] = nil
-        hallOfFame[:MODE] = nil
-        hallOfFame[:DIFFICULTY] = nil
-
-        hallOfFame[:TRAINER_HAT] = nil
-        hallOfFame[:TRAINER_HAT_COLOR] = nil
-        hallOfFame[:TRAINER_HAIR] = nil
-        hallOfFame[:TRAINER_HAIR_COLOR] = nil
-        hallOfFame[:TRAINER_CLOTHES] = nil
-        hallOfFame[:TRAINER_CLOTHES_COLOR] = nil
-        hallOfFame[:TRAINER_SKIN] = nil
-
-        convertedHallOfFame << hallOfFame
-      end
-      @hallOfFame = convertedHallOfFame
-      echoln @hallOfFame
-    end
     return @hallOfFame
-    # @hallOfFame = [] if !@hallOfFame
-    # return @hallOfFame
   end
 
   def hallOfFameLastNumber

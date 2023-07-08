@@ -123,12 +123,8 @@ class PokemonRuleSet
     return self
   end
 
-  def isPokemonValid?(pkmn,ableProc=nil)
+  def isPokemonValid?(pkmn)
     return false if !pkmn
-    if ableProc
-      return false if !ableProc.call(pkmn)
-    end
-
     for rule in @pokemonRules
       return false if !rule.isValid?(pkmn)
     end

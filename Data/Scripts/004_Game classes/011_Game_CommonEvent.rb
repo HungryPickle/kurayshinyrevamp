@@ -11,7 +11,6 @@ class Game_CommonEvent
   #-----------------------------------------------------------------------------
   def initialize(common_event_id)
     @common_event_id = common_event_id
-
     @interpreter = nil
     refresh
   end

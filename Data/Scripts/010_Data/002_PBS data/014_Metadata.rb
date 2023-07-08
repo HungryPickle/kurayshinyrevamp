@@ -69,7 +69,6 @@ module GameData
     end
 
     def self.get_player(id)
-      return self.get.player_A
       case id
       when 0 then return self.get.player_A
       when 1 then return self.get.player_B

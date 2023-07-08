@@ -5,34 +5,7 @@ class Player < Trainer
   # @return [Integer] the character ID of the player
   attr_accessor :character_ID
   # @return [Integer] the player's outfit
-  attr_accessor :outfit #old - unused
-
-  attr_accessor :skin_tone
-  attr_accessor :clothes
-  attr_accessor :hat
-  attr_accessor :hair
-  attr_accessor :hair_color
-  attr_accessor :hat_color
-  attr_accessor :clothes_color
-  attr_accessor :unlocked_clothes
-  attr_accessor :unlocked_hats
-  attr_accessor :unlocked_hairstyles
-  attr_accessor :unlocked_card_backgrounds
-
-  attr_accessor :dyed_hats
-  attr_accessor :dyed_clothes
-
-
-  attr_accessor :last_worn_outfit
-  attr_accessor :last_worn_hat
-
-  attr_accessor :surfing_pokemon
-
-
-  attr_accessor :card_background
-  attr_accessor :unlocked_card_backgrounds
-
-
+  attr_accessor :outfit
   # @return [Array<Boolean>] the player's Gym Badges (true if owned)
   attr_accessor :badges
   # @return [Integer] the player's money
@@ -74,22 +47,6 @@ class Player < Trainer
     @money = value.clamp(0, Settings::MAX_MONEY)
   end
 
-  def last_worn_outfit
-    if !@last_worn_outfit
-      if pbGet(VAR_TRAINER_GENDER) == GENDER_MALE
-        @last_worn_outfit = DEFAULT_OUTFIT_MALE
-      else
-        @last_worn_outfit = DEFAULT_OUTFIT_FEMALE
-      end
-    end
-    return @last_worn_outfit
-  end
-
-
-  def last_worn_hat
-    return @last_worn_hat
-  end
-
   # Sets the player's coins amount. It can not exceed {Settings::MAX_COINS}.
   # @param value [Integer] new coins value
   def coins=(value)
@@ -97,116 +54,6 @@ class Player < Trainer
     @coins = value.clamp(0, Settings::MAX_COINS)
   end
 
-  def outfit=(value)
-    @outfit=value
-  end
-
-  def hat=(value)
-    if value.is_a?(Symbol)
-      value = HATS[value].id
-    end
-    @hat=value
-    refreshPlayerOutfit()
-  end
-
-  def hair=(value)
-    if value.is_a?(Symbol)
-      value = HAIRSTYLES[value].id
-    end
-    @hair=value
-    refreshPlayerOutfit()
-  end
-
-  def clothes=(value)
-    if value.is_a?(Symbol)
-      value = OUTFITS[value].id
-    end
-    @clothes=value
-    refreshPlayerOutfit()
-  end
-
-  def clothes_color=(value)
-    echoln value
-    echoln @clothes
-    echoln $Trainer.dyed_clothes
-    echoln caller
-
-    @clothes_color=value
-    $Trainer.dyed_clothes= {} if !$Trainer.dyed_clothes
-    $Trainer.dyed_clothes[@clothes] = value if value
-    refreshPlayerOutfit()
-  end
-  def hat_color=(value)
-    @hat_color=value
-    $Trainer.dyed_hats= {} if ! $Trainer.dyed_hats
-    $Trainer.dyed_hats[@hat] = value if value
-    refreshPlayerOutfit()
-  end
-
-
-  def unlock_clothes(outfitID,silent=false)
-    update_global_clothes_list()
-    outfit = $PokemonGlobal.clothes_data[outfitID]
-    @unlocked_clothes = [] if !@unlocked_clothes
-    @unlocked_clothes << outfitID if !@unlocked_clothes.include?(outfitID)
-
-    if !silent
-      filename = getTrainerSpriteOutfitFilename(outfitID)
-      name= outfit ? outfit.name : outfitID
-      unlock_outfit_animation(filename,name)
-    end
-  end
-
-  def unlock_hat(hatID,silent=false)
-    update_global_hats_list()
-
-    hat = $PokemonGlobal.hats_data[hatID]
-    @unlocked_hats = [] if !@unlocked_hats
-    @unlocked_hats << hatID if !@unlocked_hats.include?(hatID)
-
-
-    if !silent
-      filename = getTrainerSpriteHatFilename(hatID)
-      name= hat ? hat.name : hatID
-      unlock_outfit_animation(filename,name)
-    end
-  end
-
-  def unlock_hair(hairID,silent=false)
-    update_global_hairstyles_list()
-
-    hairstyle = $PokemonGlobal.hairstyles_data[hairID]
-    if hairID.is_a?(Symbol)
-      hairID = HAIRSTYLES[hairID].id
-    end
-    @unlocked_hairstyles = [] if !@unlocked_hairstyles
-    @unlocked_hairstyles << hairID if !@unlocked_hairstyles.include?(hairID)
-
-    if !silent
-      filename = getTrainerSpriteHairFilename("2_" + hairID)
-      name= hairstyle ? hairstyle.name : hairID
-      unlock_outfit_animation(filename,name)
-    end
-  end
-
-  def unlock_outfit_animation(filepath,name,color=2)
-    outfit_preview = PictureWindow.new(filepath)
-    outfit_preview.x = Graphics.width/4
-    musicEffect= "Key item get"
-    pbMessage(_INTL("{1} obtained \\C[{2}]{3}\\C[0]!\\me[{4}]",$Trainer.name,color,name,musicEffect))
-    outfit_preview.dispose
-  end
-
-  def surfing_pokemon=(species)
-    @surfing_pokemon = species
-  end
-
-
-  def skin_tone=(value)
-    @skin_tone=value
-    $scene.reset_player_sprite
-    #$scene.spritesetGlobal.playersprite.updateCharacterBitmap
-  end
 
   def beat_league=(value)
     @beat_league = value
@@ -252,22 +99,12 @@ class Player < Trainer
     return @pokedex.owned?(species)
   end
 
-  def can_change_outfit()
-    return false if isOnPinkanIsland()
-    return true
-  end
-
   #=============================================================================
 
   def initialize(name, trainer_type)
     super
     @character_ID          = -1
     @outfit                = 0
-    @hat                   = 0
-    @hair                  = 0
-    @clothes               = 0
-    @hair_color            = 0
-    @skin_tone             = 0
     @badges                = [false] * 8
     @money                 = Settings::INITIAL_MONEY
     @coins                 = 0
@@ -283,15 +120,5 @@ class Player < Trainer
     @beat_league             =  false
     @new_game_plus_unlocked  =  false
     @new_game_plus         = false
-    @surfing_pokemon = nil
-    @last_worn_outfit = nil
-    @last_worn_hat = nil
-
-    @dyed_hats = {}
-    @dyed_clothes = {}
-
-
-    @card_background = Settings::DEFAULT_TRAINER_CARD_BG
-    @unlocked_card_backgrounds = [@card_background]
   end
 end

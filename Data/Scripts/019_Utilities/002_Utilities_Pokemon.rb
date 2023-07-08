@@ -56,15 +56,13 @@ def pbNicknameAndStore(pkmn)
   $Trainer.pokedex.set_seen(pkmn.species)
   $Trainer.pokedex.set_owned(pkmn.species)
   pbNickname(pkmn)
-  promptCaughtPokemonAction(pkmn)
-
-  #pbStorePokemon(pkmn)
+  pbStorePokemon(pkmn)
 end
 
 #===============================================================================
 # Giving Pokémon to the player (will send to storage if party is full)
 #===============================================================================
-def pbAddPokemon(pkmn, level = 1, see_form = true, dontRandomize=false, variableToSave=nil)
+def pbAddPokemon(pkmn, level = 1, see_form = true, dontRandomize=false)
   return false if !pkmn
   if pbBoxesFull?
     pbMessage(_INTL("There's no more room for Pokémon!\1"))
@@ -74,14 +72,11 @@ def pbAddPokemon(pkmn, level = 1, see_form = true, dontRandomize=false, variable
   pkmn = Pokemon.new(pkmn, level) if !pkmn.is_a?(Pokemon)
   tryRandomizeGiftPokemon(pkmn,dontRandomize)
   species_name = pkmn.speciesName
-  pbMessage(_INTL("{1} obtained {2}!\\me[Pkmn get]\\wtnp[20]\1", $Trainer.name, species_name))
+  pbMessage(_INTL("{1} obtained {2}!\\me[Pkmn get]\\wtnp[80]\1", $Trainer.name, species_name))
   pbNicknameAndStore(pkmn)
   $Trainer.pokedex.register(pkmn) if see_form
-  pbSet(variableToSave,pkmn) if variableToSave
   return true
 end
-
-
 
 def pbAddPokemonSilent(pkmn, level = 1, see_form = true)
   return false if !pkmn || pbBoxesFull?
