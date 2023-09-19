@@ -5,9 +5,8 @@
 #==============================================================================#
 module Settings
   # The version of your game. It has to adhere to the MAJOR.MINOR.PATCH format.
-  GAME_VERSION = '6.4.5'
-  GAME_VERSION_NUMBER = "6.4.5"
-  LATEST_GAME_RELEASE = "6.4"
+  GAME_VERSION = '5.0.0'
+  GAME_VERSION_NUMBER = "5.3.1.2"
 
   POKERADAR_LIGHT_ANIMATION_RED_ID = 17
   POKERADAR_LIGHT_ANIMATION_GREEN_ID = 18
@@ -21,58 +20,23 @@ module Settings
   FUSION_ICON_SPRITE_OFFSET = 10
 
   #Infinite fusion settings
-  NB_POKEMON = 501
-  CUSTOM_BASE_SPRITES_FOLDER = "Graphics/CustomBattlers/local_sprites/BaseSprites/"
+  NB_POKEMON = 420
+  CUSTOM_BASE_SPRITES_FOLDER = "Graphics/CustomBattlers/customBaseSprites/"
   CUSTOM_BATTLERS_FOLDER = "Graphics/CustomBattlers/"
-  CUSTOM_SPRITES_TO_IMPORT_FOLDER = "Graphics/CustomBattlers/Sprites to import/"
-  CUSTOM_BATTLERS_FOLDER_INDEXED = "Graphics/CustomBattlers/local_sprites/indexed/"
-  CUSTOM_BASE_SPRITE_FOLDER = "Graphics/CustomBattlers/local_sprites/BaseSprites/"
-  BATTLERS_FOLDER = "Graphics/Battlers/Autogens/"
+  CUSTOM_BATTLERS_FOLDER_INDEXED = "Graphics/CustomBattlers/indexed/"
+  BATTLERS_FOLDER = "Graphics/Battlers/"
   DOWNLOADED_SPRITES_FOLDER = "Graphics/temp/"
   DEFAULT_SPRITE_PATH = "Graphics/Battlers/Special/000.png"
-  CREDITS_FILE_PATH = "Data/sprites/Sprite Credits.csv"
+  CREDITS_FILE_PATH = "Data/SPRITE_CREDS"
   VERSION_FILE_PATH = "Data/VERSION"
-  CUSTOM_SPRITES_FILE_PATH = "Data/sprites/CUSTOM_SPRITES"
-  BASE_SPRITES_FILE_PATH = "Data/sprites/BASE_SPRITES"
-  CUSTOM_DEX_ENTRIES_PATH = "Data/pokedex/dex.json"
-  AI_DEX_ENTRIES_PATH = "Data/pokedex/generated_entries.json"
-  POKEDEX_ENTRIES_PATH = "Data/pokedex/all_entries.json"
+  CUSTOM_SPRITES_FILE_PATH = "Data/CUSTOM_SPRITES"
 
-  UPDATED_SPRITESHEETS_CACHE = "Data/sprites/updated_spritesheets_cache"
+  HTTP_CONFIGS_FILE_URL = "https://raw.githubusercontent.com/infinitefusion/infinitefusion-e18/main/Data/Scripts/RemoteUrls.rb"
 
-  BACK_ITEM_ICON_PATH = "Graphics/Items/back.png"
+  HTTP_CONFIGS_FILE_PATH = "Data/Scripts/RemoteUrls.rb"
 
-  PLAYER_GRAPHICS_FOLDER = "Graphics/Characters/player/"
-  PLAYER_HAT_FOLDER = 'hat'
-  PLAYER_HAIR_FOLDER = 'hair'
-  PLAYER_CLOTHES_FOLDER = 'clothes'
-  PLAYER_BALL_FOLDER = 'balls'
-  PLAYER_TEMP_OUTFIT_FALLBACK = 'temp'
-
-
-  HATS_DATA_PATH = "Data/outfits/hats_data.json"
-  HAIRSTYLE_DATA_PATH = "Data/outfits/hairstyles_data.json"
-  CLOTHES_DATA_PATH = "Data/outfits/clothes_data.json"
-
-  PLAYER_SURFBASE_FOLDER = 'surf_base/'
-  OW_SHINE_ANIMATION_ID=25
-
-  HTTP_CONFIGS_FILE_URL = "https://raw.githubusercontent.com/infinitefusion/pif-downloadables/refs/heads/master/Settings.rb"
-  HTTP_CONFIGS_FILE_PATH = "Data/Scripts/DownloadedSettings.rb"
-
-  SPRITES_FILE_URL = "https://raw.githubusercontent.com/infinitefusion/infinitefusion-e18/main/Data/sprites/CUSTOM_SPRITES"
-  BASE_SPRITES_FILE_URL = "https://raw.githubusercontent.com/infinitefusion/infinitefusion-e18/main/Data/sprites/BASE_SPRITES"
-
-
-  STARTUP_MESSAGES = ""
-
-  LEVEL_CAPS=[12,22,26,35,38,45,51,54,62,62,63,64,64,65,67,68]
-
-  CUSTOM_ENTRIES_NAME_PLACEHOLDER = "POKENAME"
-
-  DEFAULT_SPEED_UP_SPEED=2
   FRONTSPRITE_POSITION_OFFSET = 20
-  FRONTSPRITE_SCALE = 0.6666666666666666
+  FRONTSPRITE_SCALE = 0.6666666666
   BACKRPSPRITE_SCALE = 1
   EGGSPRITE_SCALE = 1
   BACKSPRITE_POSITION_OFFSET = 20
@@ -80,33 +44,6 @@ module Settings
   SHINY_HUE_OFFSET = 75
   NO_LEVEL_MODE_LEVEL_INCR = 5.8
   NO_LEVEL_MODE_LEVEL_BASE = 6
-
-  SAVEFILE_NB_BACKUPS=10
-
-  DISCORD_URL = "https://discord.com/invite/infinitefusion"
-  WIKI_URL = "https://infinitefusion.fandom.com/"
-
-  AI_ENTRIES_URL = "https://ai-entries.pkmninfinitefusion.workers.dev/"
-  AI_ENTRIES_RATE_MAX_NB_REQUESTS = 10  #Nb. requests allowed in each time window
-  AI_ENTRIES_RATE_TIME_WINDOW = 120    # In seconds
-  AI_ENTRIES_RATE_LOG_FILE = 'Data/pokedex/dex_rate_limit.log'  # Path to the log file
-
-  CUSTOMSPRITES_RATE_MAX_NB_REQUESTS = 15  #Nb. requests allowed in each time window
-  CUSTOMSPRITES_ENTRIES_RATE_TIME_WINDOW = 120    # In seconds
-  CUSTOMSPRITES_RATE_LOG_FILE = 'Data/sprites/sprites_rate_limit.log'  # Path to the log file
-  MAX_NB_SPRITES_TO_DOWNLOAD_AT_ONCE=5
-
-  CUSTOM_SPRITES_REPO_URL = "https://bitbucket.org/infinitefusionsprites/customsprites/raw/main/CustomBattlers/"
-  CUSTOM_SPRITES_NEW_URL = "https://infinitefusion.net/CustomBattlers/"
-
-  BASE_POKEMON_ALT_SPRITES_REPO_URL = "https://bitbucket.org/infinitefusionsprites/customsprites/raw/main/Other/BaseSprites/"
-  BASE_POKEMON_ALT_SPRITES_NEW_URL = "https://infinitefusion.net/Other/BaseSprites/"
-
-  BASE_POKEMON_SPRITESHEET_URL = "https://infinitefusion.net/spritesheets/spritesheets_base/"
-  CUSTOM_FUSIONS_SPRITESHEET_URL = "https://infinitefusion.net/spritesheets/spritesheets_custom/"
-
-  BASE_POKEMON_SPRITESHEET_TRUE_SIZE_URL = "https://infinitefusion.net/spritesheets_truesize/spritesheets_base/"
-  CUSTOM_FUSIONS_SPRITESHEET_TRUE_SIZE_URL = "https://infinitefusion.net/spritesheets_truesize/spritesheets_custom/"
 
   RIVAL_STARTER_PLACEHOLDER_SPECIES = :MEW #(MEW)
   VAR_1_PLACEHOLDER_SPECIES = :DIALGA
@@ -119,17 +56,11 @@ module Settings
   OVERRIDE_BATTLE_LEVEL_VALUE_VAR = 240
   HARD_MODE_LEVEL_MODIFIER = 1.1
 
-  ZAPMOLCUNO_NB = 999999#176821
+  ZAPMOLCUNO_NB = 176821
   MAPS_WITHOUT_SURF_MUSIC = [762]
 
   WONDERTRADE_BASE_URL = "http://localhost:8080"
   WONDERTRADE_PUBLIC_KEY = "http://localhost:8080"
-
-  MAX_NB_OUTFITS=99
-
-  OUTFIT_PREVIEW_PICTURE_ID=20
-
-  DEFAULT_TRAINER_CARD_BG="BLUE"
 
   # The generation that the battle system follows. Used throughout the battle
   # scripts, and also by some other settings which are used in and out of battle
@@ -160,7 +91,6 @@ module Settings
   NB_BADGES = 16
   # The odds of a newly generated Pokémon being shiny (out of 65536).
   SHINY_POKEMON_CHANCE = 16#(MECHANICS_GENERATION >= 6) ? 16 : 8
-
   # The odds of a wild Pokémon/bred egg having Pokérus (out of 65536).
   POKERUS_CHANCE = 3
   # Whether a bred baby Pokémon can inherit any TM/HM moves from its father. It
@@ -169,13 +99,6 @@ module Settings
   # Whether a bred baby Pokémon can inherit egg moves from its mother. It can
   # always inherit egg moves from its father.
   BREEDING_CAN_INHERIT_EGG_MOVES_FROM_MOTHER = (MECHANICS_GENERATION >= 6)
-
-  KANTO_STARTERS = [:BULBASAUR, :CHARMANDER, :SQUIRTLE]
-  JOHTO_STARTERS = [:CHIKORITA, :CYNDAQUIL, :TOTODILE]
-  HOENN_STARTERS = [:TREECKO, :TORCHIC, :MUDKIP]
-  SINNOH_STARTERS = [:TURTWIG, :CHIMCHAR, :PIPLUP]
-  KALOS_STARTERS = [:CHESPIN, :FENNEKIN, :FROAKIE]
-
 
   #=============================================================================
 
@@ -266,7 +189,7 @@ module Settings
   BADGE_FOR_FLY = 3
   BADGE_FOR_STRENGTH = 5
   BADGE_FOR_DIVE = 9
-  BADGE_FOR_WATERFALL = 9
+  BADGE_FOR_WATERFALL = 8
   BADGE_FOR_TELEPORT = 3
   BADGE_FOR_BOUNCE = 8
   BADGE_FOR_ROCKCLIMB = 16
@@ -294,7 +217,7 @@ module Settings
   end
 
   # The number of boxes in Pokémon storage.
-  NUM_STORAGE_BOXES = 40
+  NUM_STORAGE_BOXES = 30
 
   #=============================================================================
 
@@ -366,12 +289,9 @@ module Settings
   #   * Name of the graphic, found in the Graphics/Pictures folder.
   #   * The graphic will always (true) or never (false) be shown on a wall map.
   REGION_MAP_EXTRAS = [
-    #[0, 51, 16, 15, "mapHiddenBerth", false],
-    #[0, 52, 20, 14, "mapHiddenFaraday", false]
+    [0, 51, 16, 15, "mapHiddenBerth", false],
+    [0, 52, 20, 14, "mapHiddenFaraday", false]
   ]
-
-  TRIPLE_TYPES = [:QMARKS,:ICEFIREELECTRIC,:FIREWATERELECTRIC,:WATERGROUNDFLYING,:GHOSTSTEELWATER,
-                  :FIREWATERGRASS,:GRASSSTEEL,:BUGSTEELPSYCHIC,:ICEROCKSTEEL]
 
   #=============================================================================
 
@@ -415,14 +335,12 @@ module Settings
   #   * Name of BGM to play for that encounter (optional).
   #   * Roaming areas specifically for this Pokémon (optional).
   ROAMING_SPECIES = [
-    [:ENTEI, 50, 350, 1, "Legendary Birds",ROAMING_AREAS,:Sunny],
-    [:B245H243, 50, 341, 1, "Legendary Birds",ROAMING_AREAS,:Storm],
-    [:B379H378, 50, 602, 0, "Legendary Birds",SEVII_ROAMING,:StrongWinds],
-    [:B378H379, 50, 602, 0, "Legendary Birds",SEVII_ROAMING,:StrongWinds],
-    [:FEEBAS, 15, 4, 3, "Pokemon HeartGold and SoulSilver - Wild Pokemon Battle (Kanto)",SEVII_ROAMING,:Rain]
+    [:ENTEI, 50, 350, 1, "Legendary Birds"],
+    [:B245H243, 50, 341, 1, "Legendary Birds"],
+    [:LATIOS, 50, 602, 0, "Legendary Birds",SEVII_ROAMING],
+    [:LATIAS, 50, 602, 0, "Legendary Birds",SEVII_ROAMING],
+    [:FEEBAS, 15, 4, 3, "Pokemon HeartGold and SoulSilver - Wild Pokemon Battle (Kanto)",SEVII_ROAMING]
   ]
-
-  PINKAN_ISLAND_MAPS=[51,46,428,531]
 
   #=============================================================================
 
@@ -461,7 +379,7 @@ module Settings
     [484, 50, :AXEW,20,20],             #Safari zone 2
     [485, 50, :DEINO,20,20],            #Safari zone 3
     [486, 50, :LARVITAR,20,20],         #Safari zone 4
-    [487, 50, :JANGMOO,20,20],           #Safari zone 5
+    [487, 50, :BELDUM,20,20],           #Safari zone 5
     [59, 50,  :DUNSPARCE,25,30],        #Rt. 21
     [171, 50, :BIDOOF,2,5],             #Rt. 22
     [143, 50, :RIOLU,25,25],            #Rt. 23
@@ -477,7 +395,7 @@ module Settings
     [265, 50, :KIRLIA,25,30],           #Rt. 34
     [254, 50, :SMEARGLE,25,30],         #Rt. 35
     [267, 50, :SUDOWOODO,25,30],        #Rt. 36
-    [500, 50, :FOMANTIS,30,30],          #National Park
+    [500, 50, :ROSELIA,30,30],          #National Park
     [266, 50, :BRELOOM,30,30],          #Ilex Forest
     [670, 50, :WEAVILE,50,50],          #Ice mountains
     [528, 50, :PYUKUMUKU,20,20],        #Treasure Beach
@@ -485,8 +403,7 @@ module Settings
     [561, 50, :FLETCHINDER,32,45],      #Mt. Ember
     [562, 50, :NINJASK,45,50],          #Boon Island
     [603, 50, :KECLEON,45,50],          #Chrono Island
-    [654, 50, :WHIMSICOTT,32,45],        #Brine Road
-    [559, 50, :SCRAGGY,32,45]        #Kindle Road
+    [654, 50, :WHIMSICOTT,32,45]        #Brine Road
   ]
 
   #=============================================================================
@@ -524,7 +441,6 @@ module Settings
   # ID of the animation played when a berry tree grows a stage while the player
   # is on the map (for new plant growth mechanics only).
   PLANT_SPARKLE_ANIMATION_ID = 7
-  SLEEP_ANIMATION_ID = 26
 
   CUT_TREE_ANIMATION_ID = 19
   ROCK_SMASH_ANIMATION_ID = 20
@@ -539,11 +455,6 @@ module Settings
     #  ["Deutsch", "deutsch.dat"]
   ]
 
-
-  #Technical
-  SPRITE_CACHE_MAX_NB=100
-  NEWEST_SPRITEPACK_MONTH = 12
-  NEWEST_SPRITEPACK_YEAR = 2020
   #=============================================================================
 
   # Available speech frames. These are graphic files in "Graphics/Windowskins/".
