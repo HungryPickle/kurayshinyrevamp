@@ -5,8 +5,8 @@
 #==============================================================================#
 module Settings
   # The version of your game. It has to adhere to the MAJOR.MINOR.PATCH format.
-  GAME_VERSION = '6.2.3'
-  GAME_VERSION_NUMBER = "6.2.3"
+  GAME_VERSION = '5.0.0'
+  GAME_VERSION_NUMBER = "5.3.1.2"
 
   POKERADAR_LIGHT_ANIMATION_RED_ID = 17
   POKERADAR_LIGHT_ANIMATION_GREEN_ID = 18
@@ -20,7 +20,7 @@ module Settings
   FUSION_ICON_SPRITE_OFFSET = 10
 
   #Infinite fusion settings
-  NB_POKEMON = 470
+  NB_POKEMON = 420
   CUSTOM_BASE_SPRITES_FOLDER = "Graphics/CustomBattlers/customBaseSprites/"
   CUSTOM_BATTLERS_FOLDER = "Graphics/CustomBattlers/"
   CUSTOM_BATTLERS_FOLDER_INDEXED = "Graphics/CustomBattlers/indexed/"
@@ -30,35 +30,13 @@ module Settings
   CREDITS_FILE_PATH = "Data/SPRITE_CREDS"
   VERSION_FILE_PATH = "Data/VERSION"
   CUSTOM_SPRITES_FILE_PATH = "Data/CUSTOM_SPRITES"
-  CUSTOM_DEX_ENTRIES_PATH = "Data/dex.json"
-
-  BACK_ITEM_ICON_PATH = "Graphics/Items/back.png"
-
-  PLAYER_GRAPHICS_FOLDER = "Graphics/Characters/player/"
-  PLAYER_HAT_FOLDER = 'hat'
-  PLAYER_HAIR_FOLDER = 'hair'
-  PLAYER_CLOTHES_FOLDER = 'clothes'
-  PLAYER_BALL_FOLDER = 'balls'
-  PLAYER_TEMP_OUTFIT_FALLBACK = 'temp'
-
-
-  HATS_DATA_PATH = "Data/hats_data.json"
-  HAIRSTYLE_DATA_PATH = "Data/hairstyles_data.json"
-  CLOTHES_DATA_PATH = "Data/clothes_data.json"
-
-  PLAYER_SURFBASE_FOLDER = 'surf_base/'
-  OW_SHINE_ANIMATION_ID=25
 
   HTTP_CONFIGS_FILE_URL = "https://raw.githubusercontent.com/infinitefusion/infinitefusion-e18/main/Data/Scripts/RemoteUrls.rb"
-  HTTP_CONFIGS_FILE_PATH = "Data/Scripts/DownloadedSettings.rb"
 
-  LEVEL_CAPS=[12,22,26,35,38,45,51,54,62,62,63,64,64,65,67,68]
+  HTTP_CONFIGS_FILE_PATH = "Data/Scripts/RemoteUrls.rb"
 
-  CUSTOM_ENTRIES_NAME_PLACEHOLDER = "POKENAME"
-
-  DEFAULT_SPEED_UP_SPEED=2
   FRONTSPRITE_POSITION_OFFSET = 20
-  FRONTSPRITE_SCALE = 0.6666666666666666
+  FRONTSPRITE_SCALE = 0.6666666666
   BACKRPSPRITE_SCALE = 1
   EGGSPRITE_SCALE = 1
   BACKSPRITE_POSITION_OFFSET = 20
@@ -66,10 +44,6 @@ module Settings
   SHINY_HUE_OFFSET = 75
   NO_LEVEL_MODE_LEVEL_INCR = 5.8
   NO_LEVEL_MODE_LEVEL_BASE = 6
-
-  DISCORD_URL = "https://discord.com/invite/infinitefusion"
-  WIKI_URL = "https://infinitefusion.fandom.com/"
-
 
   RIVAL_STARTER_PLACEHOLDER_SPECIES = :MEW #(MEW)
   VAR_1_PLACEHOLDER_SPECIES = :DIALGA
@@ -82,18 +56,11 @@ module Settings
   OVERRIDE_BATTLE_LEVEL_VALUE_VAR = 240
   HARD_MODE_LEVEL_MODIFIER = 1.1
 
-  ZAPMOLCUNO_NB = 999999#176821
+  ZAPMOLCUNO_NB = 176821
   MAPS_WITHOUT_SURF_MUSIC = [762]
 
   WONDERTRADE_BASE_URL = "http://localhost:8080"
   WONDERTRADE_PUBLIC_KEY = "http://localhost:8080"
-
-  MAX_NB_OUTFITS=99
-  DEFAULT_OUTFIT_MALE = "red"
-  DEFAULT_OUTFIT_FEMALE = "leaf"
-  STARTING_OUTFIT = "pikajamas"
-
-  OUTFIT_PREVIEW_PICTURE_ID=20
 
   # The generation that the battle system follows. Used throughout the battle
   # scripts, and also by some other settings which are used in and out of battle
@@ -124,7 +91,6 @@ module Settings
   NB_BADGES = 16
   # The odds of a newly generated Pokémon being shiny (out of 65536).
   SHINY_POKEMON_CHANCE = 16#(MECHANICS_GENERATION >= 6) ? 16 : 8
-
   # The odds of a wild Pokémon/bred egg having Pokérus (out of 65536).
   POKERUS_CHANCE = 3
   # Whether a bred baby Pokémon can inherit any TM/HM moves from its father. It
@@ -133,12 +99,6 @@ module Settings
   # Whether a bred baby Pokémon can inherit egg moves from its mother. It can
   # always inherit egg moves from its father.
   BREEDING_CAN_INHERIT_EGG_MOVES_FROM_MOTHER = (MECHANICS_GENERATION >= 6)
-
-  KANTO_STARTERS = [:BULBASAUR, :CHARMANDER, :SQUIRTLE]
-  JOHTO_STARTERS = [:CHIKORITA, :CYNDAQUIL, :TOTODILE]
-  HOENN_STARTERS = [:TREECKO, :TORCHIC, :MUDKIP]
-  SINNOH_STARTERS = [:TURTWIG, :CHIMCHAR, :PIPLUP]
-
 
   #=============================================================================
 
@@ -257,7 +217,7 @@ module Settings
   end
 
   # The number of boxes in Pokémon storage.
-  NUM_STORAGE_BOXES = 40
+  NUM_STORAGE_BOXES = 30
 
   #=============================================================================
 
@@ -375,11 +335,11 @@ module Settings
   #   * Name of BGM to play for that encounter (optional).
   #   * Roaming areas specifically for this Pokémon (optional).
   ROAMING_SPECIES = [
-    [:ENTEI, 50, 350, 1, "Legendary Birds",ROAMING_AREAS,:Sunny],
-    [:B245H243, 50, 341, 1, "Legendary Birds",ROAMING_AREAS,:Storm],
-    [:LATIOS, 50, 602, 0, "Legendary Birds",SEVII_ROAMING,:StrongWinds],
-    [:LATIAS, 50, 602, 0, "Legendary Birds",SEVII_ROAMING,:StrongWinds],
-    [:FEEBAS, 15, 4, 3, "Pokemon HeartGold and SoulSilver - Wild Pokemon Battle (Kanto)",SEVII_ROAMING,:Rain]
+    [:ENTEI, 50, 350, 1, "Legendary Birds"],
+    [:B245H243, 50, 341, 1, "Legendary Birds"],
+    [:LATIOS, 50, 602, 0, "Legendary Birds",SEVII_ROAMING],
+    [:LATIAS, 50, 602, 0, "Legendary Birds",SEVII_ROAMING],
+    [:FEEBAS, 15, 4, 3, "Pokemon HeartGold and SoulSilver - Wild Pokemon Battle (Kanto)",SEVII_ROAMING]
   ]
 
   #=============================================================================
@@ -481,7 +441,6 @@ module Settings
   # ID of the animation played when a berry tree grows a stage while the player
   # is on the map (for new plant growth mechanics only).
   PLANT_SPARKLE_ANIMATION_ID = 7
-  SLEEP_ANIMATION_ID = 26
 
   CUT_TREE_ANIMATION_ID = 19
   ROCK_SMASH_ANIMATION_ID = 20
