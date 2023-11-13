@@ -44,8 +44,8 @@ module GameData
       @egg_moves = calculate_egg_moves() # hash[:egg_moves] || []
 
       #Abilities
-      @abilities = calculate_abilities() # hash[:abilities] || []
-      @hidden_abilities = calculate_hidden_abilities() # hash[:hidden_abilities] || []
+      @abilities = calculate_abilities(@body_pokemon, @head_pokemon) # hash[:abilities] || []
+      @hidden_abilities = calculate_hidden_abilities(@body_pokemon, @head_pokemon) # hash[:hidden_abilities] || []
 
       #wild held items
       @wild_item_common = get_wild_item(@head_pokemon.wild_item_common, @body_pokemon.wild_item_common) # hash[:wild_item_common]
@@ -94,14 +94,6 @@ module GameData
 
     def get_head_number_from_symbol(id)
       return id.to_s.match(/(?<=H)\d+/)[0].to_i
-    end
-
-    def get_body_species
-      return @body_pokemon
-    end
-
-    def get_head_species
-      return @head_pokemon
     end
 
     def adjust_stats_with_evs
@@ -180,50 +172,25 @@ module GameData
       end
     end
 
-    def calculate_abilities()
+    def calculate_abilities(pokemon1, pokemon2)
       abilities_hash = []
 
-      ability1 = @body_pokemon.abilities[0]
-      ability2 = @head_pokemon.abilities[0]
+      ability1 = pokemon1.abilities[0]
+      ability2 = pokemon2.abilities[1]
+      if !ability2
+        ability2 = pokemon2.abilities[0]
+      end
       abilities_hash << ability1
       abilities_hash << ability2
       return abilities_hash
     end
 
-    # def calculate_abilities(pokemon1, pokemon2)
-    #   abilities_hash = []
-    #
-    #   ability1 = pokemon1.abilities[0]
-    #   ability2 = pokemon2.abilities[1]
-    #   if !ability2
-    #     ability2 = pokemon2.abilities[0]
-    #   end
-    #   abilities_hash << ability1
-    #   abilities_hash << ability2
-    #   return abilities_hash
-    # end
-
-    def calculate_hidden_abilities()
-      abilities_hash = []
-
+    def calculate_hidden_abilities(pokemon1, pokemon2)
       #First two spots are the other abilities of the two pokemon
-      ability1 = @body_pokemon.abilities[1]
-      ability2 = @head_pokemon.abilities[1]
-      ability1 = @body_pokemon.abilities[0] if !ability1
-      ability2 = @head_pokemon.abilities[0] if !ability2
-
-      abilities_hash << ability1
-      abilities_hash << ability2
-
+      abilities_hash = calculate_abilities(pokemon2, pokemon1)
       #add the hidden ability for the two base pokemon
-      hiddenAbility1 = @body_pokemon.hidden_abilities[0]
-      hiddenAbility1 = ability1 if !hiddenAbility1
-
-      hiddenAbility2 = @head_pokemon.hidden_abilities[0]
-      hiddenAbility2 = ability2 if !hiddenAbility2
-
-      abilities_hash << hiddenAbility1
-      abilities_hash << hiddenAbility2
+      abilities_hash << @body_pokemon.hidden_abilities[0]
+      abilities_hash << @head_pokemon.hidden_abilities[0]
       return abilities_hash
     end
 
@@ -312,7 +279,7 @@ module GameData
       growth_rate_priority = [:Slow, :Erratic, :Fluctuating, :Parabolic, :Medium, :Fast] #todo rearrange order for balance?
       body_growth_rate = @body_pokemon.growth_rate
       head_growth_rate = @head_pokemon.growth_rate
-      base_growth_rates = [body_growth_rate, head_growth_rate]
+      base_growth_rates =[body_growth_rate,head_growth_rate]
       for rate in growth_rate_priority
         return rate if base_growth_rates.include?(rate)
       end
