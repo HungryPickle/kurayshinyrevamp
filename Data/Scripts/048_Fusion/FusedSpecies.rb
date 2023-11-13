@@ -44,8 +44,8 @@ module GameData
       @egg_moves = calculate_egg_moves() # hash[:egg_moves] || []
 
       #Abilities
-      @abilities = calculate_abilities() # hash[:abilities] || []
-      @hidden_abilities = calculate_hidden_abilities() # hash[:hidden_abilities] || []
+      @abilities = calculate_abilities(@body_pokemon, @head_pokemon) # hash[:abilities] || []
+      @hidden_abilities = calculate_hidden_abilities(@body_pokemon, @head_pokemon) # hash[:hidden_abilities] || []
 
       #wild held items
       @wild_item_common = get_wild_item(@head_pokemon.wild_item_common, @body_pokemon.wild_item_common) # hash[:wild_item_common]
@@ -94,22 +94,6 @@ module GameData
 
     def get_head_number_from_symbol(id)
       return id.to_s.match(/(?<=H)\d+/)[0].to_i
-    end
-
-    def get_body_species
-      return @body_pokemon.id_number
-    end
-
-    def get_head_species
-      return @head_pokemon.id_number
-    end
-
-    def get_body_species_symbol
-      return @body_pokemon.id
-    end
-
-    def get_head_species_symbol
-      return @head_pokemon.id
     end
 
     def adjust_stats_with_evs
@@ -188,50 +172,25 @@ module GameData
       end
     end
 
-    def calculate_abilities()
+    def calculate_abilities(pokemon1, pokemon2)
       abilities_hash = []
 
-      ability1 = @body_pokemon.abilities[0]
-      ability2 = @head_pokemon.abilities[0]
+      ability1 = pokemon1.abilities[0]
+      ability2 = pokemon2.abilities[1]
+      if !ability2
+        ability2 = pokemon2.abilities[0]
+      end
       abilities_hash << ability1
       abilities_hash << ability2
       return abilities_hash
     end
 
-    # def calculate_abilities(pokemon1, pokemon2)
-    #   abilities_hash = []
-    #
-    #   ability1 = pokemon1.abilities[0]
-    #   ability2 = pokemon2.abilities[1]
-    #   if !ability2
-    #     ability2 = pokemon2.abilities[0]
-    #   end
-    #   abilities_hash << ability1
-    #   abilities_hash << ability2
-    #   return abilities_hash
-    # end
-
-    def calculate_hidden_abilities()
-      abilities_hash = []
-
+    def calculate_hidden_abilities(pokemon1, pokemon2)
       #First two spots are the other abilities of the two pokemon
-      ability1 = @body_pokemon.abilities[1]
-      ability2 = @head_pokemon.abilities[1]
-      ability1 = @body_pokemon.abilities[0] if !ability1
-      ability2 = @head_pokemon.abilities[0] if !ability2
-
-      abilities_hash << ability1
-      abilities_hash << ability2
-
+      abilities_hash = calculate_abilities(pokemon2, pokemon1)
       #add the hidden ability for the two base pokemon
-      hiddenAbility1 = @body_pokemon.hidden_abilities[0]
-      hiddenAbility1 = ability1 if !hiddenAbility1
-
-      hiddenAbility2 = @head_pokemon.hidden_abilities[0]
-      hiddenAbility2 = ability2 if !hiddenAbility2
-
-      abilities_hash << hiddenAbility1
-      abilities_hash << hiddenAbility2
+      abilities_hash << @body_pokemon.hidden_abilities[0]
+      abilities_hash << @head_pokemon.hidden_abilities[0]
       return abilities_hash
     end
 
@@ -297,31 +256,6 @@ module GameData
       return split_and_combine_text(body_entry, head_entry, ".")
     end
 
-    def get_random_dex_entry()
-      begin
-        file_path = Settings::POKEDEX_ENTRIES_PATH
-        json_data = File.read(file_path)
-        all_body_entries  = HTTPLite::JSON.parse(json_data)
-
-
-        body_entry = all_body_entries[@body_pokemon.id_number.to_s].sample
-        body_entry = body_entry.gsub(/#{@body_pokemon.real_name}/i, @real_name)
-        body_entry = clean_json_string(body_entry).gsub(@body_pokemon.real_name, @real_name)
-
-        head_entry = all_body_entries[@head_pokemon.id_number.to_s].sample
-        head_entry = head_entry.gsub(/#{@head_pokemon.real_name}/i, @real_name)
-        head_entry = clean_json_string(head_entry).gsub(@head_pokemon.real_name, @real_name)
-      rescue
-        body_entry = @body_pokemon.real_pokedex_entry.gsub(@body_pokemon.real_name, @real_name)
-        head_entry = @head_pokemon.real_pokedex_entry.gsub(@head_pokemon.real_name, @real_name)
-      end
-      echoln body_entry
-      echoln head_entry
-      combined_entry = split_and_combine_text(body_entry, head_entry, ".")
-      combined_entry += "." unless combined_entry.end_with?(".")
-      return combined_entry
-    end
-
     def calculate_egg_groups
       body_egg_groups = @body_pokemon.egg_groups
       head_egg_groups = @head_pokemon.egg_groups
@@ -342,10 +276,10 @@ module GameData
     end
 
     def calculate_growth_rate
-      growth_rate_priority = [:Fast, :Medium, :Parabolic, :Fluctuating, :Erratic, :Slow] #todo rearrange order for balance?
+      growth_rate_priority = [:Slow, :Erratic, :Fluctuating, :Parabolic, :Medium, :Fast] #todo rearrange order for balance?
       body_growth_rate = @body_pokemon.growth_rate
       head_growth_rate = @head_pokemon.growth_rate
-      base_growth_rates = [body_growth_rate, head_growth_rate]
+      base_growth_rates =[body_growth_rate,head_growth_rate]
       for rate in growth_rate_priority
         return rate if base_growth_rates.include?(rate)
       end
@@ -368,7 +302,7 @@ module GameData
 
       beginningText = beginingText_split[0]
       endText = endText_split[1] && endText_split[1] != "" ? endText_split[1] : endText_split[0]
-      return beginningText + separator + " " + endText
+      return beginningText + separator + endText
     end
 
     def calculate_fused_stats(dominantStat, otherStat)
