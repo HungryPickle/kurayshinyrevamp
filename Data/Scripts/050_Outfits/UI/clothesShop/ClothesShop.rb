@@ -1,12 +1,11 @@
-def genericOutfitsShopMenu(stock = [], itemType = nil, versions = false, isShop=true, message=nil)
+def genericOutfitsShopMenu(stock = [], itemType = nil, versions = false)
   commands = []
   commands[cmdBuy = commands.length] = _INTL("Buy")
   commands[cmdQuit = commands.length] = _INTL("Quit")
-  message = _INTL("Welcome! How may I serve you?") if !message
-  cmd = pbMessage(message, commands, cmdQuit + 1)
+  cmd = pbMessage(_INTL("Welcome! How may I serve you?"), commands, cmdQuit + 1)
   loop do
     if cmdBuy >= 0 && cmd == cmdBuy
-      adapter = getAdapter(itemType, stock, isShop)
+      adapter = getAdapter(itemType, stock, true)
       view = ClothesShopView.new()
       presenter = getPresenter(itemType, view, stock, adapter, versions)
       presenter.pbBuyScreen
@@ -15,6 +14,8 @@ def genericOutfitsShopMenu(stock = [], itemType = nil, versions = false, isShop=
       pbMessage(_INTL("Please come again!"))
       break
     end
+    cmd = pbMessage(_INTL("Is there anything else I can help you with?"),
+                    commands, cmdQuit + 1)
   end
 end
 
@@ -40,35 +41,32 @@ end
 
 def list_all_possible_outfits() end
 
-def clothesShop(outfits_list = [], free=false,customMessage=nil)
+def clothesShop(outfits_list = [])
   stock = []
   outfits_list.each { |outfit_id|
     outfit = get_clothes_by_id(outfit_id)
     stock << outfit if outfit
   }
-  genericOutfitsShopMenu(stock, :CLOTHES,false,!free,customMessage)
+  genericOutfitsShopMenu(stock, :CLOTHES)
 end
 
-def hatShop(outfits_list = [], free=false, customMessage=nil)
+def hatShop(outfits_list = [])
   stock = []
   outfits_list.each { |outfit_id|
     outfit = get_hat_by_id(outfit_id)
     stock << outfit if outfit
   }
-  genericOutfitsShopMenu(stock, :HAT,false,!free,customMessage)
+  genericOutfitsShopMenu(stock, :HAT)
 end
 
-def hairShop(outfits_list = [],free=false, customMessage=nil)
-  currentHair = getSimplifiedHairIdFromFullID($Trainer.hair)
-  stock = [:SWAP_COLOR]
-  #always add current hairstyle as first option (in case the player just wants to swap the color)
-  stock << get_hair_by_id(currentHair) if $Trainer.hair
+def hairShop(outfits_list = [])
+  stock = []
   outfits_list.each { |outfit_id|
-    next if outfit_id == currentHair
+    echoln outfit_id
     outfit = get_hair_by_id(outfit_id)
     stock << outfit if outfit
   }
-  genericOutfitsShopMenu(stock, :HAIR, true,!free,customMessage)
+  genericOutfitsShopMenu(stock, :HAIR, true)
 end
 
 def openSelectOutfitMenu(stock = [], itemType)
@@ -93,14 +91,13 @@ def changeHatMenu()
     outfit = get_hat_by_id(outfit_id)
     stock << outfit if outfit
   }
-  stock << :REMOVE_HAT
   openSelectOutfitMenu(stock, :HAT)
 end
 
 def changeOutfit()
   commands = []
-  commands[cmdHat = commands.length] = _INTL("Change hat")
   commands[cmdClothes = commands.length] = _INTL("Change clothes")
+  commands[cmdHat = commands.length] = _INTL("Change hat")
   commands[cmdQuit = commands.length] = _INTL("Quit")
 
   cmd = pbMessage(_INTL("What would you like to do?"), commands, cmdQuit + 1)
@@ -115,7 +112,4 @@ def changeOutfit()
       break
     end
   end
-
-
-
 end

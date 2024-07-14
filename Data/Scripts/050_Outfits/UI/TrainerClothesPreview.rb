@@ -23,8 +23,7 @@ class TrainerClothesPreview
   end
 
   def show()
-    @playerBitmap = generate_front_trainer_sprite_bitmap(false,
-                                                         @pokeball,
+    @playerBitmap = generate_front_trainer_sprite_bitmap(@pokeball,
                                                          @clothes, @hat, @hair,
                                                          @skin_tone,
                                                          @hair_color, @hat_color, @clothes_color)

@@ -16,17 +16,16 @@ class PokemonHatPresenter
     @original_pokemon_bitmap = nil
   end
 
-  # def getPicturePath()
-  #   if @pokemon.isTripleFusion?
-  #     picturePath = GameData::Species::getSpecialSpriteName(@pokemon.species_data.id_number)
-  #   elsif @pokemon.isFusion?
-  #     picturePath = get_fusion_sprite_path(@pokemon.species_data.head_pokemon.id_number, @pokemon.species_data.body_pokemon.id_number)
-  #   else
-  #     picturePath = get_unfused_sprite_path(@pokemon.species_data.id_number)
-  #   end
-  #   echoln picturePath
-  #   return picturePath
-  # end
+  def getPicturePath()
+    if @pokemon.isTripleFusion?
+      picturePath = GameData::Species::getSpecialSpriteName(@pokemon.species_data.id_number)
+    elsif @pokemon.isFusion?
+      picturePath = get_fusion_sprite_path(@pokemon.species_data.head_pokemon.id_number, @pokemon.species_data.body_pokemon.id_number)
+    else
+      picturePath = get_unfused_sprite_path(@pokemon.species_data.id_number, @pokemon.spriteform_body)
+    end
+    return picturePath
+  end
 
   def pbStartScreen
     @view.init_window(self)
@@ -72,15 +71,13 @@ class PokemonHatPresenter
 
   def position_hat
     @view.display_move_arrows
-    min_x, max_x = -64, 88
-    min_y, max_y = -20, 140
     loop do
       Graphics.update
       Input.update
-      @x_pos += PIXELS_PER_MOVEMENT if Input.repeat?(Input::RIGHT) && @x_pos < max_x
-      @x_pos -= PIXELS_PER_MOVEMENT if Input.repeat?(Input::LEFT) && @x_pos > min_x
-      @y_pos += PIXELS_PER_MOVEMENT if Input.repeat?(Input::DOWN) && @y_pos < max_y
-      @y_pos -= PIXELS_PER_MOVEMENT if Input.repeat?(Input::UP) && @y_pos > min_y
+      @x_pos += PIXELS_PER_MOVEMENT if Input.repeat?(Input::RIGHT)
+      @x_pos -= PIXELS_PER_MOVEMENT if Input.repeat?(Input::LEFT)
+      @y_pos += PIXELS_PER_MOVEMENT if Input.repeat?(Input::DOWN)
+      @y_pos -= PIXELS_PER_MOVEMENT if Input.repeat?(Input::UP)
       break if Input.trigger?(Input::USE)
       return false if Input.trigger?(Input::BACK)
       @view.update()
@@ -90,25 +87,8 @@ class PokemonHatPresenter
   end
 
   def initialize_bitmap()
-    spriteLoader = BattleSpriteLoader.new
-
-    if @pokemon.isTripleFusion?
-      #todo
-    elsif @pokemon.isFusion?
-      @original_pokemon_bitmap = spriteLoader.load_fusion_sprite(@pokemon.head_id(),@pokemon.body_id())
-    else
-      echoln @pokemon
-      echoln @pokemon.species_data
-      @original_pokemon_bitmap = spriteLoader.load_base_sprite(@pokemon.id_number)
-    end
-
-    # picturePath = getPicturePath()
-    # if picturePath
-    #   @original_pokemon_bitmap = AnimatedBitmap.new(picturePath)
-    # else
-    #   @original_pokemon_bitmap = GameData::Species.setAutogenSprite(@pokemon)
-    #   #autogen
-    # end
+    picturePath = getPicturePath()
+    @original_pokemon_bitmap = AnimatedBitmap.new(picturePath)
     @original_pokemon_bitmap.scale_bitmap(Settings::FRONTSPRITE_SCALE)
   end
 
