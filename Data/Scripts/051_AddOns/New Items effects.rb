@@ -440,7 +440,6 @@ def useDreamMirror
   Kernel.pbMessage(_INTL("You can see a faint glimpse of {1} in the reflection.", map_name))
 end
 
-
 def useStrangePlant
   if darknessEffectOnCurrentMap()
     Kernel.pbMessage(_INTL("The strange plant appears to be glowing."))
@@ -448,8 +447,8 @@ def useStrangePlant
   else
     Kernel.pbMessage(_INTL("It had no effect"))
   end
-
 end
+
 
 #DREAMMIRROR
 ItemHandlers::UseFromBag.add(:DREAMMIRROR, proc { |item|
@@ -491,7 +490,7 @@ ItemHandlers::UseFromBag.add(:MAGICBOOTS, proc { |item|
 def pbForceEvo(pokemon)
   newspecies = getEvolvedSpecies(pokemon)
   return false if newspecies == -1
-  if newspecies > 0
+  if newspecies > 0 && (pokemon.kuray_no_evo? == 0 || $PokemonSystem.kuray_no_evo == 0)
     evo = PokemonEvolutionScene.new
     evo.pbStartScreen(pokemon, newspecies)
     evo.pbEvolution
@@ -592,7 +591,7 @@ ItemHandlers::UseOnPokemon.add(:DNAREVERSER, proc { |item, pokemon, scene|
     scene.pbDisplay(_INTL("It won't have any effect."))
     next false
   end
-  if Kernel.pbConfirmMessageSerious(_INTL("Should {1} be reversed?", pokemon.name))
+  if Kernel.pbConfirmMessage(_INTL("Should {1} be reversed?", pokemon.name))
     reverseFusion(pokemon)
     scene.pbRefreshAnnotations(proc { |p| pbCheckEvolution(p, item) > 0 })
     scene.pbRefresh
@@ -613,7 +612,13 @@ def reverseFusion(pokemon)
   pokemon.exp_when_fused_body = head_exp
   pokemon.exp_when_fused_head = body_exp
 
+  #KurayX - KURAYX_ABOUT_SHINIES
   pokemon.head_shiny, pokemon.body_shiny = pokemon.body_shiny, pokemon.head_shiny
+  pokemon.head_shinyr, pokemon.body_shinyr = pokemon.body_shinyr, pokemon.head_shinyr
+  pokemon.head_shinyg, pokemon.body_shinyg = pokemon.body_shinyg, pokemon.head_shinyg
+  pokemon.head_shinyb, pokemon.body_shinyb = pokemon.body_shinyb, pokemon.head_shinyb
+  pokemon.head_shinyhue, pokemon.body_shinyhue = pokemon.body_shinyhue, pokemon.head_shinyhue
+  pokemon.head_shinykrs, pokemon.body_shinykrs = pokemon.body_shinykrs.clone, pokemon.head_shinykrs.clone
   #play animation
   pbFadeOutInWithMusic(99999) {
     fus = PokemonEvolutionScene.new
@@ -628,7 +633,7 @@ ItemHandlers::UseOnPokemon.add(:INFINITEREVERSERS, proc { |item, pokemon, scene|
     scene.pbDisplay(_INTL("It won't have any effect."))
     next false
   end
-  if Kernel.pbConfirmMessageSerious(_INTL("Should {1} be reversed?", pokemon.name))
+  if Kernel.pbConfirmMessage(_INTL("Should {1} be reversed?", pokemon.name))
     body = getBasePokemonID(pokemon.species, true)
     head = getBasePokemonID(pokemon.species, false)
     newspecies = (head) * Settings::NB_POKEMON + body
@@ -1044,55 +1049,53 @@ ItemHandlers::BattleUseOnPokemon.add(:BALMMUSHROOM, proc { |item, pokemon, battl
   next pbBattleHPItem(pokemon, battler, 999, scene)
 })
 
+#TRACKER (for roaming legendaries)
+ItemHandlers::UseInField.add(:REVEALGLASS, proc { |item|
+  if Settings::ROAMING_SPECIES.length == 0
+    Kernel.pbMessage(_INTL("No roaming Pokémon defined."))
+  else
+    text = "\\l[8]"
+    min = $game_switches[350] ? 0 : 1
+    for i in min...Settings::ROAMING_SPECIES.length
+      poke = Settings::ROAMING_SPECIES[i]
+      next if poke == PBSPecies::FEEBAS
+      if $game_switches[poke[2]]
+        status = $PokemonGlobal.roamPokemon[i]
+        if status == true
+          if $PokemonGlobal.roamPokemonCaught[i]
+            text += _INTL("{1} has been caught.",
+                          PBSpecies.getName(getID(PBSpecies, poke[0])))
+          else
+            text += _INTL("{1} has been defeated.",
+                          PBSpecies.getName(getID(PBSpecies, poke[0])))
+          end
+        else
+          curmap = $PokemonGlobal.roamPosition[i]
+          if curmap
+            mapinfos = $RPGVX ? load_data("Data/MapInfos.rvdata") : load_data("Data/MapInfos.rxdata")
 
-#
-# #TRACKER (for roaming legendaries)
-# ItemHandlers::UseInField.add(:REVEALGLASS, proc { |item|
-#   if Settings::ROAMING_SPECIES.length == 0
-#     Kernel.pbMessage(_INTL("No roaming Pokémon defined."))
-#   else
-#     text = "\\l[8]"
-#     min = $game_switches[350] ? 0 : 1
-#     for i in min...Settings::ROAMING_SPECIES.length
-#       poke = Settings::ROAMING_SPECIES[i]
-#       next if poke == PBSPecies::FEEBAS
-#       if $game_switches[poke[2]]
-#         status = $PokemonGlobal.roamPokemon[i]
-#         if status == true
-#           if $PokemonGlobal.roamPokemonCaught[i]
-#             text += _INTL("{1} has been caught.",
-#                           PBSpecies.getName(getID(PBSpecies, poke[0])))
-#           else
-#             text += _INTL("{1} has been defeated.",
-#                           PBSpecies.getName(getID(PBSpecies, poke[0])))
-#           end
-#         else
-#           curmap = $PokemonGlobal.roamPosition[i]
-#           if curmap
-#             mapinfos = $RPGVX ? load_data("Data/MapInfos.rvdata") : load_data("Data/MapInfos.rxdata")
-#
-#             if curmap == $game_map.map_id
-#               text += _INTL("Beep beep! {1} appears to be nearby!",
-#                             PBSpecies.getName(getID(PBSpecies, poke[0])))
-#             else
-#               text += _INTL("{1} is roaming around {3}",
-#                             PBSpecies.getName(getID(PBSpecies, poke[0])), curmap,
-#                             mapinfos[curmap].name, (curmap == $game_map.map_id) ? _INTL("(this route!)") : "")
-#             end
-#           else
-#             text += _INTL("{1} is roaming in an unknown area.",
-#                           PBSpecies.getName(getID(PBSpecies, poke[0])), poke[1])
-#           end
-#         end
-#       else
-#         #text+=_INTL("{1} does not appear to be roaming.",
-#         #   PBSpecies.getName(getID(PBSpecies,poke[0])),poke[1],poke[2])
-#       end
-#       text += "\n" if i < Settings::ROAMING_SPECIES.length - 1
-#     end
-#     Kernel.pbMessage(text)
-#   end
-# })
+            if curmap == $game_map.map_id
+              text += _INTL("Beep beep! {1} appears to be nearby!",
+                            PBSpecies.getName(getID(PBSpecies, poke[0])))
+            else
+              text += _INTL("{1} is roaming around {3}",
+                            PBSpecies.getName(getID(PBSpecies, poke[0])), curmap,
+                            mapinfos[curmap].name, (curmap == $game_map.map_id) ? _INTL("(this route!)") : "")
+            end
+          else
+            text += _INTL("{1} is roaming in an unknown area.",
+                          PBSpecies.getName(getID(PBSpecies, poke[0])), poke[1])
+          end
+        end
+      else
+        #text+=_INTL("{1} does not appear to be roaming.",
+        #   PBSpecies.getName(getID(PBSpecies,poke[0])),poke[1],poke[2])
+      end
+      text += "\n" if i < Settings::ROAMING_SPECIES.length - 1
+    end
+    Kernel.pbMessage(text)
+  end
+})
 
 ####EXP. ALL
 #Methodes relative a l'exp sont pas encore la et pas compatibles
@@ -1126,21 +1129,40 @@ ItemHandlers::UseOnPokemon.add(:GOLDENBANANA, proc { |item, pokemon, scene|
   next pbHPItem(pokemon, 50, scene)
 })
 
+#KurayX Changed transgender to work on fusions and players can forcefully choose a specific gender for a pokemon
 ItemHandlers::UseOnPokemon.add(:TRANSGENDERSTONE, proc { |item, pokemon, scene|
-  if pokemon.gender == 0
-    pokemon.makeFemale
-    scene.pbRefresh
-    scene.pbDisplay(_INTL("The Pokémon became female!"))
-    next true
-  elsif pokemon.gender == 1
-    pokemon.makeMale
-    scene.pbRefresh
-    scene.pbDisplay(_INTL("The Pokémon became male!"))
-
-    next true
-  else
+  if pokemon.pizza?
     scene.pbDisplay(_INTL("It won't have any effect."))
     next false
+  else
+    commands = []
+    cmdFemale = -1
+    cmdMale = -1
+    cmdGenderless = -1
+    commands[cmdFemale = commands.length] = _INTL("Make female") if pokemon.gender != 1
+    commands[cmdGenderless = commands.length] = _INTL("Make genderless") if pokemon.gender != 2
+    commands[cmdMale = commands.length] = _INTL("Make male") if pokemon.gender != 0
+    commands = scene.pbShowCommands(
+      _INTL("Transgender to which gender?"), commands)
+    if cmdFemale >= 0 && commands == cmdFemale # to female
+      pokemon.forceFemale
+      scene.pbRefresh
+      scene.pbDisplay(_INTL("The Pokémon became female!"))
+      next true
+    elsif cmdMale >= 0 && commands == cmdMale # to male
+      pokemon.forceMale
+      scene.pbRefresh
+      scene.pbDisplay(_INTL("The Pokémon became male!"))
+      next true
+    elsif cmdGenderless >= 0 && commands == cmdGenderless # to genderless
+      pokemon.forceGenderless
+      scene.pbRefresh
+      scene.pbDisplay(_INTL("The Pokémon became genderless!"))
+      next true
+    else
+      scene.pbDisplay(_INTL("It won't have any effect."))
+      next false
+    end
   end
 })
 
@@ -1319,7 +1341,19 @@ ItemHandlers::UseOnPokemon.add(:MISTSTONE, proc { |item, pokemon, scene|
   end
 })
 
+#KurayX DEvolution
+ItemHandlers::UseOnPokemon.add(:DEVOLUTIONSPRAY, proc { |item, pokemon, scene|
+  next false if pokemon.egg?
+  if pbForceDevo(pokemon)
+    next true
+  else
+    scene.pbDisplay(_INTL("It won't have any effect."))
+    next false
+  end
+})
+
 def pbForceEvo(pokemon)
+  return false if pokemon.kuray_no_evo? == 1 && $PokemonSystem.kuray_no_evo == 1
   evolutions = getEvolvedSpecies(pokemon)
   return false if evolutions.empty?
   #if multiple evolutions, pick a random one
@@ -1333,9 +1367,31 @@ def pbForceEvo(pokemon)
   return true
 end
 
+#KurayX DEvolution
+def pbForceDevo(pokemon)
+  return false if pokemon.kuray_no_evo? == 1 && $PokemonSystem.kuray_no_evo == 1
+  evolution = getDevolvedSpecies(pokemon)
+  return false if evolution == pokemon.species
+  # return false if evolutions.empty?
+  #if multiple evolutions, pick a random one
+  #(format of returned value is [[speciesNum, level]])
+  # newspecies = evolutions[rand(evolutions.length - 1)][0]
+  # return false if newspecies == nil
+  evo = PokemonEvolutionScene.new
+  evo.pbStartScreen(pokemon, evolution)
+  evo.pbEvolution
+  evo.pbEndScreen
+  return true
+end
+
 # format of returned value is [[speciesNum, evolutionMethod],[speciesNum, evolutionMethod],etc.]
 def getEvolvedSpecies(pokemon)
   return GameData::Species.get(pokemon.species).get_evolutions(true)
+end
+
+#KurayX DEvolution
+def getDevolvedSpecies(pokemon)
+    return GameData::Species.get(pokemon.species).get_previous_species
 end
 
 #(copie de fixEvolutionOverflow dans FusionScene)
@@ -1530,17 +1586,20 @@ def pbUnfuse(pokemon, scene, supersplicers, pcPosition = nil)
     return false
   end
 
-  pokemon.spriteform_body=nil
-  pokemon.spriteform_head=nil
+  # Don't think this is a good idea - if player cancel or there's an error, that data will be lost
+  # pokemon.spriteform_body=nil
+  # pokemon.spriteform_head=nil
 
   bodyPoke = getBasePokemonID(pokemon.species_data.id_number, true)
   headPoke = getBasePokemonID(pokemon.species_data.id_number, false)
-
-  if (pokemon.obtain_method == 2 || pokemon.ot != $Trainer.name) # && !canunfuse
+  $PokemonSystem.unfusetraded = 0 unless $PokemonSystem.unfusetraded
+  if (pokemon.obtain_method == 2 || pokemon.ot != $Trainer.name) && $PokemonSystem.unfusetraded == 0 # && !canunfuse
     scene.pbDisplay(_INTL("You can't unfuse a Pokémon obtained in a trade!"))
     return false
   else
-    if Kernel.pbConfirmMessageSerious(_INTL("Should {1} be unfused?", pokemon.name))
+    # if Kernel.pbConfirmMessageSerious(_INTL("Should {1} be unfused?", pokemon.name))
+    #Kuray No Confirm on Unfuse
+    if Kernel.pbConfirmMessage(_INTL("Should {1} be unfused?", pokemon.name))
       keepInParty = 0
       if $Trainer.party.length >= 6 && !pcPosition
         scene.pbDisplay(_INTL("Your party is full! Keep which Pokémon in party?"))
@@ -1573,33 +1632,122 @@ def pbUnfuse(pokemon, scene, supersplicers, pcPosition = nil)
       end
       body_level = poke1.level
       head_level = poke2.level
+      
+      #KurayX - KURAYX_ABOUT_SHINIES
+      poke2.shinyValue=pokemon.shinyValue
+      #
 
+      # pokemon = body
+      # poke2 = head
+
+      pokemon.spriteform_body=nil
+      pokemon.spriteform_head=nil
       pokemon.exp_gained_since_fused = 0
       pokemon.exp_when_fused_head = nil
       pokemon.exp_when_fused_body = nil
+      pokemon.kuraycustomfile = nil
+      poke2.kuraycustomfile = nil
+      poke2.name = pokemon.name unless !pokemon.nicknamed? 
+      poke2.force_gender = pokemon.head_gender?
+      # @pokemon1.head_gender = @pokemon2.gender
+      # @pokemon1.head_nickname = @pokemon2.nicknamed?
 
       if pokemon.shiny?
         pokemon.shiny = false
+        if pokemon.body_shinyhue == nil && pokemon.head_shinyhue == nil
+            pokemon.head_shinyhue=pokemon.shinyValue?
+            pokemon.head_shinyr=pokemon.shinyR?
+            pokemon.head_shinyg=pokemon.shinyG?
+            pokemon.head_shinyb=pokemon.shinyB?
+            pokemon.head_shinykrs=pokemon.shinyKRS?.clone
+          # if rand(2) == 0
+          #   pokemon.head_shinyhue=pokemon.shinyValue?
+          #   pokemon.head_shinyr=pokemon.shinyR?
+          #   pokemon.head_shinyg=pokemon.shinyG?
+          #   pokemon.head_shinyb=pokemon.shinyB?
+          #   pokemon.head_shinykrs=pokemon.shinyKRS?.clone
+          # else
+          #   pokemon.body_shinyhue=pokemon.shinyValue?
+          #   pokemon.body_shinyr=pokemon.shinyR?
+          #   pokemon.body_shinyg=pokemon.shinyG?
+          #   pokemon.body_shinyb=pokemon.shinyB?
+          #   pokemon.body_shinykrs=pokemon.shinyKRS?.clone
+          # end
+        end
         if pokemon.bodyShiny? && pokemon.headShiny?
           pokemon.shiny = true
           poke2.shiny = true
+          #KurayX - KURAYX_ABOUT_SHINIES
+          pokemon.shinyValue=pokemon.body_shinyhue?
+          pokemon.shinyR=pokemon.body_shinyr?
+          pokemon.shinyG=pokemon.body_shinyg?
+          pokemon.shinyB=pokemon.body_shinyb?
+          pokemon.shinyKRS=pokemon.body_shinykrs?.clone
+          poke2.shinyValue=pokemon.head_shinyhue?
+          poke2.shinyR=pokemon.head_shinyr?
+          poke2.shinyG=pokemon.head_shinyg?
+          poke2.shinyB=pokemon.head_shinyb?
+          poke2.shinyKRS=pokemon.head_shinykrs?.clone
+          #####
           pokemon.natural_shiny = true if pokemon.natural_shiny && !pokemon.debug_shiny
           poke2.natural_shiny = true if pokemon.natural_shiny && !pokemon.debug_shiny
         elsif pokemon.bodyShiny?
           pokemon.shiny = true
+          #KurayX - KURAYX_ABOUT_SHINIES
+          pokemon.shinyValue=pokemon.body_shinyhue?
+          pokemon.shinyR=pokemon.body_shinyr?
+          pokemon.shinyG=pokemon.body_shinyg?
+          pokemon.shinyB=pokemon.body_shinyb?
+          pokemon.shinyKRS=pokemon.body_shinykrs?.clone
+          #####
           poke2.shiny = false
           pokemon.natural_shiny = true if pokemon.natural_shiny && !pokemon.debug_shiny
         elsif pokemon.headShiny?
           poke2.shiny = true
+          #KurayX - KURAYX_ABOUT_SHINIES
+          poke2.shinyValue=pokemon.head_shinyhue?
+          poke2.shinyR=pokemon.head_shinyr?
+          poke2.shinyG=pokemon.head_shinyg?
+          poke2.shinyB=pokemon.head_shinyb?
+          poke2.shinyKRS=pokemon.head_shinykrs?.clone
+          #####
           pokemon.shiny = false
           poke2.natural_shiny = true if pokemon.natural_shiny && !pokemon.debug_shiny
         else
           #shiny was obtained already fused
-          if rand(2) == 0
-            pokemon.shiny = true
-          else
-            poke2.shiny = true
-          end
+          # if rand(2) == 0
+          #   pokemon.shiny = true
+          #   #KurayX
+          #   # pokemon.shinyValue=pokemon.body_shinyhue?
+          #   # pokemon.shinyR=pokemon.body_shinyr?
+          #   # pokemon.shinyG=pokemon.body_shinyg?
+          #   # pokemon.shinyB=pokemon.body_shinyb?
+          #   #####
+          # else
+          #   poke2.shiny = true
+          #   #KurayX - KURAYX_ABOUT_SHINIES
+          #   poke2.shinyValue=pokemon.shinyValue?
+          #   poke2.shinyR=pokemon.shinyR?
+          #   poke2.shinyG=pokemon.shinyG?
+          #   poke2.shinyB=pokemon.shinyB?
+          #   poke2.shinyKRS=pokemon.shinyKRS?.clone
+          #   #####
+          # end
+          poke2.shiny = true
+          #KurayX - KURAYX_ABOUT_SHINIES
+          poke2.shinyValue=pokemon.shinyValue?
+          poke2.shinyR=pokemon.shinyR?
+          poke2.shinyG=pokemon.shinyG?
+          poke2.shinyB=pokemon.shinyB?
+          poke2.shinyKRS=pokemon.shinyKRS?.clone
+          
+          # It wasn't shiny (it was obtained already fused) - so the body should re-roll its shiny value
+          newvalue = rand(0..360) - 180
+          pokemon.shinyValue=newvalue
+          pokemon.shinyR=kurayRNGforChannels
+          pokemon.shinyG=kurayRNGforChannels
+          pokemon.shinyB=kurayRNGforChannels
+          pokemon.shinyKRS=kurayKRSmake
         end
       end
 
@@ -1624,10 +1772,17 @@ def pbUnfuse(pokemon, scene, supersplicers, pcPosition = nil)
         poke2.debug_shiny = false
       end
 
+      currentBoxFull = pcPosition != nil && (pcPosition[0] == -1 ? $PokemonStorage.party_full? : $PokemonStorage[pcPosition[0]].full?)
+
       if $Trainer.party.length >= 6
         if (keepInParty == 0)
-          $PokemonStorage.pbStoreCaught(poke2)
-          scene.pbDisplay(_INTL("{1} was sent to the PC.", poke2.name))
+          if currentBoxFull && scene.is_a?(PokemonStorageScene) && !scene.screen.heldpkmn
+            # Hold the pokemon if the current box is full
+            scene.screen.pbSetHeldPokemon(poke2)
+          else
+            $PokemonStorage.pbStoreCaught(poke2)
+            scene.pbDisplay(_INTL("{1} was sent to the PC.", poke2.name))
+          end
         else
           poke2 = Pokemon.new(bodyPoke, body_level)
           poke1 = Pokemon.new(headPoke, head_level)
@@ -1635,8 +1790,14 @@ def pbUnfuse(pokemon, scene, supersplicers, pcPosition = nil)
           if pcPosition != nil
             box = pcPosition[0]
             index = pcPosition[1]
-            #todo: store at next available position from current position
-            $PokemonStorage.pbStoreCaught(poke2)
+
+            if currentBoxFull && scene.is_a?(PokemonStorageScene) && !scene.screen.heldpkmn
+              # Hold the pokemon if the current box is full
+              scene.screen.pbSetHeldPokemon(poke2)
+            else
+              #todo: store at next available position from current position
+              $PokemonStorage.pbStoreCaught(poke2)
+            end
           else
             $PokemonStorage.pbStoreCaught(poke2)
             scene.pbDisplay(_INTL("{1} was sent to the PC.", poke2.name))
@@ -1648,14 +1809,21 @@ def pbUnfuse(pokemon, scene, supersplicers, pcPosition = nil)
           box = pcPosition[0]
           index = pcPosition[1]
 
-          #todo: store at next available position from current position
-          $PokemonStorage.pbStoreCaught(poke2)
+          if box == -1
+            Kernel.pbAddPokemonSilent(poke2, poke2.level)
+          elsif currentBoxFull && scene.is_a?(PokemonStorageScene) && !scene.screen.heldpkmn
+            # Hold the pokemon if the current box is full
+            scene.screen.pbSetHeldPokemon(poke2)
+          else
+            #todo: store at next available position from current position
+            $PokemonStorage.pbStoreCaught(poke2)
+          end
         else
           Kernel.pbAddPokemonSilent(poke2, poke2.level)
         end
       end
 
-      #On ajoute les poke au pokedex
+      #On ajoute l'autre dans le pokedex aussi
       $Trainer.pokedex.set_seen(poke1.species)
       $Trainer.pokedex.set_owned(poke1.species)
       $Trainer.pokedex.set_seen(poke2.species)
@@ -1667,6 +1835,9 @@ def pbUnfuse(pokemon, scene, supersplicers, pcPosition = nil)
       pokemon.moves = poke1.moves
       pokemon.obtain_method = 0
       poke1.obtain_method = 0
+      #Just to be sure...
+      poke1.kuraycustomfile = nil
+      poke2.kuraycustomfile = nil
 
       #scene.pbDisplay(_INTL(p1.to_s + " " + p2.to_s))
       scene.pbHardRefresh
@@ -1868,97 +2039,61 @@ ItemHandlers::UseInField.add(:DEVONSCOPE, proc { |item|
 #TRACKER (for roaming legendaries)
 ItemHandlers::UseInField.add(:REVEALGLASS, proc { |item|
   track_pokemon()
-  next true
 })
 ItemHandlers::UseFromBag.add(:REVEALGLASS, proc { |item|
   track_pokemon()
-  next true
 })
 
-def getAllCurrentlyRoamingPokemon
-  currently_roaming = []
-  Settings::ROAMING_SPECIES.each_with_index do |data, i|
-    next if !GameData::Species.exists?(data[0])
-    next if data[2] > 0 && !$game_switches[data[2]]   # Isn't roaming
-    next if $PokemonGlobal.roamPokemon[i] == true   # Roaming Pokémon has been caught
-    currently_roaming << i
-  end
-  return currently_roaming
-end
-
 def track_pokemon()
-  currently_roaming = getAllCurrentlyRoamingPokemon()
-  echoln currently_roaming
-  weather_data = []
-  mapinfos = $RPGVX ? load_data("Data/MapInfos.rvdata") : load_data("Data/MapInfos.rxdata")
-  currently_roaming.each do |roamer_id|
-    map_id = $PokemonGlobal.roamPosition[roamer_id]
-    map_name = mapinfos[map_id].name
-    weather_type =  Settings::ROAMING_SPECIES[roamer_id][6]
-    case weather_type
-    when :Storm
-      forecast_msg = _INTL("An unusual \\c[6]thunderstorm\\c[0] has been detected around \\c[6]{1}",map_name)
-    when :StrongWinds
-      forecast_msg = _INTL("Unusually \\c[9]strong winds\\c[0] have been detected around \\c[9]{1}",map_name)
-    when :Sunny
-      forecast_msg = _INTL("Unusually \\c[10]harsh sunlight\\c[0] has been detected around \\c[10]{1}",map_name)
-    end
-    weather_data << forecast_msg if forecast_msg && !weather_data.include?(forecast_msg)
-  end
-  weather_data << _INTL("No unusual weather patterns have been detected.") if weather_data.empty?
-  weather_data.each do |message|
-    Kernel.pbMessage(message)
-  end
+  nbRoaming = 0
+  if Settings::ROAMING_SPECIES.length == 0
+    Kernel.pbMessage(_INTL("No roaming Pokémon defined."))
+  else
+    text = "\\l[8]"
+    min = $game_switches[350] ? 0 : 1
+    for i in min...Settings::ROAMING_SPECIES.length
+      poke = Settings::ROAMING_SPECIES[i]
+      next if poke[0] == :FEEBAS
+      if $game_switches[poke[2]]
+        status = $PokemonGlobal.roamPokemon[i]
+        if status == true
+          if $PokemonGlobal.roamPokemonCaught[i]
+            text += _INTL("{1} has been caught.",
+                          PBSpecies.getName(getID(PBSpecies, poke[0])))
+          else
+            text += _INTL("{1} has been defeated.",
+                          PBSpecies.getName(getID(PBSpecies, poke[0])))
+          end
+        else
+          nbRoaming += 1
+          curmap = $PokemonGlobal.roamPosition[i]
+          if curmap
+            mapinfos = $RPGVX ? load_data("Data/MapInfos.rvdata") : load_data("Data/MapInfos.rxdata")
 
-  # nbRoaming = 0
-  # if Settings::ROAMING_SPECIES.length == 0
-  #   Kernel.pbMessage(_INTL("No roaming Pokémon defined."))
-  # else
-  #   text = "\\l[8]"
-  #   min = $game_switches[350] ? 0 : 1
-  #   for i in min...Settings::ROAMING_SPECIES.length
-  #     poke = Settings::ROAMING_SPECIES[i]
-  #     next if poke[0] == :FEEBAS
-  #     if $game_switches[poke[2]]
-  #       status = $PokemonGlobal.roamPokemon[i]
-  #       if status == true
-  #         if $PokemonGlobal.roamPokemonCaught[i]
-  #           text += _INTL("{1} has been caught.",
-  #                         PBSpecies.getName(getID(PBSpecies, poke[0])))
-  #         else
-  #           text += _INTL("{1} has been defeated.",
-  #                         PBSpecies.getName(getID(PBSpecies, poke[0])))
-  #         end
-  #       else
-  #         nbRoaming += 1
-  #         curmap = $PokemonGlobal.roamPosition[i]
-  #         if curmap
-  #           mapinfos = $RPGVX ? load_data("Data/MapInfos.rvdata") : load_data("Data/MapInfos.rxdata")
-  #
-  #           if curmap == $game_map.map_id
-  #             text += _INTL("Beep beep! {1} appears to be nearby!",
-  #                           PBSpecies.getName(getID(PBSpecies, poke[0])))
-  #           else
-  #             text += _INTL("{1} is roaming around {3}",
-  #                           PBSpecies.getName(getID(PBSpecies, poke[0])), curmap,
-  #                           mapinfos[curmap].name, (curmap == $game_map.map_id) ? _INTL("(this route!)") : "")
-  #           end
-  #         else
-  #           text += _INTL("{1} is roaming in an unknown area.",
-  #                         PBSpecies.getName(getID(PBSpecies, poke[0])), poke[1])
-  #         end
-  #       end
-  #     else
-  #       #text+=_INTL("{1} does not appear to be roaming.",
-  #       #   PBSpecies.getName(getID(PBSpecies,poke[0])),poke[1],poke[2])
-  #     end
-  #     #text += "\n" if i < Settings::ROAMING_SPECIES.length - 1
-  #   end
-  #   if nbRoaming == 0
-  #     text = "No Pokémon appears to be roaming at this moment."
-  #   end
-  #   Kernel.pbMessage(text)
-  # end
+            if curmap == $game_map.map_id
+              text += _INTL("Beep beep! {1} appears to be nearby!",
+                            PBSpecies.getName(getID(PBSpecies, poke[0])))
+            else
+              text += _INTL("{1} is roaming around {3}",
+                            PBSpecies.getName(getID(PBSpecies, poke[0])), curmap,
+                            mapinfos[curmap].name, (curmap == $game_map.map_id) ? _INTL("(this route!)") : "")
+            end
+          else
+            text += _INTL("{1} is roaming in an unknown area.",
+                          PBSpecies.getName(getID(PBSpecies, poke[0])), poke[1])
+          end
+        end
+      else
+        #text+=_INTL("{1} does not appear to be roaming.",
+        #   PBSpecies.getName(getID(PBSpecies,poke[0])),poke[1],poke[2])
+      end
+      #text += "\n" if i < Settings::ROAMING_SPECIES.length - 1
+    end
+    if nbRoaming == 0
+      text = "No Pokémon appears to be roaming at this moment."
+    end
+    Kernel.pbMessage(text)
+  end
 end
 
 ####EXP. ALL
@@ -2003,11 +2138,13 @@ ItemHandlers::UseInField.add(:BOXLINK, proc { |item|
   if blacklisted_maps.include?($game_map.map_id)
     Kernel.pbMessage("There doesn't seem to be any network coverage here...")
   else
+    $game_temp.fromkurayshop = 1
     pbFadeOutIn {
       scene = PokemonStorageScene.new
       screen = PokemonStorageScreen.new(scene,$PokemonStorage)
       screen.pbStartScreen(0) #Boot PC in organize mode
     }
+    $game_temp.fromkurayshop = nil
   end
   next 1
 })

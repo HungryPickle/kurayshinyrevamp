@@ -43,32 +43,6 @@
 #   end
 # }
 
-def onLoadExistingGame()
-  migrateOldSavesToCharacterCustomization()
-
-
-end
-
-def onStartingNewGame() end
-
-def migrateOldSavesToCharacterCustomization()
-  if !$Trainer.unlocked_clothes
-    $Trainer.unlocked_clothes = [Settings::DEFAULT_OUTFIT_MALE,
-                                 Settings::DEFAULT_OUTFIT_FEMALE,
-                                 Settings::STARTING_OUTFIT]
-  end
-  if !$Trainer.unlocked_hats
-    $Trainer.unlocked_hats = [Settings::DEFAULT_OUTFIT_MALE, Settings::DEFAULT_OUTFIT_FEMALE]
-  end
-  if !$Trainer.unlocked_hairstyles
-    $Trainer.unlocked_hairstyles = [Settings::DEFAULT_OUTFIT_MALE, Settings::DEFAULT_OUTFIT_FEMALE]
-  end
-
-  if !$Trainer.clothes || !$Trainer.hair #|| !$Trainer.hat
-    setupStartingOutfit()
-  end
-end
-
 #===============================================================================
 #
 #===============================================================================
@@ -300,10 +274,10 @@ class PokemonLoadScreen
     begin
       save_data = SaveData.read_from_file(file_path)
     rescue
-      save_data = try_load_backup(file_path)
+      save_data =try_load_backup(file_path)
     end
     unless SaveData.valid?(save_data)
-      save_data = try_load_backup(file_path)
+      save_data =try_load_backup(file_path)
     end
     return save_data
   end
@@ -352,23 +326,6 @@ class PokemonLoadScreen
     end
   end
 
-  #So that the options menu is set on the correct difficulty on older saves
-  def ensureCorrectDifficulty()
-    $Trainer.selected_difficulty = 1 #normal
-    $Trainer.selected_difficulty = 0 if $game_switches[SWITCH_GAME_DIFFICULTY_EASY]
-    $Trainer.selected_difficulty = 2 if $game_switches[SWITCH_GAME_DIFFICULTY_HARD]
-    $Trainer.lowest_difficulty= $Trainer.selected_difficulty if !$Trainer.lowest_difficulty
-  end
-
-  def setGameMode()
-    $Trainer.game_mode = 0 #classic
-    $Trainer.game_mode = 2 if $game_switches[SWITCH_MODERN_MODE]
-    $Trainer.game_mode = 3 if $game_switches[SWITCH_EXPERT_MODE]
-    $Trainer.game_mode = 4 if $game_switches[SWITCH_SINGLE_POKEMON_MODE]
-    $Trainer.game_mode = 1 if $game_switches[SWITCH_RANDOMIZED_AT_LEAST_ONCE]
-    $Trainer.game_mode = 5 if $game_switches[ENABLED_DEBUG_MODE_AT_LEAST_ONCE]
-  end
-
   def promptEnableSpritesDownload
     message = "Some sprites appear to be missing from your game. \nWould you like the game to download sprites automatically while playing? (this requires an internet connection)"
     if pbConfirmMessage(message)
@@ -382,7 +339,23 @@ class PokemonLoadScreen
     updateCustomDexFile
     newer_version = find_newer_available_version
     if newer_version
-      pbMessage(_INTL("Version {1} is now available! Please use the game's installer to download the newest version. Check the Discord for more information.", newer_version))
+      if File.file?('.\INSTALL_OR_UPDATE.bat')
+        update_answer = pbMessage(_INTL("Version {1} is now available! Update now?", newer_version), ["Yes","No"], 1)
+        if update_answer == 0
+          Process.spawn('.\INSTALL_OR_UPDATE.bat', "auto")
+          exit
+        end
+      else
+        pbMessage(_INTL("Version {1} is now available! Please check the game's official page to download the newest version.", newer_version))
+      end
+    end
+
+    if $PokemonSystem && $PokemonSystem.shiny_cache == 1
+      checkDirectory("Cache")
+      checkDirectory("Cache/Shiny")
+      Dir.glob("Cache/Shiny/*").each do |file|
+        File.delete(file) if File.file?(file)
+      end
     end
 
     if ($game_temp.unimportedSprites && $game_temp.unimportedSprites.size > 0)
@@ -392,6 +365,7 @@ class PokemonLoadScreen
       pbMessage(_INTL("{1} new custom sprites were imported into the game", $game_temp.nb_imported_sprites.to_s))
     end
     checkEnableSpritesDownload
+
     $game_temp.nb_imported_sprites = nil
 
     copyKeybindings()
@@ -412,14 +386,21 @@ class PokemonLoadScreen
       cmd_mystery_gift = -1
       cmd_debug = -1
       cmd_quit = -1
+      #Kuray Add Documentation & Discord server links
+      cmd_doc         = -1
+      cmd_discord         = -1
+      cmd_pifdiscord        = -1
+      cmd_wiki        = -1
       show_continue = !@save_data.empty?
       new_game_plus = show_continue && (@save_data[:player].new_game_plus_unlocked || $DEBUG)
 
       if show_continue
         commands[cmd_continue = commands.length] = "#{@selected_file}"
-        if @save_data[:player].mystery_gift_unlocked
-          commands[cmd_mystery_gift = commands.length] = _INTL('Mystery Gift') # Honestly I have no idea how to make Mystery Gift work well with this.
-        end
+        # if @save_data[:player].mystery_gift_unlocked
+        commands[cmd_mystery_gift = commands.length] = _INTL('Mystery Gift') # Honestly I have no idea how to make Mystery Gift work well with this.
+        # if true
+          # commands[cmd_mystery_gift = commands.length] = _INTL('Mystery Gift') # Honestly I have no idea how to make Mystery Gift work well with this.
+        # end
       end
 
       commands[cmd_new_game = commands.length] = _INTL('New Game')
@@ -427,9 +408,11 @@ class PokemonLoadScreen
         commands[cmd_new_game_plus = commands.length] = _INTL('New Game +')
       end
       commands[cmd_options = commands.length] = _INTL('Options')
-      commands[cmd_language = commands.length] = _INTL('Language') if Settings::LANGUAGES.length >= 2
-      commands[cmd_discord = commands.length] = _INTL('Discord')
+      commands[cmd_discord = commands.length]     = _INTL('KIF Discord')
+      commands[cmd_doc = commands.length]     = _INTL('KIF Documentation (Obsolete)')
+      commands[cmd_pifdiscord = commands.length]     = _INTL('PIF Discord')
       commands[cmd_wiki = commands.length] = _INTL('Wiki')
+      commands[cmd_language = commands.length] = _INTL('Language') if Settings::LANGUAGES.length >= 2
       commands[cmd_debug = commands.length] = _INTL('Debug') if $DEBUG
       commands[cmd_quit = commands.length] = _INTL('Quit Game')
       cmd_left = -3
@@ -456,8 +439,6 @@ class PokemonLoadScreen
           @scene.pbEndScene
           Game.load(@save_data)
           $game_switches[SWITCH_V5_1] = true
-          ensureCorrectDifficulty()
-          setGameMode()
           $PokemonGlobal.alt_sprite_substitutions = {} if !$PokemonGlobal.alt_sprite_substitutions
           $PokemonGlobal.autogen_sprites_cache = {}
           return
@@ -471,15 +452,27 @@ class PokemonLoadScreen
           Game.start_new(@save_data[:bag], @save_data[:storage_system], @save_data[:player])
           @save_data[:player].new_game_plus_unlocked = true
           return
-        when cmd_discord
-          openUrlInBrowser(Settings::DISCORD_URL)
+        when cmd_pifdiscord
+          openUrlInBrowser(Settings::PIF_DISCORD_URL)
         when cmd_wiki
           openUrlInBrowser(Settings::WIKI_URL)
+        when cmd_doc
+          openUrlInBrowser("https://docs.google.com/document/d/1O6pKKL62dbLcapO0c2zDG2UI-eN6uatYlt_0GSk1dbE")
+          # https://docs.google.com/document/d/1O6pKKL62dbLcapO0c2zDG2UI-eN6uatYlt_0GSk1dbE
+          # system("start https://docs.google.com/document/d/1O6pKKL62dbLcapO0c2zDG2UI-eN6uatYlt_0GSk1dbE")
+          # `open https://docs.google.com/document/d/1O6pKKL62dbLcapO0c2zDG2UI-eN6uatYlt_0GSk1dbE`
+          return
+        when cmd_discord
+          # https://discord.gg/UFxQkUZeyE
+          openUrlInBrowser(Settings::DISCORD_URL)
+          # system("start https://discord.gg/UFxQkUZeyE")
+          # `open https://discord.gg/UFxQkUZeyE`
+          return
         when cmd_mystery_gift
           pbFadeOutIn { pbDownloadMysteryGift(@save_data[:player]) }
         when cmd_options
           pbFadeOutIn do
-            scene = PokemonGameOption_Scene.new
+            scene = PokemonOption_Scene.new
             screen = PokemonOptionScreen.new(scene)
             screen.pbStartScreen(true)
           end

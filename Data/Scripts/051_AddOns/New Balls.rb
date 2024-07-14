@@ -5,9 +5,9 @@
 #GENDER BALL (24) - switch le gender du pokemon
 #catch rate: pokeball
 BallHandlers::OnCatch.add(:GENDERBALL,proc{|ball,battle,pokemon|
-if pokemon.gender == 0 
-  pokemon.makeFemale 
-elsif  pokemon.gender == 1 
+if pokemon.gender == 0
+  pokemon.makeFemale
+elsif  pokemon.gender == 1
   pokemon.makeMale
 end
 })
@@ -30,9 +30,8 @@ next catchRate
 })
 BallHandlers::OnCatch.add(:ABILITYBALL,proc{|ball,battle,pokemon|
   species = getSpecies(dexNum(pokemon))
-  ability = species.hidden_abilities[-1]
-  pokemon.ability = ability
-  pokemon.ability_index= getAbilityIndexFromID(ability,pokemon)
+  pokemon.ability= species.hidden_abilities[-1]
+  pokemon.ability_index = 2
 })
 
 #VIRUS BALL 27  - give pokerus
@@ -62,11 +61,9 @@ BallHandlers::ModifyCatchRate.add(:PERFECTBALL,proc{|ball,catchRate,battle,pokem
 next catchRate
 })
 BallHandlers::OnCatch.add(:PERFECTBALL,proc{|ball,battle,pokemon|
-  stats = [:ATTACK, :SPECIAL_ATTACK, :SPECIAL_DEFENSE, :SPEED, :DEFENSE, :HP]
-  first = rand(5)
-  second = rand(5)
-  pokemon.iv[stats[first]] = 31
-  pokemon.iv[stats[second]] = 31
+  perfects = [:ATTACK, :SPECIAL_ATTACK, :SPECIAL_DEFENSE, :SPEED, :DEFENSE, :HP].sample(2)
+  pokemon.iv[perfects[0]] = 31
+  pokemon.iv[perfects[1]] = 31
 })
 
 
@@ -97,12 +94,12 @@ BallHandlers::ModifyCatchRate.add(:SPARKBALL,proc{|ball,catchRate,battle,battler
 })
 #PUREBALL  - marche mieux quand pas de status
 BallHandlers::ModifyCatchRate.add(:PUREBALL,proc{|ball,catchRate,battle,battler|
-   catchRate=(catchRate*7/2).floor if battler.status ==0   
+   catchRate=(catchRate*7/2).floor if battler.status ==0
    next catchRate
 })
 #STATUSBALL - marche mieux quand any status
 BallHandlers::ModifyCatchRate.add(:STATUSBALL,proc{|ball,catchRate,battle,battler|
-   catchRate=(catchRate*5/2).floor if battler.status !=0   
+   catchRate=(catchRate*5/2).floor if battler.status !=0
    next catchRate
 })
 
@@ -115,7 +112,7 @@ BallHandlers::ModifyCatchRate.add(:FUSIONBALL,proc{|ball,catchRate,battle,battle
 #CANDY BALL  - +5 level
 #catchrate: 80% pokeball
 BallHandlers::ModifyCatchRate.add(:CANDYBALL,proc{|ball,catchRate,battle,pokemon|
-  catchRate=(catchRate*0.8).floor  
+  catchRate=(catchRate*0.8).floor
 next catchRate
 })
 BallHandlers::OnCatch.add(:CANDYBALL,proc{|ball,battle,pokemon|
@@ -123,6 +120,6 @@ BallHandlers::OnCatch.add(:CANDYBALL,proc{|ball,battle,pokemon|
 })
 #FIRECRACKER
 BallHandlers::ModifyCatchRate.add(:FIRECRACKER,proc{|ball,catchRate,battle,battler|
-   battler.hp -= 10  
+   battler.hp -= 10
    next 0
 })

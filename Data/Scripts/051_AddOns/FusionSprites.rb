@@ -1,66 +1,79 @@
 module GameData
   class Species
-    def self.sprite_bitmap_from_pokemon(pkmn, back = false, species = nil)
+    def self.sprite_bitmap_from_pokemon(pkmn, back = false, species = nil, makeShiny = true)
       species = pkmn.species if !species
       species = GameData::Species.get(species).id_number # Just to be sure it's a number
       return self.egg_sprite_bitmap(species, pkmn.form) if pkmn.egg?
       if back
-        ret = self.back_sprite_bitmap(species, pkmn.spriteform_body, pkmn.spriteform_head, pkmn.shiny?, pkmn.bodyShiny?, pkmn.headShiny?)
+        #KurayX - KURAYX_ABOUT_SHINIES
+        if makeShiny
+          ret = self.back_sprite_bitmap(species, pkmn.spriteform_body, pkmn.spriteform_head, pkmn.shiny?,pkmn.bodyShiny?,pkmn.headShiny?,pkmn.shinyValue?,pkmn.shinyR?,pkmn.shinyG?,pkmn.shinyB?,pkmn.shinyKRS?,pkmn.kuraycustomfile?)
+        else
+          ret = self.back_sprite_bitmap(species, pkmn.spriteform_body, pkmn.spriteform_head, false, false, false)
+        end
       else
-        ret = self.front_sprite_bitmap(species, pkmn.spriteform_body, pkmn.spriteform_head, pkmn.shiny?, pkmn.bodyShiny?, pkmn.headShiny?)
+        #KurayX - KURAYX_ABOUT_SHINIES
+        if makeShiny
+          ret = self.front_sprite_bitmap(species, nil, nil, pkmn.shiny?,pkmn.bodyShiny?,pkmn.headShiny?,pkmn.shinyValue?,pkmn.shinyR?,pkmn.shinyG?,pkmn.shinyB?,pkmn.shinyKRS?,pkmn.kuraycustomfile?)
+        else
+          ret = self.front_sprite_bitmap(species, nil, nil, false, false, false)
+        end
       end
       return ret
     end
 
-    def self.sprite_bitmap_from_pokemon_id(id, back = false, shiny = false, bodyShiny = false, headShiny = false)
+    #KurayX - KURAYX_ABOUT_SHINIES
+    def self.sprite_bitmap_from_pokemon_id(id, back = false, shiny=false, bodyShiny=false,headShiny=false, pokeHue = 0, pokeR = 0, pokeG = 1, pokeB = 2, cusFile=nil)
       if back
-        ret = self.back_sprite_bitmap(id, nil, nil, shiny, bodyShiny, headShiny)
+        ret = self.back_sprite_bitmap(id,nil,nil,shiny,bodyShiny,headShiny,pokeHue,pokeR,pokeG,pokeB,cusFile)
       else
-        ret = self.front_sprite_bitmap(id, nil, nil, shiny, bodyShiny, headShiny)
+        ret = self.front_sprite_bitmap(id,nil,nil,shiny,bodyShiny,headShiny,pokeHue,pokeR,pokeG,pokeB,cusFile)
       end
       return ret
     end
 
     MAX_SHIFT_VALUE = 360
-    MINIMUM_OFFSET = 40
-    ADDITIONAL_OFFSET_WHEN_TOO_CLOSE = 40
-    MINIMUM_DEX_DIF = 20
+    MINIMUM_OFFSET=40
+    ADDITIONAL_OFFSET_WHEN_TOO_CLOSE=40
+    MINIMUM_DEX_DIF=20
 
+    #KurayBringingBack
     def self.calculateShinyHueOffset(dex_number, isBodyShiny = false, isHeadShiny = false)
       if dex_number <= NB_POKEMON
         if SHINY_COLOR_OFFSETS[dex_number]
           return SHINY_COLOR_OFFSETS[dex_number]
         end
         body_number = dex_number
-        head_number = dex_number
+        head_number=dex_number
 
-      else
+        else
         body_number = getBodyID(dex_number)
-        head_number = getHeadID(dex_number, body_number)
+        head_number=getHeadID(dex_number,body_number)
       end
-      if isBodyShiny && isHeadShiny && SHINY_COLOR_OFFSETS[body_number] && SHINY_COLOR_OFFSETS[head_number]
+      if isBodyShiny && isHeadShiny && SHINY_COLOR_OFFSETS[body_number]  && SHINY_COLOR_OFFSETS[head_number]
         offset = SHINY_COLOR_OFFSETS[body_number] + SHINY_COLOR_OFFSETS[head_number]
       elsif isHeadShiny && SHINY_COLOR_OFFSETS[head_number]
         offset = SHINY_COLOR_OFFSETS[head_number]
       elsif isBodyShiny && SHINY_COLOR_OFFSETS[body_number]
         offset = SHINY_COLOR_OFFSETS[body_number]
       else
-        offset = calculateShinyHueOffsetDefaultMethod(body_number, head_number, dex_number, isBodyShiny, isHeadShiny)
+        offset = calculateShinyHueOffsetDefaultMethod(body_number,head_number,dex_number,isBodyShiny,isHeadShiny)
       end
       return offset
     end
 
-    def self.calculateShinyHueOffsetDefaultMethod(body_number, head_number, dex_number, isBodyShiny = false, isHeadShiny = false)
+    #KurayBringingBack
+    def self.calculateShinyHueOffsetDefaultMethod(body_number,head_number,dex_number, isBodyShiny = false, isHeadShiny = false)
       dex_offset = dex_number
       #body_number = getBodyID(dex_number)
       #head_number=getHeadID(dex_number,body_number)
-      dex_diff = (body_number - head_number).abs
+      dex_diff = (body_number-head_number).abs
       if isBodyShiny && isHeadShiny
         dex_offset = dex_number
       elsif isHeadShiny
         dex_offset = head_number
       elsif isBodyShiny
-        dex_offset = dex_diff > MINIMUM_DEX_DIF ? body_number : body_number + ADDITIONAL_OFFSET_WHEN_TOO_CLOSE
+        dex_offset = dex_diff > MINIMUM_DEX_DIF ? body_number : body_number+ADDITIONAL_OFFSET_WHEN_TOO_CLOSE
       end
       offset = dex_offset + Settings::SHINY_HUE_OFFSET
       offset /= MAX_SHIFT_VALUE if offset > NB_POKEMON
@@ -70,7 +83,9 @@ module GameData
       return offset
     end
 
-    def self.front_sprite_bitmap(dex_number, spriteform_body = nil, spriteform_head = nil, isShiny = false, bodyShiny = false, headShiny = false)
+    #KurayX - KURAYX_ABOUT_SHINIES
+    #KuraSprite
+    def self.front_sprite_bitmap(dex_number, spriteform_body = nil, spriteform_head = nil, isShiny = false, bodyShiny = false, headShiny = false, shinyValue = 0, shinyR = 0, shinyG = 1, shinyB = 2, shinyKRS=[0, 0, 0, 0, 0, 0, 0, 0, 0],cusFile=nil)
       spriteform_body = nil# if spriteform_body == 0
       spriteform_head = nil# if spriteform_head == 0
       #TODO Remove spriteform mechanic entirely
@@ -79,19 +94,49 @@ module GameData
       if dex_number.is_a?(Symbol)
         dex_number = GameData::Species.get(dex_number).id_number
       end
-      filename = self.sprite_filename(dex_number, spriteform_body, spriteform_head)
+      if cusFile == nil
+        filename = self.sprite_filename(dex_number, spriteform_body, spriteform_head)
+      else
+        if pbResolveBitmap(cusFile) && (!$PokemonSystem.kurayindividcustomsprite || $PokemonSystem.kurayindividcustomsprite == 0)
+          filename = cusFile
+        else
+          filename = self.sprite_filename(dex_number, spriteform_body, spriteform_head)
+        end
+      end
       sprite = (filename) ? AnimatedBitmap.new(filename) : nil
       if isShiny
-        sprite.shiftColors(self.calculateShinyHueOffset(dex_number, bodyShiny, headShiny))
+        # sprite.shiftColors(colorshifting)
+        #KurayBringBackOldShinies
+        if $PokemonSystem.kuraynormalshiny == 1
+          sprite.shiftColors(self.calculateShinyHueOffset(dex_number, bodyShiny, headShiny))
+        else
+          sprite.pbGiveFinaleColor(shinyR, shinyG, shinyB, shinyValue, shinyKRS)
+        end
       end
       return sprite
     end
 
-    def self.back_sprite_bitmap(dex_number, spriteform_body = nil, spriteform_head = nil, isShiny = false, bodyShiny = false, headShiny = false)
-      filename = self.sprite_filename(dex_number, spriteform_body, spriteform_head)
+    #KurayX - KURAYX_ABOUT_SHINIES
+    #KuraSprite
+    def self.back_sprite_bitmap(dex_number, spriteform_body = nil, spriteform_head = nil, isShiny = false, bodyShiny = false, headShiny = false, shinyValue = 0, shinyR = 0, shinyG = 1, shinyB = 2, shinyKRS=[0, 0, 0, 0, 0, 0, 0, 0, 0], cusFile=nil)
+      if cusFile == nil
+        filename = self.sprite_filename(dex_number, spriteform_body, spriteform_head)
+      else
+        if pbResolveBitmap(cusFile) && (!$PokemonSystem.kurayindividcustomsprite || $PokemonSystem.kurayindividcustomsprite == 0)
+          filename = cusFile
+        else
+          filename = self.sprite_filename(dex_number, spriteform_body, spriteform_head)
+        end
+      end
       sprite = (filename) ? AnimatedBitmap.new(filename) : nil
       if isShiny
-        sprite.shiftColors(self.calculateShinyHueOffset(dex_number, bodyShiny, headShiny))
+        # sprite.shiftColors(colorshifting)
+        #KurayBringBackOldShinies
+        if $PokemonSystem.kuraynormalshiny == 1
+          sprite.shiftColors(self.calculateShinyHueOffset(dex_number, bodyShiny, headShiny))
+        else
+          sprite.pbGiveFinaleColor(shinyR, shinyG, shinyB, shinyValue, shinyKRS)
+        end
       end
       return sprite
     end
@@ -165,11 +210,18 @@ module GameData
       when Settings::ZAPMOLCUNO_NB + 27 #Triple regi
         return sprintf(base_path + "447.448.449")
       else
+        # puts dexNum.inspect
+        if dexNum > Settings::KURAY_CUSTOM_POKEMONS
+          # testddd = sprintf(base_path + "k_%03d", dexNum-Settings::KURAY_CUSTOM_POKEMONS)
+          # puts testddd.inspect
+          return sprintf(base_path + "k_%03d", dexNum-Settings::KURAY_CUSTOM_POKEMONS)
+        end
         return sprintf(base_path + "000")
       end
     end
 
     def self.sprite_filename(dex_number, spriteform_body = nil, spriteform_head = nil)
+      
       #dex_number = GameData::NAT_DEX_MAPPING[dex_number] ? GameData::NAT_DEX_MAPPING[dex_number] : dex_number
       if dex_number.is_a?(GameData::Species)
         dex_number = dex_number.id_number
@@ -183,8 +235,12 @@ module GameData
       else
         if dex_number >= Settings::ZAPMOLCUNO_NB
           specialPath = getSpecialSpriteName(dex_number)
+          # Check if specialPath exists as a .png
+          if !pbResolveBitmap(specialPath)
+            specialPath = sprintf("Graphics/Battlers/special/000")
+          end
           return pbResolveBitmap(specialPath)
-          head_id = nil
+          head_id=nil
         else
           body_id = getBodyID(dex_number)
           head_id = getHeadID(dex_number, body_id)
@@ -207,6 +263,7 @@ module GameData
 
   end
 end
+
 
 def get_unfused_sprite_path(dex_number_id, spriteform = nil)
   dex_number = dex_number_id.to_s
@@ -345,6 +402,63 @@ def get_fusion_sprite_path(head_id, body_id, spriteform_body = nil, spriteform_h
   return Settings::DEFAULT_SPRITE_PATH
 end
 
+# def get_fusion_sprite_path(head_id, body_id, spriteform_body = nil, spriteform_head = nil)
+#   $PokemonGlobal.autogen_sprites_cache = {} if $PokemonGlobal && !$PokemonGlobal.autogen_sprites_cache
+#   #Todo: ça va chier si on fusionne une forme d'un pokemon avec une autre forme, mais pas un problème pour tout de suite
+#   form_suffix = ""
+#   form_suffix += "_" + spriteform_body.to_s if spriteform_body
+#   form_suffix += "_" + spriteform_head.to_s if spriteform_head
+
+#   #Swap path if alt is selected for this pokemon
+#   dex_num = getSpeciesIdForFusion(head_id, body_id)
+#   substitution_id = dex_num.to_s + form_suffix
+
+
+#   if alt_sprites_substitutions_available && $PokemonGlobal.alt_sprite_substitutions.keys.include?(substitution_id)
+#     substitutionPath= $PokemonGlobal.alt_sprite_substitutions[substitution_id]
+#     return substitutionPath if pbResolveBitmap(substitutionPath)
+#   end
+
+#   random_alt = get_random_alt_letter_for_custom(head_id, body_id) #nil if no main
+#   random_alt = "" if !random_alt
+#   #if the game has loaded an autogen earlier, no point in trying to redownload, so load that instead
+#   return $PokemonGlobal.autogen_sprites_cache[substitution_id] if  $PokemonGlobal && $PokemonGlobal.autogen_sprites_cache[substitution_id]
+
+#   #Try local custom sprite
+#   spriteform_body_letter = spriteform_body ? "_" + spriteform_body.to_s : ""
+#   spriteform_head_letter = spriteform_head ? "_" + spriteform_head.to_s : ""
+
+#   filename = _INTL("{1}{2}.{3}{4}{5}.png", head_id, spriteform_head_letter, body_id, spriteform_body_letter, random_alt)
+#   local_custom_path = Settings::CUSTOM_BATTLERS_FOLDER_INDEXED + head_id.to_s + spriteform_head_letter + "/" + filename
+#   if pbResolveBitmap(local_custom_path)
+#     record_sprite_substitution(substitution_id, local_custom_path)
+#     return local_custom_path
+#   end
+#   #Try to download custom sprite if none found locally
+#   downloaded_custom = download_custom_sprite(head_id, body_id, spriteform_body_letter, spriteform_head_letter, random_alt)
+#   if downloaded_custom
+#     record_sprite_substitution(substitution_id, downloaded_custom)
+#     return downloaded_custom
+#   end
+
+#   #Try local generated sprite
+#   local_generated_path = Settings::BATTLERS_FOLDER + head_id.to_s + spriteform_head_letter + "/" + filename
+#   if pbResolveBitmap(local_generated_path)
+#     add_to_autogen_cache(substitution_id,local_generated_path)
+#     return local_generated_path
+#   end
+
+#   #Download generated sprite if nothing else found
+#   # autogen_path = download_autogen_sprite(head_id, body_id)
+#   autogen_path = download_autogen_sprite(head_id, body_id,spriteform_body,spriteform_head)
+#   if pbResolveBitmap(autogen_path)
+#     add_to_autogen_cache(substitution_id,autogen_path)
+#     return autogen_path
+#   end
+
+#   return Settings::DEFAULT_SPRITE_PATH
+# end
+
 def get_random_alt_letter_for_custom(head_id, body_id, onlyMain = true)
   spriteName = _INTL("{1}.{2}", head_id, body_id)
   if onlyMain
@@ -370,13 +484,6 @@ def list_main_sprites_letters(spriteName)
   main_sprites = []
   all_sprites.each do |key, value|
     main_sprites << key if value == "main"
-  end
-
-  #add temp sprites if no main sprites found
-  if main_sprites.empty?
-    all_sprites.each do |key, value|
-      main_sprites << key if value == "temp"
-    end
   end
   return main_sprites
 end

@@ -141,6 +141,7 @@ def getFossilsGuyTeam(level)
   elsif $game_switches[SWITCH_PICKED_ANORITH_FOSSIL]
     fossils << :LILEEP if level < fossils_evolution_level_1
     fossils << :CRADILY if level >= fossils_evolution_level_1
+
   end
   #Celadon fossil
   if $game_switches[SWITCH_PICKED_ARMOR_FOSSIL]
@@ -173,41 +174,50 @@ def getFossilsGuyTeam(level)
   return team
 end
 
-
-
-def playPokeFluteAnimation
-  # return if $Trainer.outfit != 0
-  # $game_player.setDefaultCharName("players/pokeflute", 0, false)
-  # Graphics.update
-  # Input.update
-  # pbUpdateSceneMap
+def find_last_outfit(player_sprite)
+  for i in 1..Settings::MAX_NB_OUTFITS
+    return i - 1 if !pbResolveBitmap("Graphics/Characters/" + player_sprite + "_" + i.to_s)
+  end
+  return 0
 end
 
-def restoreDefaultCharacterSprite(charset_number = 0)
-  meta = GameData::Metadata.get_player($Trainer.character_ID)
-  $game_player.setDefaultCharName(nil, 0, false)
-  $game_player.character_name = meta[1]
+def changeToNextOutfit(incr = 1)
+  metadata = GameData::Metadata.get_player($Trainer.character_ID)
+  player_sprite = metadata[$game_player.charsetData[1]]
+
+  currentOutfit = $Trainer.outfit
+  currentOutfit = 0 if !currentOutfit
+
+  nextOutfit = currentOutfit + incr
+  nextOutfitName = "Graphics/Characters/" + player_sprite + "_" + nextOutfit.to_s
+  nextOutfitName = "Graphics/Characters/" + player_sprite if nextOutfit == 0
+  if !pbResolveBitmap(nextOutfitName)
+    if incr > 0
+      nextOutfit = 0
+    else
+      nextOutfit = find_last_outfit(player_sprite)
+    end
+  end
+  $Trainer.outfit = nextOutfit
+end
+
+def playPokeFluteAnimation
+  return if $Trainer.outfit != 0
+  $game_player.setDefaultCharName("players/pokeflute", 0, false)
   Graphics.update
   Input.update
   pbUpdateSceneMap
 end
 
-def setDifficulty(index)
-  $Trainer.selected_difficulty=index
-  case index
-  when 0  #EASY
-    $game_switches[SWITCH_GAME_DIFFICULTY_EASY] = true
-    $game_switches[SWITCH_GAME_DIFFICULTY_HARD] = false
-  when 1 #NORMAL
-    $game_switches[SWITCH_GAME_DIFFICULTY_EASY] = false
-    $game_switches[SWITCH_GAME_DIFFICULTY_HARD] = false
-  when 2 # HARD
-    $game_switches[SWITCH_GAME_DIFFICULTY_EASY] = false
-    $game_switches[SWITCH_GAME_DIFFICULTY_HARD] = true
-  end
+def restoreDefaultCharacterSprite(charset_number=0)
+  meta = GameData::Metadata.get_player($Trainer.character_ID)
+  $game_player.setDefaultCharName(nil, 0, false)
+  $game_player.character_name =meta[1]
+  Graphics.update
+  Input.update
+  pbUpdateSceneMap
 end
 
-  #Old menu for changing difficulty - unused
 def change_game_difficulty(down_only = false)
   message = "The game is currently on " + get_difficulty_text() + " difficulty."
   pbMessage(message)
@@ -601,31 +611,31 @@ def validate_regirock_ice_puzzle(solution)
     # echoln ""
     # echoln x.to_s + ", " + y.to_s
     # echoln $game_map.event_at_position(x,y)
-    return false if !$game_map.event_at_position(x, y)
+    return false if !$game_map.event_at_position(x,y)
   end
   echoln "all boulders in place"
   return true
 end
 
 def unpress_all_regirock_steel_switches()
-  switch_ids = [75, 77, 76, 67, 74, 68, 73, 72, 70, 69]
+  switch_ids = [75,77,76,67, 74,68, 73,72,70,69]
   regi_map = 813
   switch_ids.each do |event_id|
-    pbSetSelfSwitch(event_id, "A", false, regi_map)
+    pbSetSelfSwitch(event_id,"A",false,regi_map)
   end
 end
 
 def validate_regirock_steel_puzzle()
-  expected_pressed_switches = [75, 77, 74, 68, 73, 69]
-  expected_unpressed_switches = [76, 67, 72, 70]
-  switch_ids = [75, 77, 76, 67,
-                74, 68,
-                73, 72, 70, 69]
+  expected_pressed_switches = [75,77,74,68,73,69]
+  expected_unpressed_switches = [76,67,72,70]
+  switch_ids = [75,77,76,67,
+                74,68,
+                73,72,70,69]
 
-  pressed_switches = []
+  pressed_switches =[]
   unpressed_switches = []
   switch_ids.each do |switch_id|
-    is_pressed = pbGetSelfSwitch(switch_id, "A")
+    is_pressed = pbGetSelfSwitch(switch_id,"A")
     if is_pressed
       pressed_switches << switch_id
     else
@@ -634,7 +644,7 @@ def validate_regirock_steel_puzzle()
   end
 
   for event_id in switch_ids
-    is_pressed = pbGetSelfSwitch(event_id, "A")
+    is_pressed = pbGetSelfSwitch(event_id,"A")
     return false if !is_pressed && expected_pressed_switches.include?(event_id)
     return false if is_pressed && expected_unpressed_switches.include?(event_id)
   end
@@ -643,13 +653,13 @@ end
 
 def registeel_ice_press_switch(letter)
   order = pbGet(1)
-  solution = "ssBSBGG" #GGSBBss"
+  solution = "ssBSBGG"#GGSBBss"
   registeel_ice_reset_switches() if !order.is_a?(String)
   order << letter
-  pbSet(1, order)
+  pbSet(1,order)
   if order == solution
     echoln "OK"
-    pbSEPlay("Evolution start", nil, 130)
+    pbSEPlay("Evolution start",nil,130)
   elsif order.length >= solution.length
     registeel_ice_reset_switches()
   end
@@ -657,20 +667,20 @@ def registeel_ice_press_switch(letter)
 end
 
 def registeel_ice_reset_switches()
-  switches_events = [66, 78, 84, 85, 86, 87, 88]
+  switches_events = [66,78,84,85,86,87,88]
   switches_events.each do |switch_id|
     pbSetSelfSwitch(switch_id, "A", false)
     echoln "reset" + switch_id.to_s
   end
-  pbSet(1, "")
+  pbSet(1,"")
 end
 
 def regirock_steel_move_boulder()
 
   switches_position = [
-    [16, 21], [18, 21], [20, 21], [22, 21],
-    [16, 23], [22, 23],
-    [16, 25], [18, 25], [20, 25], [22, 25]
+    [16,21],[18,21],[20,21],[22,21],
+    [16,23],                [22,23],
+    [16,25],[18,25],[20,25],[22,25]
   ]
   boulder_event = get_self
   old_x = boulder_event.x
@@ -681,15 +691,15 @@ def regirock_steel_move_boulder()
   boulder_event = get_self
 
   if stepped_off_switch
-    switch_event = $game_map.get_event_at_position(old_x, old_y, [boulder_event.id])
+    switch_event = $game_map.get_event_at_position(old_x,old_y,[boulder_event.id])
     echoln switch_event.id if switch_event
-    pbSEPlay("Entering Door", nil, 80)
+    pbSEPlay("Entering Door",nil,80)
     pbSetSelfSwitch(switch_event.id, "A", false) if switch_event
   end
 
   stepped_on_switch = switches_position.find { |position| position[0] == boulder_event.x && position[1] == boulder_event.y }
   if stepped_on_switch
-    switch_event = $game_map.get_event_at_position(boulder_event.x, boulder_event.y, [boulder_event.id])
+    switch_event = $game_map.get_event_at_position(boulder_event.x,boulder_event.y,[boulder_event.id])
     echoln switch_event.id if switch_event
     pbSEPlay("Entering Door")
     pbSetSelfSwitch(switch_event.id, "A", true) if switch_event
@@ -707,47 +717,6 @@ end
 #
 def setForcedAltSprites(forcedSprites_map)
   $PokemonTemp.forced_alt_sprites = forcedSprites_map
-end
-
-
-def setupStartingOutfit()
-  $Trainer.hat=nil
-  $Trainer.clothes = Settings::STARTING_OUTFIT
-
-  gender = pbGet(VAR_TRAINER_GENDER)
-  if gender== GENDER_FEMALE
-    $Trainer.unlock_clothes(Settings::DEFAULT_OUTFIT_FEMALE,true)
-    $Trainer.unlock_hat(Settings::DEFAULT_OUTFIT_FEMALE,true)
-    $Trainer.hair ="3_" + Settings::DEFAULT_OUTFIT_FEMALE if !$Trainer.hair #when migrating old savefiles
-
-      #todo TEMP REMOVE WHEN CC IS OFFICIALLY IMPLEMENTED - put pajamas instead & other gender clothes are to be unlocked bu taalking to sibling
-    $Trainer.clothes=Settings::DEFAULT_OUTFIT_FEMALE
-    $Trainer.hat=Settings::DEFAULT_OUTFIT_FEMALE
-    $Trainer.unlock_clothes(Settings::DEFAULT_OUTFIT_MALE,true)
-    $Trainer.unlock_hat(Settings::DEFAULT_OUTFIT_MALE,true)
-      ##
-
-  elsif gender== GENDER_MALE
-    $Trainer.unlock_clothes(Settings::DEFAULT_OUTFIT_MALE,true)
-    $Trainer.unlock_hat(Settings::DEFAULT_OUTFIT_MALE,true)
-
-    echoln $Trainer.hair
-    $Trainer.hair = ("3_" +Settings::DEFAULT_OUTFIT_MALE) if !$Trainer.hair  #when migrating old savefiles
-    echoln $Trainer.hair
-
-
-    #todo TEMP REMOVE WHEN CC IS OFFICIALLY IMPLEMENTED - put pajamas instead & other gender clothes are to be unlocked bu taalking to sibling
-    $Trainer.clothes=Settings::DEFAULT_OUTFIT_MALE
-    $Trainer.hat=Settings::DEFAULT_OUTFIT_MALE
-    $Trainer.unlock_clothes(Settings::DEFAULT_OUTFIT_FEMALE,true)
-    $Trainer.unlock_hat(Settings::DEFAULT_OUTFIT_FEMALE,true)
-    ##
-
-  end
-  $Trainer.unlock_hair(Settings::DEFAULT_OUTFIT_MALE,true)
-  $Trainer.unlock_hair(Settings::DEFAULT_OUTFIT_FEMALE,true)
-  $Trainer.unlock_clothes(Settings::STARTING_OUTFIT,true)
-
 end
 
 def playMeloettaBandMusic()
@@ -898,7 +867,15 @@ end
 
 def promptCaughtPokemonAction(pokemon)
   pickedOption = false
-  return pbStorePokemon(pokemon) if !$Trainer.party_full?
+  if ($PokemonGlobal.pokemonSelectionOriginalParty!=nil)
+    return pbStorePokemon(pokemon) if !($PokemonGlobal.pokemonSelectionOriginalParty.length >= Settings::MAX_PARTY_SIZE)
+  else
+    return pbStorePokemon(pokemon) if !$Trainer.party_full?
+  end
+  
+  if $PokemonSystem.skipcaughtprompt == 1
+    return pbStorePokemon(pokemon)
+  end
 
   while !pickedOption
     command = pbMessage(_INTL("\\ts[]Your team is full!"),
@@ -929,13 +906,14 @@ def swapCaughtPokemon(caughtPokemon)
                   })
   index = pbGet(1)
   return false if index == -1
-  $PokemonStorage.pbStoreCaught($Trainer.party[index])
+  if ($PokemonGlobal.pokemonSelectionOriginalParty!=nil)
+    $PokemonStorage.pbStoreCaught($PokemonGlobal.pokemonSelectionOriginalParty[index])
+  else  
+    $PokemonStorage.pbStoreCaught($Trainer.party[index])
+  end
+  # $PokemonStorage.pbStoreCaught($Trainer.party[index])
   pbRemovePokemonAt(index)
   pbStorePokemon(caughtPokemon)
-
-  tmp = $Trainer.party[index]
-  $Trainer.party[index] = $Trainer.party[-1]
-  $Trainer.party[-1] = tmp
   return true
 end
 
@@ -1043,23 +1021,6 @@ def calculateIvLineForShowdown(pokemon)
   return ivLine
 end
 
-def addWaterCausticsEffect(fog_name="caustic1",opacity=16)
-  $game_map.fog_name       = fog_name
-  $game_map.fog_hue        = 0
-  $game_map.fog_opacity    = opacity
-  #$game_map.fog_blend_type = @parameters[4]
-  $game_map.fog_zoom       =200
-  $game_map.fog_sx         = 2
-  $game_map.fog_sy         = 2
-
-  $game_map.setFog2(fog_name,-3,0,opacity,)
-end
-
-def stopWaterCausticsEffect()
-  $game_map.fog_opacity=0
-  $game_map.eraseFog2()
-end
-
 def openUrlInBrowser(url="")
   begin
   # Open the URL in the default web browser
@@ -1069,96 +1030,4 @@ def openUrlInBrowser(url="")
     pbMessage("The game could not open the link in the browser")
     pbMessage("The link has been copied to your clipboard instead")
   end
-end
-
-def isPostgame?()
-  return $game_switches[SWITCH_BEAT_THE_LEAGUE]
-end
-
-
-def obtainStarter(starterIndex=0)
-  if($game_switches[SWITCH_RANDOM_STARTERS])
-    starter=obtainRandomizedStarter(starterIndex)
-  else
-    startersList = Settings::KANTO_STARTERS
-    if $game_switches[SWITCH_JOHTO_STARTERS]
-      startersList = Settings::JOHTO_STARTERS
-    elsif $game_switches[SWITCH_HOENN_STARTERS]
-      startersList = Settings::HOENN_STARTERS
-    elsif $game_switches[SWITCH_SINNOH_STARTERS]
-      startersList = Settings::SINNOH_STARTERS
-    end
-    starter = startersList[starterIndex]
-  end
-  return GameData::Species.get(starter)
-end
-
-def setRivalStarter(starterIndex1,starterIndex2)
-  starter1 = obtainStarter(starterIndex1)
-  starter2 = obtainStarter(starterIndex2)
-
-  ensureRandomHashInitialized()
-  if $game_switches[SWITCH_RANDOM_WILD_TO_FUSION] #if fused starters, only take index 1
-    starter= obtainStarter(starterIndex1)
-  else
-    starter_body = starter1.id_number
-    starter_head = starter2.id_number
-    starter = getFusionSpecies(starter_body,starter_head).id_number
-  end
-  if $game_switches[SWITCH_RANDOM_STARTER_FIRST_STAGE]
-    starterSpecies = GameData::Species.get(starter)
-    starter = GameData::Species.get(starterSpecies.get_baby_species(false)).id_number
-  end
-  pbSet(VAR_RIVAL_STARTER,starter)
-  $game_switches[SWITCH_DEFINED_RIVAL_STARTER] = true
-  return starter
-end
-
-def ensureRandomHashInitialized()
-  if $PokemonGlobal.psuedoBSTHash == nil
-    psuedoHash = Hash.new
-    for i in 0..NB_POKEMON
-      psuedoHash[i] = i
-    end
-    $PokemonGlobal.psuedoBSTHash = psuedoHash
-  end
-end
-
-#Get difficulty for displaying in-game
-def getDisplayDifficulty
-  if $game_switches[SWITCH_GAME_DIFFICULTY_EASY] || $Trainer.lowest_difficulty <= 0
-    return getDisplayDifficultyFromIndex(0)
-  elsif $Trainer.lowest_difficulty <= 1
-    return getDisplayDifficultyFromIndex(1)
-  elsif $game_switches[SWITCH_GAME_DIFFICULTY_HARD]
-    return getDisplayDifficultyFromIndex(2)
-  else
-    return getDisplayDifficultyFromIndex(1)
-  end
-end
-
-def getDisplayDifficultyFromIndex(difficultyIndex)
-  return "Easy" if difficultyIndex ==0
-  return "Normal" if difficultyIndex ==1
-  return "Hard" if difficultyIndex ==2
-  return "???"
-end
-
-
-def getGameModeFromIndex(index)
-  return "Classic" if index ==0
-  return "Random" if index ==1
-  return "Remix" if index ==2
-  return "Expert" if index ==3
-  return "Species" if index == 4
-  return "Debug" if index ==5
-  return ""
-end
-
-
-
-
-#todo: implement
-def getMappedKeyFor(internalKey)
-
 end

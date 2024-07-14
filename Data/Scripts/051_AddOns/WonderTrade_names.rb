@@ -1,3 +1,4 @@
+
 RandTrainerNames_male = [
   "Mikaël",
   "James",
@@ -1022,8 +1023,6 @@ RandPokeNick = [
   "NullPointerException",
   "Myriam",
   "pink",
-  "Ram",
-  "Cheeto",
   "Gump",
   "shazam",
   "Stefano",
@@ -1069,5 +1068,21 @@ RandPokeNick = [
   "Vince",
   "Thorns",
   "Xillo",
-  "Froggywoggy"
+  "Reïzod",
+  "Lamakhun",
+  "Méliosa",
+  "Garlayn",
+  "Sylvi",
+  "JustAnotherUser",
+  "BlueWoppo",
+  "HungryPickles",
+  "DemICE",
+  "FerrousLupus",
+  "ClemShino",
+  "Darkmost",
+  "Globby",
+  "TM",
+  "Trapstarr",
+  "TheDuoDesign",
+  "MinamoStyle"
 ]

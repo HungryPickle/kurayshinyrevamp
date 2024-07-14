@@ -8,8 +8,13 @@
 ###SCRIPTEDIT1
 # Config value for selecting title screen style
 SCREENSTYLE = 1
+# KURAYVERSION = "0.9.4"
 # 1 - FR/LG
 # 2 - R/S/E
+
+# module Settings
+#   # GAME_VERSION_NUMBER = "5.3.1.2"
+# end
 
 class Scene_Intro
 
@@ -28,17 +33,30 @@ class Scene_Intro
     @skip = false
 
 
-    playIntroCinematic
-    # Selects title screen style
-    @screen = GenOneStyle.new
-    # Plays the title screen intro (is skippable)
-    @screen.intro
-    # Creates/updates the main title screen loop
-    self.update
-    Graphics.freeze
+    if File.exists?(RTP.getSaveFolder + "\\NoIntro.krs")
+      sscene = PokemonLoad_Scene.new
+      sscreen = PokemonLoadScreen.new(sscene)
+      sscreen.pbStartLoadScreen
+    else
+      playIntroCinematic
+      # Selects title screen style
+      @screen = GenOneStyle.new
+      # Plays the title screen intro (is skippable)
+      @screen.intro
+      # Creates/updates the main title screen loop
+      self.update
+      Graphics.freeze
+    end
   end
 
   def update
+  #   # closeTitle
+  #   if File.exists?("NoIntro.krs")
+  #     closeTitle
+  #     # sscene = PokemonLoad_Scene.new
+  #     # sscreen = PokemonLoadScreen.new(sscene)
+  #     # sscreen.pbStartLoadScreen
+  #   end
     ret = 0
     loop do
       @screen.update
@@ -74,6 +92,32 @@ class Scene_Intro
     # initializes load screen
     sscene = PokemonLoad_Scene.new
     sscreen = PokemonLoadScreen.new(sscene)
+    #KurayX just a quick way to load font at start (temporary fix)
+    if !$PokemonSystem.kurayfonts
+      $PokemonSystem.kurayfonts = 0
+    elsif $PokemonSystem.kurayfonts == 1
+      MessageConfig.pbGetSystemFontSizeset(26)
+      MessageConfig.pbGetSmallFontSizeset(25)
+      MessageConfig.pbGetNarrowFontSizeset(26)
+      MessageConfig.pbSetSystemFontName("Power Red and Green")
+      MessageConfig.pbSetSmallFontName("Power Green Small")
+      MessageConfig.pbSetNarrowFontName("Power Green Small")
+    elsif $PokemonSystem.kurayfonts == 2
+      MessageConfig.pbGetSystemFontSizeset(29)
+      MessageConfig.pbGetSmallFontSizeset(25)
+      MessageConfig.pbGetNarrowFontSizeset(29)
+      MessageConfig.pbSetSystemFontName("Power Clear")
+      MessageConfig.pbSetSmallFontName("Power Clear")
+      MessageConfig.pbSetNarrowFontName("Power Clear")
+    elsif $PokemonSystem.kurayfonts == 3
+      MessageConfig.pbGetSystemFontSizeset(29)
+      MessageConfig.pbGetSmallFontSizeset(25)
+      MessageConfig.pbGetNarrowFontSizeset(29)
+      MessageConfig.pbSetSystemFontName("Power Red and Blue")
+      MessageConfig.pbSetSmallFontName("Power Red and Blue")
+      MessageConfig.pbSetNarrowFontName("Power Red and Blue")
+    end
+    #KurayX just a quick way to load font at start (temporary fix)
     sscreen.pbStartLoadScreen
   end
 
@@ -126,8 +170,21 @@ end
 class GenOneStyle
 
   def initialize
+    # Shenanigans
+    # graph_path = "Graphics/Tilesets"
+    # graph_file = "Caves.png"
+    # if file_exist_case_sensitive(graph_path, graph_file)
+      # it is "Caves.png", rename it "caves.png"
+      # File.rename(graph_path + "/" + graph_file, graph_path + "/" + "caves.png")
+    # end
+    # End of shenanigans
     Kernel.pbDisplayText("Keybindings: F1", 80, 0, 99999)
-    Kernel.pbDisplayText("Version " + Settings::GAME_VERSION_NUMBER, 254, 308, 99999)
+    #KurayX Version System
+    # kuraversion = "0.6.18"
+    Kernel.pbDisplayText("(Kuray's Infinite Fusion)", 254, 298, 99999)
+    Kernel.pbDisplayText("Version: " + Settings::GAME_VERSION_NUMBER + " | PIF Version: " + Settings::IF_VERSION, 254, 334, 99999)
+    # Kernel.pbDisplayText("Ver." + Settings::GAME_VERSION_NUMBER + " | ModVer." + KURAYVERSION, 254, 334, 99999)
+    # Kernel.pbDisplayText("Version " + Settings::GAME_VERSION_NUMBER, 254, 308, 99999)
 
     @maxPoke = 140 #1st gen, pas de legend la premiere fois, graduellement plus de poke
     @customPokeList = getCustomSpeciesList(false)
