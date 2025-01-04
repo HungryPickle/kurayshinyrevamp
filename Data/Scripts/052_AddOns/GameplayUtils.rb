@@ -2,10 +2,6 @@
 def oricorioEventPickFlower(flower_color)
   quest_progression = pbGet(VAR_ORICORIO_FLOWERS)
   if flower_color == :PINK
-    if !$game_switches[SWITCH_ORICORIO_QUEST_PINK]
-      pbMessage(_INTL("Woah! A Pokémon jumped out of the flower!"))
-      pbWildBattle(:FOMANTIS, 10)
-    end
     $game_switches[SWITCH_ORICORIO_QUEST_PINK] = true
     pbMessage(_INTL("It's a flower with pink nectar."))
     pbSEPlay("MiningAllFound")
@@ -25,16 +21,6 @@ def oricorioEventPickFlower(flower_color)
 end
 
 def changeOricorioFlower(form = 1)
-  if $PokemonGlobal.stepcount % 25 == 0
-    if !hatUnlocked?(HAT_FLOWER) && rand(2) == 0
-      obtainHat(HAT_FLOWER)
-      $PokemonGlobal.stepcount += 1
-    else
-      pbMessage(_INTL("Woah! A Pokémon jumped out of the flower!"))
-      pbWildBattle(:FOMANTIS, 10)
-      $PokemonGlobal.stepcount += 1
-    end
-  end
   return if !($Trainer.has_species_or_fusion?(:ORICORIO_1) || $Trainer.has_species_or_fusion?(:ORICORIO_2) || $Trainer.has_species_or_fusion?(:ORICORIO_3) || $Trainer.has_species_or_fusion?(:ORICORIO_4))
   message = ""
   form_name = ""
@@ -155,6 +141,7 @@ def getFossilsGuyTeam(level)
   elsif $game_switches[SWITCH_PICKED_ANORITH_FOSSIL]
     fossils << :LILEEP if level < fossils_evolution_level_1
     fossils << :CRADILY if level >= fossils_evolution_level_1
+
   end
   #Celadon fossil
   if $game_switches[SWITCH_PICKED_ARMOR_FOSSIL]
@@ -195,19 +182,19 @@ def playPokeFluteAnimation
   # pbUpdateSceneMap
 end
 
-def restoreDefaultCharacterSprite(charset_number = 0)
+def restoreDefaultCharacterSprite(charset_number=0)
   meta = GameData::Metadata.get_player($Trainer.character_ID)
   $game_player.setDefaultCharName(nil, 0, false)
-  $game_player.character_name = meta[1]
+  $game_player.character_name =meta[1]
   Graphics.update
   Input.update
   pbUpdateSceneMap
 end
 
 def setDifficulty(index)
-  $Trainer.selected_difficulty = index
+  $Trainer.selected_difficulty=index
   case index
-  when 0 #EASY
+  when 0  #EASY
     $game_switches[SWITCH_GAME_DIFFICULTY_EASY] = true
     $game_switches[SWITCH_GAME_DIFFICULTY_HARD] = false
   when 1 #NORMAL
@@ -219,7 +206,7 @@ def setDifficulty(index)
   end
 end
 
-#Old menu for changing difficulty - unused
+  #Old menu for changing difficulty - unused
 def change_game_difficulty(down_only = false)
   message = "The game is currently on " + get_difficulty_text() + " difficulty."
   pbMessage(message)
@@ -613,31 +600,31 @@ def validate_regirock_ice_puzzle(solution)
     # echoln ""
     # echoln x.to_s + ", " + y.to_s
     # echoln $game_map.event_at_position(x,y)
-    return false if !$game_map.event_at_position(x, y)
+    return false if !$game_map.event_at_position(x,y)
   end
   echoln "all boulders in place"
   return true
 end
 
 def unpress_all_regirock_steel_switches()
-  switch_ids = [75, 77, 76, 67, 74, 68, 73, 72, 70, 69]
+  switch_ids = [75,77,76,67, 74,68, 73,72,70,69]
   regi_map = 813
   switch_ids.each do |event_id|
-    pbSetSelfSwitch(event_id, "A", false, regi_map)
+    pbSetSelfSwitch(event_id,"A",false,regi_map)
   end
 end
 
 def validate_regirock_steel_puzzle()
-  expected_pressed_switches = [75, 77, 74, 68, 73, 69]
-  expected_unpressed_switches = [76, 67, 72, 70]
-  switch_ids = [75, 77, 76, 67,
-                74, 68,
-                73, 72, 70, 69]
+  expected_pressed_switches = [75,77,74,68,73,69]
+  expected_unpressed_switches = [76,67,72,70]
+  switch_ids = [75,77,76,67,
+                74,68,
+                73,72,70,69]
 
-  pressed_switches = []
+  pressed_switches =[]
   unpressed_switches = []
   switch_ids.each do |switch_id|
-    is_pressed = pbGetSelfSwitch(switch_id, "A")
+    is_pressed = pbGetSelfSwitch(switch_id,"A")
     if is_pressed
       pressed_switches << switch_id
     else
@@ -646,7 +633,7 @@ def validate_regirock_steel_puzzle()
   end
 
   for event_id in switch_ids
-    is_pressed = pbGetSelfSwitch(event_id, "A")
+    is_pressed = pbGetSelfSwitch(event_id,"A")
     return false if !is_pressed && expected_pressed_switches.include?(event_id)
     return false if is_pressed && expected_unpressed_switches.include?(event_id)
   end
@@ -655,13 +642,13 @@ end
 
 def registeel_ice_press_switch(letter)
   order = pbGet(1)
-  solution = "ssBSBGG" #GGSBBss"
+  solution = "ssBSBGG"#GGSBBss"
   registeel_ice_reset_switches() if !order.is_a?(String)
   order << letter
-  pbSet(1, order)
+  pbSet(1,order)
   if order == solution
     echoln "OK"
-    pbSEPlay("Evolution start", nil, 130)
+    pbSEPlay("Evolution start",nil,130)
   elsif order.length >= solution.length
     registeel_ice_reset_switches()
   end
@@ -669,20 +656,20 @@ def registeel_ice_press_switch(letter)
 end
 
 def registeel_ice_reset_switches()
-  switches_events = [66, 78, 84, 85, 86, 87, 88]
+  switches_events = [66,78,84,85,86,87,88]
   switches_events.each do |switch_id|
     pbSetSelfSwitch(switch_id, "A", false)
     echoln "reset" + switch_id.to_s
   end
-  pbSet(1, "")
+  pbSet(1,"")
 end
 
 def regirock_steel_move_boulder()
 
   switches_position = [
-    [16, 21], [18, 21], [20, 21], [22, 21],
-    [16, 23], [22, 23],
-    [16, 25], [18, 25], [20, 25], [22, 25]
+    [16,21],[18,21],[20,21],[22,21],
+    [16,23],                [22,23],
+    [16,25],[18,25],[20,25],[22,25]
   ]
   boulder_event = get_self
   old_x = boulder_event.x
@@ -693,15 +680,15 @@ def regirock_steel_move_boulder()
   boulder_event = get_self
 
   if stepped_off_switch
-    switch_event = $game_map.get_event_at_position(old_x, old_y, [boulder_event.id])
+    switch_event = $game_map.get_event_at_position(old_x,old_y,[boulder_event.id])
     echoln switch_event.id if switch_event
-    pbSEPlay("Entering Door", nil, 80)
+    pbSEPlay("Entering Door",nil,80)
     pbSetSelfSwitch(switch_event.id, "A", false) if switch_event
   end
 
   stepped_on_switch = switches_position.find { |position| position[0] == boulder_event.x && position[1] == boulder_event.y }
   if stepped_on_switch
-    switch_event = $game_map.get_event_at_position(boulder_event.x, boulder_event.y, [boulder_event.id])
+    switch_event = $game_map.get_event_at_position(boulder_event.x,boulder_event.y,[boulder_event.id])
     echoln switch_event.id if switch_event
     pbSEPlay("Entering Door")
     pbSetSelfSwitch(switch_event.id, "A", true) if switch_event
@@ -721,49 +708,45 @@ def setForcedAltSprites(forcedSprites_map)
   $PokemonTemp.forced_alt_sprites = forcedSprites_map
 end
 
-def unlock_easter_egg_hats()
-  if $Trainer.name == "Ash"
-    $Trainer.hat = HAT_ASH
-    $Trainer.unlock_hat(HAT_ASH)
-  end
-  if $Trainer.name == "Frogman"
-    $Trainer.hat = HAT_FROG
-    $Trainer.unlock_hat(HAT_FROG)
-  end
-end
 
 def setupStartingOutfit()
-  $Trainer.hat = nil
-  $Trainer.clothes = STARTING_OUTFIT
-  unlock_easter_egg_hats()
+  $Trainer.hat=nil
+  $Trainer.clothes = Settings::STARTING_OUTFIT
+
   gender = pbGet(VAR_TRAINER_GENDER)
-  if gender == GENDER_FEMALE
-    $Trainer.unlock_clothes(DEFAULT_OUTFIT_FEMALE, true)
-    $Trainer.unlock_hat(DEFAULT_OUTFIT_FEMALE, true)
-    $Trainer.hair = "3_" + DEFAULT_OUTFIT_FEMALE if !$Trainer.hair #when migrating old savefiles
+  if gender== GENDER_FEMALE
+    $Trainer.unlock_clothes(Settings::DEFAULT_OUTFIT_FEMALE,true)
+    $Trainer.unlock_hat(Settings::DEFAULT_OUTFIT_FEMALE,true)
+    $Trainer.hair ="3_" + Settings::DEFAULT_OUTFIT_FEMALE if !$Trainer.hair #when migrating old savefiles
 
-  elsif gender == GENDER_MALE
-    $Trainer.unlock_clothes(DEFAULT_OUTFIT_MALE, true)
-    $Trainer.unlock_hat(DEFAULT_OUTFIT_MALE, true)
+      #todo TEMP REMOVE WHEN CC IS OFFICIALLY IMPLEMENTED - put pajamas instead & other gender clothes are to be unlocked bu taalking to sibling
+    $Trainer.clothes=Settings::DEFAULT_OUTFIT_FEMALE
+    $Trainer.hat=Settings::DEFAULT_OUTFIT_FEMALE
+    $Trainer.unlock_clothes(Settings::DEFAULT_OUTFIT_MALE,true)
+    $Trainer.unlock_hat(Settings::DEFAULT_OUTFIT_MALE,true)
+      ##
+
+  elsif gender== GENDER_MALE
+    $Trainer.unlock_clothes(Settings::DEFAULT_OUTFIT_MALE,true)
+    $Trainer.unlock_hat(Settings::DEFAULT_OUTFIT_MALE,true)
 
     echoln $Trainer.hair
-    $Trainer.hair = ("3_" + DEFAULT_OUTFIT_MALE) if !$Trainer.hair #when migrating old savefiles
+    $Trainer.hair = ("3_" +Settings::DEFAULT_OUTFIT_MALE) if !$Trainer.hair  #when migrating old savefiles
     echoln $Trainer.hair
-  end
-  $Trainer.unlock_hair(DEFAULT_OUTFIT_MALE, true)
-  $Trainer.unlock_hair(DEFAULT_OUTFIT_FEMALE, true)
-  $Trainer.unlock_clothes(STARTING_OUTFIT, true)
-end
 
-def give_date_specific_hats()
-  current_date = Time.new
-  if (current_date.day == 24 || current_date.day == 25) && current_date.month == 12
-    if !$Trainer.unlocked_hats.include?(HAT_SANTA)
-      pbCallBub(2,@event_id,true)
-      pbMessage("Hi! We're giving out a special hat today for the holidays season. Enjoy!")
-      obtainHat(HAT_SANTA)
-    end
+
+    #todo TEMP REMOVE WHEN CC IS OFFICIALLY IMPLEMENTED - put pajamas instead & other gender clothes are to be unlocked bu taalking to sibling
+    $Trainer.clothes=Settings::DEFAULT_OUTFIT_MALE
+    $Trainer.hat=Settings::DEFAULT_OUTFIT_MALE
+    $Trainer.unlock_clothes(Settings::DEFAULT_OUTFIT_FEMALE,true)
+    $Trainer.unlock_hat(Settings::DEFAULT_OUTFIT_FEMALE,true)
+    ##
+
   end
+  $Trainer.unlock_hair(Settings::DEFAULT_OUTFIT_MALE,true)
+  $Trainer.unlock_hair(Settings::DEFAULT_OUTFIT_FEMALE,true)
+  $Trainer.unlock_clothes(Settings::STARTING_OUTFIT,true)
+
 end
 
 def playMeloettaBandMusic()
@@ -842,23 +825,16 @@ def apply_concert_lighting(light, duration = 1)
 end
 
 def replaceFusionSpecies(pokemon, speciesToChange, newSpecies)
-  currentBody = pokemon.species_data.get_body_species_symbol()
-  currentHead = pokemon.species_data.get_head_species_symbol()
+  currentBody = pokemon.species_data.get_body_species()
+  currentHead = pokemon.species_data.get_head_species()
   should_update_body = currentBody == speciesToChange
   should_update_head = currentHead == speciesToChange
-
-  echoln speciesToChange
-  echoln currentBody
-  echoln currentHead
-
-
   return if !should_update_body && !should_update_head
 
   newSpeciesBody = should_update_body ? newSpecies : currentBody
   newSpeciesHead = should_update_head ? newSpecies : currentHead
 
   newSpecies = getFusionSpecies(newSpeciesBody, newSpeciesHead)
-  echoln newSpecies.id_number
   pokemon.species = newSpecies
 end
 
@@ -872,9 +848,9 @@ def getNextLunarFeatherHint()
   nb_feathers = pbGet(VAR_LUNAR_FEATHERS)
   case nb_feathers
   when 0
-    return "Find the first feather in the northernmost dwelling in the port of exquisite sunsets..."
+    return "Find the first feather in the northernmost dwelling in the city of sunsets..."
   when 1
-    return "Amidst a nursery for Pokémon youngsters, the second feather hides, surrounded by innocence."
+    return "Amidst a playground for Pokémon youngsters, the second feather hides, surrounded by innocence."
   when 2
     return "Find the next one in the inn where water meets rest"
   when 3
@@ -921,8 +897,16 @@ end
 
 def promptCaughtPokemonAction(pokemon)
   pickedOption = false
-  return pbStorePokemon(pokemon) if !$Trainer.party_full?
-  return promptKeepOrRelease(pokemon) if isOnPinkanIsland() && !$game_switches[SWITCH_PINKAN_FINISHED]
+  if ($PokemonGlobal.pokemonSelectionOriginalParty!=nil)
+    return pbStorePokemon(pokemon) if !($PokemonGlobal.pokemonSelectionOriginalParty.length >= Settings::MAX_PARTY_SIZE)
+  else
+    return pbStorePokemon(pokemon) if !$Trainer.party_full?
+  end
+  
+  if $PokemonSystem.skipcaughtprompt == 1
+    return pbStorePokemon(pokemon)
+  end
+
   while !pickedOption
     command = pbMessage(_INTL("\\ts[]Your team is full!"),
                         [_INTL("Add to your party"), _INTL("Store to PC"),], 2)
@@ -943,23 +927,6 @@ def promptCaughtPokemonAction(pokemon)
 
 end
 
-def promptKeepOrRelease(pokemon)
-  pickedOption = false
-  while !pickedOption
-    command = pbMessage(_INTL("\\ts[]Your team is full!"),
-                        [_INTL("Release a party member"), _INTL("Release this #{pokemon.name}"),], 2)
-    echoln ("command " + command.to_s)
-    case command
-    when 0 #SWAP
-      if swapReleaseCaughtPokemon(pokemon)
-        pickedOption = true
-      end
-    else
-      pickedOption = true
-    end
-  end
-end
-
 #def pbChoosePokemon(variableNumber, nameVarNumber, ableProc = nil, allowIneligible = false)
 def swapCaughtPokemon(caughtPokemon)
   pbChoosePokemon(1, 2,
@@ -969,26 +936,12 @@ def swapCaughtPokemon(caughtPokemon)
                   })
   index = pbGet(1)
   return false if index == -1
-  $PokemonStorage.pbStoreCaught($Trainer.party[index])
-  pbRemovePokemonAt(index)
-  pbStorePokemon(caughtPokemon)
-
-  tmp = $Trainer.party[index]
-  $Trainer.party[index] = $Trainer.party[-1]
-  $Trainer.party[-1] = tmp
-  return true
-end
-
-def swapReleaseCaughtPokemon(caughtPokemon)
-  pbChoosePokemon(1, 2,
-                  proc { |poke|
-                    !poke.egg? &&
-                      !(poke.isShadow? rescue false)
-                  })
-  index = pbGet(1)
-  return false if index == -1
-  releasedPokemon = $Trainer.party[index]
-  pbMessage("#{releasedPokemon.name} was released.")
+  if ($PokemonGlobal.pokemonSelectionOriginalParty!=nil)
+    $PokemonStorage.pbStoreCaught($PokemonGlobal.pokemonSelectionOriginalParty[index])
+  else  
+    $PokemonStorage.pbStoreCaught($Trainer.party[index])
+  end
+  # $PokemonStorage.pbStoreCaught($Trainer.party[index])
   pbRemovePokemonAt(index)
   pbStorePokemon(caughtPokemon)
 
@@ -1008,13 +961,13 @@ end
 
 def clear_all_images()
   for i in 1..99
-    #echoln i.to_s + " : " + $game_screen.pictures[i].name
+    echoln i.to_s + " : " + $game_screen.pictures[i].name
     $game_screen.pictures[i].erase
   end
 end
 
 def exportTeamForShowdown()
-  message = ""
+  message=""
   for pokemon in $Trainer.party
     message << exportFusedPokemonForShowdown(pokemon)
     message << "\n"
@@ -1034,12 +987,14 @@ end
 # - Water Pulse
 def exportFusedPokemonForShowdown(pokemon)
 
+
   if pokemon.species_data.is_a?(GameData::FusedSpecies)
     head_pokemon_species = pokemon.species_data.head_pokemon
     species_name = head_pokemon_species.name
   else
     species_name = pokemon.species_data.real_name
   end
+
 
   if pokemon.item
     nameLine = _INTL("{1} ({2}) @ {3}", pokemon.name, species_name, pokemon.item.name)
@@ -1050,7 +1005,7 @@ def exportFusedPokemonForShowdown(pokemon)
   abilityLine = _INTL("Ability: {1}", pokemon.ability.name)
   levelLine = _INTL("Level: {1}", pokemon.level)
 
-  fusionLine = ""
+  fusionLine=""
   if pokemon.species_data.is_a?(GameData::FusedSpecies)
     body_pokemon_species = pokemon.species_data.body_pokemon
     fusionLine = _INTL("Fusion: {1}\n", body_pokemon_species.name)
@@ -1058,7 +1013,7 @@ def exportFusedPokemonForShowdown(pokemon)
   evsLine = calculateEvLineForShowdown(pokemon)
   ivsLine = calculateIvLineForShowdown(pokemon)
 
-  move1 = "", move2 = "", move3 = "", move4 = ""
+  move1 = "", move2="", move3="", move4 = ""
   move1 = _INTL("- {1}", GameData::Move.get(pokemon.moves[0].id).real_name) if pokemon.moves[0]
   move2 = _INTL("- {1}", GameData::Move.get(pokemon.moves[1].id).real_name) if pokemon.moves[1]
   move3 = _INTL("- {1}", GameData::Move.get(pokemon.moves[2].id).real_name) if pokemon.moves[2]
@@ -1100,27 +1055,27 @@ def calculateIvLineForShowdown(pokemon)
   return ivLine
 end
 
-def addWaterCausticsEffect(fog_name = "caustic1", opacity = 16)
-  $game_map.fog_name = fog_name
-  $game_map.fog_hue = 0
-  $game_map.fog_opacity = opacity
+def addWaterCausticsEffect(fog_name="caustic1",opacity=16)
+  $game_map.fog_name       = fog_name
+  $game_map.fog_hue        = 0
+  $game_map.fog_opacity    = opacity
   #$game_map.fog_blend_type = @parameters[4]
-  $game_map.fog_zoom = 200
-  $game_map.fog_sx = 2
-  $game_map.fog_sy = 2
+  $game_map.fog_zoom       =200
+  $game_map.fog_sx         = 2
+  $game_map.fog_sy         = 2
 
-  $game_map.setFog2(fog_name, -3, 0, opacity,)
+  $game_map.setFog2(fog_name,-3,0,opacity,)
 end
 
 def stopWaterCausticsEffect()
-  $game_map.fog_opacity = 0
+  $game_map.fog_opacity=0
   $game_map.eraseFog2()
 end
 
-def openUrlInBrowser(url = "")
+def openUrlInBrowser(url="")
   begin
-    # Open the URL in the default web browser
-    system("xdg-open", url) || system("open", url) || system("start", url)
+  # Open the URL in the default web browser
+  system("xdg-open", url) || system("open", url) || system("start", url)
   rescue
     Input.clipboard = url
     pbMessage("The game could not open the link in the browser")
@@ -1132,9 +1087,10 @@ def isPostgame?()
   return $game_switches[SWITCH_BEAT_THE_LEAGUE]
 end
 
-def obtainStarter(starterIndex = 0)
-  if ($game_switches[SWITCH_RANDOM_STARTERS])
-    starter = obtainRandomizedStarter(starterIndex)
+
+def obtainStarter(starterIndex=0)
+  if($game_switches[SWITCH_RANDOM_STARTERS])
+    starter=obtainRandomizedStarter(starterIndex)
   else
     startersList = Settings::KANTO_STARTERS
     if $game_switches[SWITCH_JOHTO_STARTERS]
@@ -1143,33 +1099,29 @@ def obtainStarter(starterIndex = 0)
       startersList = Settings::HOENN_STARTERS
     elsif $game_switches[SWITCH_SINNOH_STARTERS]
       startersList = Settings::SINNOH_STARTERS
-    elsif $game_switches[SWITCH_KALOS_STARTERS]
-      startersList = Settings::KALOS_STARTERS
     end
     starter = startersList[starterIndex]
   end
   return GameData::Species.get(starter)
 end
 
-#body0
-# head 1
-def setRivalStarter(starterIndex1, starterIndex2)
+def setRivalStarter(starterIndex1,starterIndex2)
   starter1 = obtainStarter(starterIndex1)
   starter2 = obtainStarter(starterIndex2)
 
   ensureRandomHashInitialized()
   if $game_switches[SWITCH_RANDOM_WILD_TO_FUSION] #if fused starters, only take index 1
-    starter = obtainStarter(starterIndex1)
+    starter= obtainStarter(starterIndex1)
   else
     starter_body = starter1.id_number
     starter_head = starter2.id_number
-    starter = getFusionSpecies(starter_body, starter_head).id_number
+    starter = getFusionSpecies(starter_body,starter_head).id_number
   end
   if $game_switches[SWITCH_RANDOM_STARTER_FIRST_STAGE]
     starterSpecies = GameData::Species.get(starter)
     starter = GameData::Species.get(starterSpecies.get_baby_species(false)).id_number
   end
-  pbSet(VAR_RIVAL_STARTER, starter)
+  pbSet(VAR_RIVAL_STARTER,starter)
   $game_switches[SWITCH_DEFINED_RIVAL_STARTER] = true
   return starter
 end
@@ -1198,445 +1150,27 @@ def getDisplayDifficulty
 end
 
 def getDisplayDifficultyFromIndex(difficultyIndex)
-  return "Easy" if difficultyIndex == 0
-  return "Normal" if difficultyIndex == 1
-  return "Hard" if difficultyIndex == 2
+  return "Easy" if difficultyIndex ==0
+  return "Normal" if difficultyIndex ==1
+  return "Hard" if difficultyIndex ==2
   return "???"
 end
 
+
 def getGameModeFromIndex(index)
-  return "Classic" if index == 0
-  return "Random" if index == 1
-  return "Remix" if index == 2
-  return "Expert" if index == 3
+  return "Classic" if index ==0
+  return "Random" if index ==1
+  return "Remix" if index ==2
+  return "Expert" if index ==3
   return "Species" if index == 4
-  return "Debug" if index == 5
+  return "Debug" if index ==5
   return ""
 end
 
-#time in seconds
-def idleHatEvent(hatId, time, switchToActivate = nil)
-  map = $game_map.map_id
-  i = 0
-  while i < (time / 5) do
-    # /5 because we update 5 times per second
-    return if $game_map.map_id != map
-    i += 1
-    pbWait(4)
-    i = 0 if $game_player.moving?
-    echoln i
-  end
-  $game_switches[switchToActivate] = true if switchToActivate
-  obtainHat(hatId)
-end
 
-#Necessary dor setting the various events within the pokemart map, uses the numbers as wondertrade
-def get_city_numerical_id(city_sym)
-  current_city_numerical = {
-    :PEWTER => 1,
-    :CERULEAN => 2,
-    :VERMILLION => 3,
-    :LAVENDER => 4,
-    :CELADON => 5,
-    :FUCHSIA => 6,
-    :SAFFRON => 7,
-    :CINNABAR => 8,
-    :LEAGUE => 9,
-    :VIOLET => 10,
-    :AZALEA => 11,
-    :GOLDENROD => 12,
-    :ECRUTEAK => 13,
-    :MAHOGANY => 14,
-    :BLACKTHORN => 15,
-    :OLIVINE => 16,
-    :CIANWOOD => 17,
-    :KNOTISLAND => 18,
-    :BOONISLAND => 19,
-    :KINISLAND => 20,
-    :CHRONOISLAND => 21,
-    :CRIMSON => 22,
-  }
-  return current_city_numerical[city_sym]
-end
 
-POKEMART_MAP_ID = 357
-POKEMART_DOOR_POS = [12, 12]
-#city -> Symbol
-def enter_pokemart(city)
-  pbSet(VAR_CURRENT_MART, city)
-  pbSet(VAR_CURRENT_CITY_NUMERICAL_ID, get_city_numerical_id(city))
-  echoln get_city_numerical_id(city)
-  pbFadeOutIn {
-    $game_temp.player_new_map_id = POKEMART_MAP_ID
-    $game_temp.player_new_x = POKEMART_DOOR_POS[0]
-    $game_temp.player_new_y = POKEMART_DOOR_POS[1]
-    $scene.transfer_player(true)
-    $game_map.autoplay
-    $game_map.refresh
-  }
-end
-
-def exit_pokemart()
-  pokemart_entrances = {
-    :PEWTER => [380, 43, 24],
-    :CERULEAN => [1, 19, 22],
-    :VERMILLION => [19, 32, 13],
-    :LAVENDER => [50, 20, 23],
-    :CELADON => [95, 18, 15], #not a real pokemart
-    :FUCHSIA => [472, 7, 17],
-    :SAFFRON => [108, 53, 24],
-    :CINNABAR => [98, 30, 30],
-    :CRIMSON => [167, 21, 36],
-    :GOLDENROD => [237, 36, 33], #not a real pokemart
-    :AZALEA => [278, 34, 17],
-    :AZALEA_FLOODED => [338, 34, 17],
-    :VIOLET => [230, 20, 31],
-    :BLACKTHORN => [329, 16, 36],
-    :MAHOGANY => [631, 19, 19], #not a real pokemart
-    :ECRUTEAK => [359, 46, 38],
-    :OLIVINE => [138, 33, 23],
-    :CIANWOOD => [709.8, 46],
-  }
-  current_city = pbGet(VAR_CURRENT_MART)
-  current_city = :PEWTER if !current_city.is_a?(Symbol)
-
-  entrance_map = pokemart_entrances[current_city][0]
-  entrance_x = pokemart_entrances[current_city][1]
-  entrance_y = pokemart_entrances[current_city][2]
-
-  pbSet(VAR_CURRENT_CITY_NUMERICAL_ID, 0)
-  pbSet(VAR_CURRENT_MART, 0)
-  pbFadeOutIn {
-    $game_temp.player_new_map_id = entrance_map
-    $game_temp.player_new_x = entrance_x
-    $game_temp.player_new_y = entrance_y
-    $scene.transfer_player(true)
-    $game_map.autoplay
-    $game_map.refresh
-  }
-
-end
-
-def pokemart_clothes_shop(current_city = nil, include_defaults = true)
-  current_city = pbGet(VAR_CURRENT_MART) if !current_city
-  echoln current_city
-  current_city = :PEWTER if !current_city.is_a?(Symbol)
-  current_city_tag = current_city.to_s.downcase
-  selector = OutfitSelector.new
-  list = selector.generate_clothes_choice(
-    baseOptions = include_defaults,
-    additionalIds = [],
-    additionalTags = [current_city_tag],
-    filterOutTags = [])
-  clothesShop(list)
-end
-
-def pokemart_hat_shop(include_defaults = true)
-  current_city = pbGet(VAR_CURRENT_MART)
-  current_city = :PEWTER if !current_city.is_a?(Symbol)
-  current_city_tag = current_city.to_s.downcase
-  selector = OutfitSelector.new
-  list = selector.generate_hats_choice(
-    baseOptions = include_defaults,
-    additionalIds = [],
-    additionalTags = [current_city_tag],
-    filterOutTags = [])
-
-  hatShop(list)
-end
-
-def get_mart_exclusive_items(city)
-  items_list = []
-  case city
-  when :PEWTER;
-    items_list = [:ROCKGEM, :NESTBALL]
-  when :VIRIDIAN;
-    items_list = []
-  when :CERULEAN;
-    items_list = [:WATERGEM, :NETBALL, :PRETTYWING]
-  when :VERMILLION;
-    items_list = [:LOVEBALL, :ELECTRICGEM]
-  when :LAVENDER;
-    items_list = [:GHOSTGEM, :DARKGEM, :DUSKBALL]
-  when :CELADON;
-    items_list = [:GRASSGEM, :FLYINGGEM, :QUICKBALL, :TIMERBALL,]
-  when :FUCHSIA;
-    items_list = [:POISONGEM, :REPEATBALL]
-  when :SAFFRON;
-    items_list = [:PSYCHICGEM, :FIGHTINGGEM, :FRIENDBALL]
-  when :CINNABAR;
-    items_list = [:FIREGEM, :ICEGEM, :HEAVYBALL]
-  when :CRIMSON;
-    items_list = [:DRAGONGEM, :LEVELBALL]
-  when :GOLDENROD;
-    items_list = [:EVERSTONE, :MOONSTONE, :SUNSTONE, :DUSKSTONE, :DAWNSTONE, :SHINYSTONE]
-  when :AZALEA;
-    items_list = [:BUGGEM]
-  when :VIOLET;
-    items_list = [:FLYINGGEM, :STATUSBALL]
-  when :BLACKTHORN;
-    items_list = [:DRAGONGEM, :CANDYBALL]
-  when :CHERRYGROVE;
-    items_list = [:BUGGEM, :PUREBALL]
-  when :MAHOGANY;
-    items_list = []
-  when :ECRUTEAK;
-    items_list = [:GHOSTGEM, :DARKGEM]
-  when :OLIVINE;
-    items_list = []
-  when :CIANWOOD;
-    items_list = []
-  when :KNOTISLAND;
-    items_list = []
-  when :BOONISLAND;
-    items_list = []
-  when :KINISLAND;
-    items_list = []
-  when :CHRONOISLAND;
-    items_list = []
-  end
-  return items_list
-end
-
-def calculate_pokemon_weight(pokemon,nerf=0)
-
-  base_weight = pokemon.weight
-  ivs = []
-  pokemon.iv.each { |iv|
-    ivs << iv[1]
-  }
-  level = pokemon.level
-  # Ensure IVs is an array of 6 values and level is between 1 and 100
-  raise "IVs array must have 6 values" if ivs.length != 6
-  raise "Level must be between 1 and 100" unless (1..100).include?(level)
-
-  # Calculate the IV Factor
-  iv_sum = ivs.sum
-  iv_factor = (iv_sum.to_f / 186) * 30 * 10
-
-  # Calculate the Level Factor
-  level_factor = (level.to_f / 100) * 5 * 10
-
-  # Calculate the weight
-  weight = base_weight * (1 + (iv_factor / 100) + (level_factor / 100))
-  weight -= base_weight
-  # Enforce the weight variation limits
-  max_weight = base_weight * 4.00 # 400% increase
-  min_weight = base_weight * 0.5 # 50% decrease
-
-  # Cap the weight between min and max values
-  weight = [[weight, min_weight].max, max_weight].min
-  weight -= nerf if weight- nerf > min_weight
-  return weight.round(2) # Round to 2 decimal places
-end
-
-#nerf: remove x kg from each generated pokemon
-def generate_weight_contest_entries(species, level, resultsVariable,nerf=0)
-  #echoln "Generating Pokemon"
-  pokemon1 = pbGenerateWildPokemon(species, level) #Pokemon.new(species,level)
-  pokemon2 = pbGenerateWildPokemon(species, level) #Pokemon.new(species,level)
-  new_weights = []
-  new_weights << calculate_pokemon_weight(pokemon1,nerf)
-  new_weights << calculate_pokemon_weight(pokemon2,nerf)
-  echoln new_weights
-  echoln "(nerfed by -#{nerf})"
-  pbSet(resultsVariable, new_weights.max)
-
-end
 
 #todo: implement
 def getMappedKeyFor(internalKey)
 
-  keybinding_fileName = "keybindings.mkxp1"
-  path = System.data_directory + keybinding_fileName
-
-  parse_keybindings(path)
-
-  #echoln Keybindings.new(path).bindings
-end
-
-#if need to play animation from event route
-def playAnimation(animationId, x, y)
-  return if !$scene.is_a?(Scene_Map)
-  $scene.spriteset.addUserAnimation(animationId, x, y, true)
-end
-
-def formatNumberToString(number)
-  return number.to_s.reverse.gsub(/(\d{3})(?=\d)/, '\\1,').reverse
-end
-
-def playCry(pokemonSpeciesSymbol)
-  species = GameData::Species.get(pokemonSpeciesSymbol).species
-  GameData::Species.play_cry_from_species(species)
-end
-
-#chance: out of 100
-def lilypadEncounter(pokemon, minLevel, maxLevel, chance = 10)
-  minLevel, maxLevel = [minLevel, maxLevel].minmax
-  level = rand(minLevel..maxLevel)
-
-  event = $game_map.events[@event_id]
-  return if !event
-  if rand(0..100) <= chance
-    pbWildBattle(pokemon, level)
-  else
-    playAnimation(Settings::GRASS_ANIMATION_ID, event.x, event.y)
-  end
-  event.erase
-end
-
-def isPlayerMale()
-  return pbGet(VAR_TRAINER_GENDER) == GENDER_MALE
-end
-
-def isPlayerFemale()
-  return pbGet(VAR_TRAINER_GENDER) == GENDER_FEMALE
-end
-
-
-
-def optionsMenu(options = [], cmdIfCancel = -1, startingOption = 0)
-  cmdIfCancel = -1 if !cmdIfCancel
-  result = pbShowCommands(nil, options, cmdIfCancel, startingOption)
-  echoln "menuResult :#{result}"
-  return result
-end
-
-def getHiddenPowerName(pokemon)
-  hiddenpower = pbHiddenPower(pokemon)
-  hiddenPowerType = hiddenpower[0]
-
-  echoln hiddenPowerType
-  if Settings::TRIPLE_TYPES.include?(hiddenPowerType)
-    return "Neutral"
-  end
-  return PBTypes.getName(hiddenPowerType)
-end
-
-#Returns if the current map is an outdoor map
-def isOutdoor()
-  current_map = $game_map.map_id
-  map_metadata = GameData::MapMetadata.try_get(current_map)
-  return map_metadata && map_metadata.outdoor_map
-end
-
-#
-# Rewards given by hotel questman after a certain nb. of completed quests
-#
-QUEST_REWARDS = [
-  QuestReward.new(1, :HM08, 1, "This HM will allow you to illuminate dark caves and should help you to progress in your journey!"),
-  QuestReward.new(5, :AMULETCOIN, 1, "This item will allows you to get twice the money in a battle if the Pokémon holding it took part in it!"),
-  QuestReward.new(10, :LANTERN, 1, "This will allow you to illuminate caves without having to use a HM! Practical, isn't it?"),
-  QuestReward.new(15, :LINKINGCORD, 3, "This strange cable triggers the evolution of Pokémon that typically evolve via trade. I know you'll put it to good use!"),
-  QuestReward.new(20, :SLEEPINGBAG, 1, "This handy item will allow you to sleep anywhere you want. You won't even need hotels anymore!"),
-  QuestReward.new(30, :MISTSTONE, 1, "This rare stone can evolve any Pokémon, regardless of their level or evolution method. Use it wisely!",true),
-  QuestReward.new(45, :MASTERBALL, 1, "This rare ball can catch any Pokémon. Don't waste it!",true),
-  QuestReward.new(60, :GSBALL, 1, "This mysterious ball is rumored to be the key to call upon the protector of Ilex Forest.  It's a precious relic."),
-]
-
-
-def turnEventTowardsEvent(turning,turnedTowards)
-  event_x = turnedTowards.x
-  event_y = turnedTowards.y
-  if turning.x < event_x
-    turning.turn_right # Event is to the right of the player
-  elsif turning.x > event_x
-    turning.turn_left # Event is to the left of the player
-  elsif turning.y < event_y
-    turning.turn_down # Event is below the player
-  elsif turning.y > event_y
-    turning.turn_up # Event is above the player
-  end
-end
-
-def turnPlayerTowardsEvent(event)
-  event_x = event.x
-  event_y = event.y
-  if $game_player.x < event_x
-    $game_player.turn_right # Event is to the right of the player
-  elsif $game_player.x > event_x
-    $game_player.turn_left # Event is to the left of the player
-  elsif $game_player.y < event_y
-    $game_player.turn_down # Event is below the player
-  elsif $game_player.y > event_y
-    $game_player.turn_up # Event is above the player
-  end
-end
-
-
-def displaySpriteWindowWithMessage(pif_sprite, message = "", x = 0, y = 0,z=0)
-  spriteLoader = BattleSpriteLoader.new
-  sprite_bitmap = spriteLoader.load_pif_sprite_directly(pif_sprite)
-  pictureWindow = PictureWindow.new(sprite_bitmap.bitmap)
-
-  pictureWindow.opacity = 0
-  pictureWindow.z = z
-  pictureWindow.x = x
-  pictureWindow.y = y
-  pbMessage(message)
-  pictureWindow.dispose
-end
-
-def select_any_pokemon()
-  commands = []
-  for dex_num in 1..NB_POKEMON
-    species = getPokemon(dex_num)
-    commands.push([dex_num - 1, species.real_name, species.id])
-  end
-  return pbChooseList(commands, 0, nil, 1)
-end
-
-
-SWITCH_SS_ANNE_DEPARTED=88
-SWITCH_SNORLAX_GONE_ROUTE_12=110
-SWITCH_TELEPORT_NPC = 122
-SWITCH_GOT_DIVE=317
-SWITCH_GOT_ROCK_CLIMB=661
-SWITCH_GOT_WATERFALL=388
-
-def fixMissedHMs()
-  #Flash
-  if $PokemonBag.pbQuantity(:HM08) < 1 && $PokemonGlobal.questRewardsObtained.include?(:HM08)
-    pbReceiveItem(:HM08)
-  end
-
-  #Cut
-  if $PokemonBag.pbQuantity(:HM01) < 1 && $game_switches[SWITCH_SS_ANNE_DEPARTED]
-    pbReceiveItem(:HM01)
-  end
-
-  #Strength
-  if $PokemonBag.pbQuantity(:HM04) < 1 && $game_switches[SWITCH_SNORLAX_GONE_ROUTE_12]
-    pbReceiveItem(:HM04)
-  end
-
-  #Surf
-  if $PokemonBag.pbQuantity(:HM03) < 1 &&  $game_self_switches[[107, 1, "A"]]
-    pbReceiveItem(:HM03)
-  end
-
-  #Teleport
-  if $PokemonBag.pbQuantity(:HM07) < 1 && $game_switches[SWITCH_TELEPORT_NPC]
-    pbReceiveItem(:HM07)
-  end
-
-  #Fly
-  if $PokemonBag.pbQuantity(:HM02) < 1 &&  $game_self_switches[[439, 1, "B"]]
-    pbReceiveItem(:HM02)
-  end
-
-  #Waterfall
-  if $PokemonBag.pbQuantity(:HM05) < 1 &&  $game_switches[SWITCH_GOT_WATERFALL]
-    pbReceiveItem(:HM05)
-  end
-
-  #Dive
-  if $PokemonBag.pbQuantity(:HM06) < 1 &&  $game_switches[SWITCH_GOT_DIVE]
-    pbReceiveItem(:HM06)
-  end
-
-  #Rock Climb
-  if $PokemonBag.pbQuantity(:HM10) < 1 &&  $game_switches[SWITCH_GOT_ROCK_CLIMB]
-    pbReceiveItem(:HM10)
-  end
 end

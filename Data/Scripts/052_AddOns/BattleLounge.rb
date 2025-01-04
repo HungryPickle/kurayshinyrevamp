@@ -97,8 +97,8 @@ end
 
 GENERIC_PRIZES_MULTI = [:HEARTSCALE, :HEARTSCALE,:HEARTSCALE,:HEARTSCALE,:HEARTSCALE,
                         :LEMONADE, :PERFECTBALL, :TRADEBALL,
-                        :GENDERBALL, :ABILITYBALL, :VIRUSBALL, :SHINYBALL]
-GENERIC_PRIZES_SINGLE = [:RARECANDY, :RARECANDY,:RARECANDY, :PPUP, :EJECTBUTTON, :FOCUSBAND, :FOCUSSASH,
+                        :GENDERBALL, :ABILITYBALL, :VIRUSBALL, :SHINYBALL, :RARECANDY]
+GENERIC_PRIZES_SINGLE = [:RARECANDY, :RARECANDY, :PPUP, :EJECTBUTTON, :FOCUSBAND, :FOCUSSASH,
                          :RESETURGE, :ABILITYURGE, :ITEMURGE, :ITEMDROP, :HPUP, :INCUBATOR, :LUCKYEGG]
 MONSTER_PRIZES = [:RAREBONE, :LAGGINGTAIL, :RAZORFANG, :RAZORCLAW, :GRIPCLAW, :MANKEYPAW]
 WATER_PRIZES = [:MYSTICWATER, :BIGPEARL, :SHELLBELL]
@@ -185,18 +185,8 @@ end
 
 
 def generateRandomFusionFromPokemon(dexNum, onlyCustomSprites = false, allowLegendaries=true)
-  excluded = allowLegendaries ? [] : listLegendaryPokemonIds()
-  customsList = getCustomSpeciesList(downloadAllowed?())
-  i=0
-  while i < customsList.length
-    comparedPoke = customsList.sample
-    next if excluded.include?(comparedPoke)
-    if Kernel.isPartPokemon(comparedPoke, dexNum)
-      return comparedPoke
-    end
-    i+=1
-  end
-  return 1
+  speciesList = onlyCustomSprites ? getCustomSpeciesListForPokemon(dexNum,allowLegendaries) : getAllPokemonWithBase(dexNum)
+  return speciesList.sample
 end
 
 def getRandomBasePokemon(includeLegendaries = false,maxNb=NB_POKEMON)
@@ -216,7 +206,7 @@ end
 
 def getCustomSpeciesListForPokemon(dexNum,allowLegendaries=true)
   excluded = allowLegendaries ? [] : listLegendaryPokemonIds()
-  customsList = getCustomSpeciesList(downloadAllowed?())
+  customsList = getCustomSpeciesList($PokemonSystem.download_sprites == 0)
   speciesList = []
   for comparedPoke in customsList
     next if excluded.include?(comparedPoke)

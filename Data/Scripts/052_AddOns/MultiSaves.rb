@@ -45,7 +45,7 @@
 
 def onLoadExistingGame()
   migrateOldSavesToCharacterCustomization()
-  clear_all_images()
+
 
 end
 
@@ -53,15 +53,15 @@ def onStartingNewGame() end
 
 def migrateOldSavesToCharacterCustomization()
   if !$Trainer.unlocked_clothes
-    $Trainer.unlocked_clothes = [DEFAULT_OUTFIT_MALE,
-                                 DEFAULT_OUTFIT_FEMALE,
-                                 STARTING_OUTFIT]
+    $Trainer.unlocked_clothes = [Settings::DEFAULT_OUTFIT_MALE,
+                                 Settings::DEFAULT_OUTFIT_FEMALE,
+                                 Settings::STARTING_OUTFIT]
   end
   if !$Trainer.unlocked_hats
-    $Trainer.unlocked_hats = [DEFAULT_OUTFIT_MALE, DEFAULT_OUTFIT_FEMALE]
+    $Trainer.unlocked_hats = [Settings::DEFAULT_OUTFIT_MALE, Settings::DEFAULT_OUTFIT_FEMALE]
   end
   if !$Trainer.unlocked_hairstyles
-    $Trainer.unlocked_hairstyles = [DEFAULT_OUTFIT_MALE, DEFAULT_OUTFIT_FEMALE]
+    $Trainer.unlocked_hairstyles = [Settings::DEFAULT_OUTFIT_MALE, Settings::DEFAULT_OUTFIT_FEMALE]
   end
 
   if !$Trainer.clothes || !$Trainer.hair #|| !$Trainer.hat
@@ -357,7 +357,7 @@ class PokemonLoadScreen
     $Trainer.selected_difficulty = 1 #normal
     $Trainer.selected_difficulty = 0 if $game_switches[SWITCH_GAME_DIFFICULTY_EASY]
     $Trainer.selected_difficulty = 2 if $game_switches[SWITCH_GAME_DIFFICULTY_HARD]
-    $Trainer.lowest_difficulty = $Trainer.selected_difficulty if !$Trainer.lowest_difficulty
+    $Trainer.lowest_difficulty= $Trainer.selected_difficulty if !$Trainer.lowest_difficulty
   end
 
   def setGameMode()
@@ -376,67 +376,35 @@ class PokemonLoadScreen
     end
   end
 
-  def check_for_spritepack_update()
-    $updated_spritesheets = [] if !$updated_spritesheets
-    if new_spritepack_was_released()
-      reset_updated_spritesheets_cache()
-      $updated_spritesheets = []
-    end
-  end
-
-  def reset_updated_spritesheets_cache()
-    echoln "resetting updated spritesheets list"
-    begin
-      File.open(Settings::UPDATED_SPRITESHEETS_CACHE, 'w') { |file| file.truncate(0) }
-      echoln "File reset successfully."
-    rescue => e
-      echoln "Failed to reset file: #{e.message}"
-    end
-  end
-
-
-
-  def preload_party(trainer)
-    spriteLoader = BattleSpriteLoader.new
-    for pokemon in trainer.party
-      spriteLoader.preload_sprite_from_pokemon(pokemon)
-    end
-  end
-
-  #unused - too slow, & multithreading not possible
-  # def preload_party_and_boxes(storage, trainer)
-  #     echoln "Loading boxes and party into cache in the background"
-  #     start_time = Time.now
-  #     spriterLoader = BattleSpriteLoader.new
-  #     for box in storage.boxes
-  #       for pokemon in box.pokemon
-  #         if pokemon != nil
-  #           if !pokemon.egg?
-  #             spriterLoader.preload_sprite_from_pokemon(pokemon)
-  #           end
-  #         end
-  #       end
-  #     end
-  #     for pokemon in trainer.party
-  #       spriterLoader.preload_sprite_from_pokemon(pokemon)
-  #     end
-  #     end_time = Time.now
-  #     echoln "Finished in #{end_time - start_time} seconds"
-  # end
-
   def pbStartLoadScreen
     updateHttpSettingsFile
+    # Should be able to replace updateHttpSettingsFile with the following:
+    # Try later though.
+    # updateKurayJsonSettings
+    # Settings::performKurayJsonSettingsOverrides()
     updateCreditsFile
     updateCustomDexFile
-    updateOnlineCustomSpritesFile
     newer_version = find_newer_available_version
     if newer_version
-      pbMessage(_INTL("Version {1} is now available! Please use the game's installer to download the newest version. Check the Discord for more information.", newer_version))
+      if File.file?('.\INSTALL_OR_UPDATE.bat')
+        update_answer = pbMessage(_INTL("Version {1} is now available! Update now?", newer_version), ["Yes","No"], 1)
+        if update_answer == 0
+          Process.spawn('.\INSTALL_OR_UPDATE.bat', "auto")
+          exit
+        end
+      else
+        pbMessage(_INTL("Version {1} is now available! Please check the game's official page to download the newest version.", newer_version))
+      end
     end
 
-    if Settings::STARTUP_MESSAGES != ""
-      pbMessage(_INTL(Settings::STARTUP_MESSAGES))
+    if $PokemonSystem && $PokemonSystem.shiny_cache == 1
+      checkDirectory("Cache")
+      checkDirectory("Cache/Shiny")
+      Dir.glob("Cache/Shiny/*").each do |file|
+        File.delete(file) if File.file?(file)
+      end
     end
+
     if ($game_temp.unimportedSprites && $game_temp.unimportedSprites.size > 0)
       handleReplaceExistingSprites()
     end
@@ -445,7 +413,14 @@ class PokemonLoadScreen
     end
     checkEnableSpritesDownload
     $game_temp.nb_imported_sprites = nil
+
     copyKeybindings()
+    $KURAY_OPTIONSNAME_LOADED = false
+    # WIP Kuray Eggs
+    kurayeggs_main() if $KURAYEGGS_WRITEDATA
+    # puts RUBY_VERSION.to_s + " is the ruby version"
+    # End of WIP Kuray Eggs
+
     save_file_list = SaveData::AUTO_SLOTS + SaveData::MANUAL_SLOTS
     first_time = true
     loop do
@@ -463,14 +438,21 @@ class PokemonLoadScreen
       cmd_mystery_gift = -1
       cmd_debug = -1
       cmd_quit = -1
+      #Kuray Add Documentation & Discord server links
+      cmd_doc         = -1
+      cmd_discord         = -1
+      cmd_pifdiscord        = -1
+      cmd_wiki        = -1
       show_continue = !@save_data.empty?
       new_game_plus = show_continue && (@save_data[:player].new_game_plus_unlocked || $DEBUG)
 
       if show_continue
         commands[cmd_continue = commands.length] = "#{@selected_file}"
-        if @save_data[:player].mystery_gift_unlocked
-          commands[cmd_mystery_gift = commands.length] = _INTL('Mystery Gift') # Honestly I have no idea how to make Mystery Gift work well with this.
-        end
+        # if @save_data[:player].mystery_gift_unlocked
+        commands[cmd_mystery_gift = commands.length] = _INTL('Mystery Gift') # Honestly I have no idea how to make Mystery Gift work well with this.
+        # if true
+          # commands[cmd_mystery_gift = commands.length] = _INTL('Mystery Gift') # Honestly I have no idea how to make Mystery Gift work well with this.
+        # end
       end
 
       commands[cmd_new_game = commands.length] = _INTL('New Game')
@@ -478,9 +460,11 @@ class PokemonLoadScreen
         commands[cmd_new_game_plus = commands.length] = _INTL('New Game +')
       end
       commands[cmd_options = commands.length] = _INTL('Options')
-      commands[cmd_language = commands.length] = _INTL('Language') if Settings::LANGUAGES.length >= 2
-      commands[cmd_discord = commands.length] = _INTL('Discord')
+      commands[cmd_discord = commands.length]     = _INTL('KIF Discord')
+      commands[cmd_doc = commands.length]     = _INTL('KIF Documentation (Obsolete)')
+      commands[cmd_pifdiscord = commands.length]     = _INTL('PIF Discord')
       commands[cmd_wiki = commands.length] = _INTL('Wiki')
+      commands[cmd_language = commands.length] = _INTL('Language') if Settings::LANGUAGES.length >= 2
       commands[cmd_debug = commands.length] = _INTL('Debug') if $DEBUG
       commands[cmd_quit = commands.length] = _INTL('Quit Game')
       cmd_left = -3
@@ -509,31 +493,40 @@ class PokemonLoadScreen
           $game_switches[SWITCH_V5_1] = true
           ensureCorrectDifficulty()
           setGameMode()
-          initialize_alt_sprite_substitutions()
+          $PokemonGlobal.alt_sprite_substitutions = {} if !$PokemonGlobal.alt_sprite_substitutions
           $PokemonGlobal.autogen_sprites_cache = {}
-          check_for_spritepack_update()
-          preload_party(@save_data[:player])
           return
         when cmd_new_game
           @scene.pbEndScene
           Game.start_new
-          initialize_alt_sprite_substitutions()
+          $PokemonGlobal.alt_sprite_substitutions = {} if !$PokemonGlobal.alt_sprite_substitutions
           return
         when cmd_new_game_plus
           @scene.pbEndScene
           Game.start_new(@save_data[:bag], @save_data[:storage_system], @save_data[:player])
-          initialize_alt_sprite_substitutions()
           @save_data[:player].new_game_plus_unlocked = true
           return
-        when cmd_discord
-          openUrlInBrowser(Settings::DISCORD_URL)
+        when cmd_pifdiscord
+          openUrlInBrowser(Settings::PIF_DISCORD_URL)
         when cmd_wiki
           openUrlInBrowser(Settings::WIKI_URL)
+        when cmd_doc
+          openUrlInBrowser("https://docs.google.com/document/d/1O6pKKL62dbLcapO0c2zDG2UI-eN6uatYlt_0GSk1dbE")
+          # https://docs.google.com/document/d/1O6pKKL62dbLcapO0c2zDG2UI-eN6uatYlt_0GSk1dbE
+          # system("start https://docs.google.com/document/d/1O6pKKL62dbLcapO0c2zDG2UI-eN6uatYlt_0GSk1dbE")
+          # `open https://docs.google.com/document/d/1O6pKKL62dbLcapO0c2zDG2UI-eN6uatYlt_0GSk1dbE`
+          return
+        when cmd_discord
+          # https://discord.gg/UFxQkUZeyE
+          openUrlInBrowser(Settings::DISCORD_URL)
+          # system("start https://discord.gg/UFxQkUZeyE")
+          # `open https://discord.gg/UFxQkUZeyE`
+          return
         when cmd_mystery_gift
           pbFadeOutIn { pbDownloadMysteryGift(@save_data[:player]) }
         when cmd_options
           pbFadeOutIn do
-            scene = PokemonGameOption_Scene.new
+            scene = PokemonOption_Scene.new
             screen = PokemonOptionScreen.new(scene)
             screen.pbStartScreen(true)
           end
@@ -758,12 +751,6 @@ module Game
     if ngp_storage != nil
       $PokemonStorage = ngp_clean_pc_data(ngp_storage, ngp_trainer.party)
     end
-
-    if ngp_trainer
-      $Trainer.unlocked_hats = ngp_trainer.unlocked_hats
-      $Trainer.unlocked_clothes = ngp_trainer.unlocked_clothes
-    end
-
   end
 
   # Loads bootup data from save file (if it exists) or creates bootup data (if
@@ -790,37 +777,6 @@ module Game
     end
   end
 
-  def self.backup_savefile(save_path, slot)
-    backup_dir = File.join(File.dirname(save_path), "backups")
-    Dir.mkdir(backup_dir) if !Dir.exist?(backup_dir)
-
-    backup_slot_dir = File.join(File.dirname(save_path), "backups/#{slot}")
-    Dir.mkdir(backup_slot_dir) if !Dir.exist?(backup_slot_dir)
-
-    # Manage rolling backups
-    if File.exist?(save_path)
-      # Generate a timestamped backup name
-      timestamp = Time.now.strftime("%Y%m%d%H%M%S")
-      backup_file = File.join(backup_slot_dir, "#{slot}_#{timestamp}.rxdata")
-
-      # Copy the save file manually
-      File.open(save_path, 'rb') do |source|
-        File.open(backup_file, 'wb') do |dest|
-          dest.write(source.read)
-        end
-      end
-
-      # Clean up old backups
-      backups = Dir.get(backup_slot_dir, "*.rxdata")
-      # Keep only the latest N backups
-      if backups.length > Settings::SAVEFILE_NB_BACKUPS
-        excess_backups = backups[0...(backups.length - Settings::SAVEFILE_NB_BACKUPS)]
-        echoln excess_backups
-        excess_backups.each { |old_backup| File.delete(old_backup) }
-      end
-    end
-  end
-
   # Saves the game. Returns whether the operation was successful.
   # @param save_file [String] the save file path
   # @param safe [Boolean] whether $PokemonGlobal.safesave should be set to true
@@ -831,8 +787,6 @@ module Game
     return false if slot.nil?
 
     file_path = SaveData.get_full_path(slot)
-    self.backup_savefile(file_path, slot)
-
     $PokemonGlobal.safesave = safe
     $game_system.save_count += 1
     $game_system.magic_number = $data_system.magic_number

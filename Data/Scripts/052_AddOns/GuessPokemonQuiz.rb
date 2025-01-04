@@ -208,8 +208,8 @@ class FusionQuiz
 
   def show_fusion_picture(obscured = false, x = nil, y = nil)
     hide_fusion_picture()
-    spriteLoader = BattleSpriteLoader.new
-    bitmap = spriteLoader.load_fusion_sprite(@head_id, @body_id)
+    picturePath = get_fusion_sprite_path(@head_id, @body_id)
+    bitmap = AnimatedBitmap.new(picturePath)
     bitmap.scale_bitmap(Settings::FRONTSPRITE_SCALE)
     @previewwindow = PictureWindow.new(bitmap)
     @previewwindow.y = y ? y : 30
@@ -225,7 +225,7 @@ class FusionQuiz
   end
 
   def pick_random_pokemon(save_in_variable = 1)
-    random_pokemon = getRandomCustomFusion(true, @customs_list)
+    random_pokemon = getRandomCustomFusionForIntro(true, @customs_list)
     @head_id = random_pokemon[0]
     @body_id = random_pokemon[1]
     @selected_pokemon = getSpeciesIdForFusion(@head_id, @body_id)

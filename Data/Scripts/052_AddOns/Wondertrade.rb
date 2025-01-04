@@ -66,7 +66,7 @@ def pbWonderTrade(lvl, except = [], except2 = [], premiumWonderTrade = true)
     return
   end
 
-  #  $PokemonBag.pbStoreItem(poke.item, 1) if poke.item != nil
+  # $PokemonBag.pbStoreItem(poke.item, 1) if poke.item != nil
   myPoke = poke.species
   chosenBST = calcBaseStatsSum(myPoke)
   # The following excecption fields are for hardcoding the blacklisted pokemon
@@ -94,7 +94,7 @@ def pbWonderTrade(lvl, except = [], except2 = [], premiumWonderTrade = true)
       end
       species = 0 if bst > bstLimit
       if species > 0 && premiumWonderTrade
-        species = 0 if !customSpriteExistsSpecies(species)
+        species = 0 if !customSpriteExists(species)
       end
       if species > 0
         skipLegendaryCheck = premiumWonderTrade && rand(100) < luck
@@ -116,7 +116,7 @@ def pbWonderTrade(lvl, except = [], except2 = [], premiumWonderTrade = true)
       end
     end
     randTrainerNames = RandTrainerNames_male + RandTrainerNames_female + RandTrainerNames_others
-    #tname = randTrainerNames[rand(randTrainerNames.size)] # Randomizes Trainer Names
+    # tname = randTrainerNames[rand(randTrainerNames.size)] # Randomizes Trainer Names
     pname = RandPokeNick[rand(RandPokeNick.size)] # Randomizes Pokemon Nicknames
 
     #num of Wondertrade - 1

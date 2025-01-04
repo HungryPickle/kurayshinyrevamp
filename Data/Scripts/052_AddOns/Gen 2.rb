@@ -16,6 +16,7 @@
 
 NB_POKEMON = Settings::NB_POKEMON#809#420 #351  #aussi CONST_NB_POKE
 CONST_NB_POKE = NB_POKEMON
+
 def pbPokemonBitmapFile(species)
   # Used by the Pokédex
   # Load normal bitmap
@@ -69,6 +70,9 @@ def pbLoadPokemonBitmapSpecies(pokemon, species, back = false, scale = POKEMONSP
     bitmapFileName = pbResolveBitmap(bitmapFileName)
   elsif pokemon.species >= ZAPMOLCUNO_NB #zapmolcuno
     bitmapFileName = getSpecialSpriteName(pokemon.species) #sprintf("Graphics/Battlers/special/144.145.146")
+    if !pbResolveBitmap(bitmapFileName)
+      bitmapFileName = sprintf("Graphics/Battlers/special/000")
+    end
     bitmapFileName = pbResolveBitmap(bitmapFileName)
   else
     #edited here
@@ -130,7 +134,7 @@ end
 
 #in: pokemon number
 def Kernel.isPartPokemon(src, target)
-
+  
   src = getDexNumberForSpecies(src)
   target = getDexNumberForSpecies(target)
   return true if src == target

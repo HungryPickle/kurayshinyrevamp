@@ -13,7 +13,7 @@ def pbAddPokemonID(pokemon, level = nil, seeform = true, dontRandomize = false)
   end
   #random species if randomized gift pokemon &  wild poke
   if $game_switches[SWITCH_RANDOM_GIFT_POKEMON] && $game_switches[SWITCH_RANDOM_WILD] && !dontRandomize
-    tryRandomizeGiftPokemon(pokemon, dontRandomize)
+    tryRandomizeGiftPokemon(pokemon,dontRandomize)
   end
 
   speciesname = PBSpecies.getName(pokemon.species)
@@ -38,12 +38,44 @@ def pbAddPokemonID(pokemon_id, level = 1, see_form = true, skip_randomize = fals
 
   #random species if randomized gift pokemon &  wild poke
   if $game_switches[SWITCH_RANDOM_GIFT_POKEMON] && $game_switches[SWITCH_RANDOM_WILD] && !skip_randomize
-    tryRandomizeGiftPokemon(pokemon, skip_randomize)
+    tryRandomizeGiftPokemon(pokemon,skip_randomize)
   end
 
   pbMessage(_INTL("{1} obtained {2}!\\me[Pkmn get]\\wtnp[80]\1", $Trainer.name, species_name))
   pbNicknameAndStore(pokemon)
   $Trainer.pokedex.register(pokemon) if see_form
+  return true
+end
+
+def generateFusionIcon(dexNum, path)
+  begin
+    IO.copy_stream(dexNum, path)
+    return true
+  rescue
+    return false
+  end
+end
+
+def ensureFusionIconExists
+  checkDirectory("Graphics/Pokemon/FusionIcons")
+end
+
+def addNewTripleFusion(pokemon1,pokemon2,pokemon3,level = 1)
+  return if !pokemon1
+  return if !pokemon2
+  return if !pokemon3
+
+  if pbBoxesFull?
+    pbMessage(_INTL("There's no more room for Pokémon!\1"))
+    pbMessage(_INTL("The Pokémon Boxes are full and can't accept any more!"))
+    return false
+  end
+
+  pokemon = TripleFusion.new(pokemon1,pokemon2,pokemon3,level)
+  pokemon.calc_stats
+  pbMessage(_INTL("{1} obtained {2}!\\me[Pkmn get]\\wtnp[80]\1", $Trainer.name, pokemon.name))
+  pbNicknameAndStore(pokemon)
+  #$Trainer.pokedex.register(pokemon)
   return true
 end
 
@@ -60,8 +92,13 @@ def pbHasSpecies?(species)
   return false
 end
 
+# KurayX Case sensitive check
+def file_exist_case_sensitive(containing_dir, filename)
+  Dir[File.join(containing_dir, "*")].select {|f| File.basename(f) == filename}.any?
+end
+
 #ancienne methode qui est encore callée un peu partout dans les vieux scripts
-def getID(pbspecies_unused, species)
+def getID(pbspecies_unused,species)
   if species.is_a?(String)
     return nil
   elsif species.is_a?(Symbol)
@@ -70,7 +107,6 @@ def getID(pbspecies_unused, species)
     id = species.dexNum
   end
 end
-
 #Check if the Pokemon can learn a TM
 def CanLearnMove(pokemon, move)
   species = getID(PBSpecies, pokemon)
@@ -99,6 +135,29 @@ def pbCheckPokemonIconFiles(speciesID, egg = false, dna = false)
   return pbResolveBitmap("Graphics/Icons/iconDNA.png")
 end
 
+def getDexNumberForSpecies(species)
+  return species if species.is_a?(Integer)
+  if species.is_a?(Symbol)
+    dexNum = GameData::Species.get(species).id_number
+  elsif species.is_a?(Pokemon)
+    dexNum = GameData::Species.get(species.species).id_number
+  elsif species.is_a?(GameData::Species)
+    return species.id_number
+  else
+    dexNum = species
+  end
+  return dexNum
+end
+
+def getFusedPokemonIdFromDexNum(body_dex, head_dex)
+  return ("B" + body_dex.to_s + "H" + head_dex.to_s).to_sym
+end
+
+def getFusedPokemonIdFromSymbols(body_dex, head_dex)
+  bodyDexNum =  GameData::Species.get(body_dex).id_number
+  headDexNum =  GameData::Species.get(head_dex).id_number
+  return getFusedPokemonIdFromDexNum(bodyDexNum,headDexNum)
+end
 
 def getPokemon(dexNum)
   if dexNum.is_a?(Integer)
@@ -121,7 +180,42 @@ def getSpecies(dexnum)
   return getPokemon(dexnum)
 end
 
-def getAbilityIndexFromID(abilityID, fusedPokemon)
+def getSpeciesIdForFusion(head_number, body_number)
+  return (body_number) * Settings::NB_POKEMON + head_number
+end
+
+
+def get_body_species_from_symbol(fused_id)
+  body_num = get_body_number_from_symbol(fused_id)
+  return GameData::Species.get(body_num).species
+end
+
+def get_head_species_from_symbol(fused_id)
+  head_num = get_head_number_from_symbol(fused_id)
+  return GameData::Species.get(head_num).species
+end
+
+def get_body_number_from_symbol(id)
+  dexNum = getDexNumberForSpecies(id)
+  return dexNum if !isFusion(dexNum)
+  id.to_s.match(/\d+/)[0]
+  return id.to_s.match(/\d+/)[0].to_i
+end
+
+def get_head_number_from_symbol(id)
+  dexNum = getDexNumberForSpecies(id)
+  return dexNum if !isFusion(dexNum)
+  return id.to_s.match(/(?<=H)\d+/)[0].to_i
+end
+
+def getFusionSpecies(body, head)
+  body_num = getDexNumberForSpecies(body)
+  head_num = getDexNumberForSpecies(head)
+  id = body_num * Settings::NB_POKEMON + head_num
+  return GameData::Species.get(id)
+end
+
+def getAbilityIndexFromID(abilityID,fusedPokemon)
   abilityList = fusedPokemon.getAbilityList
   for abilityArray in abilityList #ex: [:CHLOROPHYLL, 0]
     ability = abilityArray[0]
@@ -131,32 +225,106 @@ def getAbilityIndexFromID(abilityID, fusedPokemon)
   return 0
 end
 
+#shortcut for using in game events because of script characters limit
+def dexNum(species)
+  return getDexNumberForSpecies(species)
+end
 
-# dir_path = Settings::CUSTOM_BATTLERS_FOLDER_INDEXED
-# indexFolders = Dir.entries(dir_path).select do |entry|
-#   entry_number = entry.to_i
-#   File.directory?(File.join(dir_path, entry)) && entry_number.between?(1, NB_POKEMON)
-# end
-# return nil if indexFolders.empty?
-# # Loop until a non-empty folder is found
-# selectedIndex = nil
-# spritesList = []
-# until selectedIndex && !spritesList.empty?
-#   selectedIndex = indexFolders.sample
-#   spritesList = Dir.entries(File.join(dir_path, selectedIndex)).select do |file|
-#     File.file?(File.join(dir_path, selectedIndex, file))
-#   end
-# end
-# selectedSprite = spritesList.sample
-# return getPokemonSpeciesFromSprite(selectedSprite)
-#end
+def isTripleFusion?(num)
+  return num >= Settings::ZAPMOLCUNO_NB
+end
 
+def isFusion(num)
+  return num > Settings::NB_POKEMON && !isTripleFusion?(num)
+end
 
+def isSpeciesFusion(species)
+  num = getDexNumberForSpecies(species)
+  return isFusion(num)
+end
 
-def addShinyStarsToGraphicsArray(imageArray, xPos, yPos, shinyBody, shinyHead, debugShiny, srcx = nil, srcy = nil, width = nil, height = nil,
-                                 showSecondStarUnder = false, showSecondStarAbove = false)
-  color = debugShiny ? Color.new(0, 0, 0, 255) : nil
-  imageArray.push(["Graphics/Pictures/shiny", xPos, yPos, srcx, srcy, width, height, color])
+def getRandomCustomFusionForIntro(returnRandomPokemonIfNoneFound = true, customPokeList = [], maxPoke = -1, recursionLimit = 3)
+  if customPokeList.length == 0
+    customPokeList = getCustomSpeciesList(false )
+  end
+  randPoke = []
+  if customPokeList.length >= 5000
+    chosen = false
+    i = 0 #loop pas plus que 3 fois pour pas lag
+    while chosen == false
+      fusedPoke = customPokeList[rand(customPokeList.length)]
+      poke1 = getBasePokemonID(fusedPoke, false)
+      poke2 = getBasePokemonID(fusedPoke, true)
+
+      if ((poke1 <= maxPoke && poke2 <= maxPoke) || i >= recursionLimit) || maxPoke == -1
+        randPoke << getBasePokemonID(fusedPoke, false)
+        randPoke << getBasePokemonID(fusedPoke, true)
+        chosen = true
+      end
+    end
+  else
+    if returnRandomPokemonIfNoneFound
+      randPoke << rand(maxPoke) + 1
+      randPoke << rand(maxPoke) + 1
+    end
+  end
+
+  return randPoke
+end
+
+#KurayX new ShinyStars
+def addShinyStarsToGraphicsArray(imageArray, xPos, yPos, shinyBody, shinyHead, debugShiny, srcx=nil, srcy=nil, width=nil, height=nil,
+                                 showSecondStarUnder=false, showSecondStarAbove=false, fakeshiny=false,kuraxRGB=[0,0,0])
+  # color = debugShiny ? Color.new(0,0,0,255) : nil
+  # if debugShiny
+  #   color = Color.new(0,0,0,255)
+  if fakeshiny
+    color = Color.new(79,33,97,255)#Dark Violet
+  else
+    if $PokemonSystem.shinyadvanced != nil && $PokemonSystem.shinyadvanced == 1
+      if [9,10,11].include?(kuraxRGB[0]) || [9,10,11].include?(kuraxRGB[1]) || [9,10,11].include?(kuraxRGB[2])
+        color = Color.new(0,255,255,255)
+        #Inverted Magenta/Cyan/Yellow
+      elsif [3,4,5].include?(kuraxRGB[0]) || [3,4,5].include?(kuraxRGB[1]) || [3,4,5].include?(kuraxRGB[2])
+        color = Color.new(255,255,0,255)
+        #Magenta/Cyan/Yellow
+      elsif [6,7,8].include?(kuraxRGB[0]) || [6,7,8].include?(kuraxRGB[1]) || [6,7,8].include?(kuraxRGB[2])
+        color = Color.new(0,0,0,255)
+        #Inverted Red/Blue/Green
+      else
+        color = Color.new(255,0,0,255)
+      end
+    elsif $PokemonSystem.shinyadvanced != nil && $PokemonSystem.shinyadvanced == 2
+      if [20,21,22,23,24,25].include?(kuraxRGB[0]) || [20,21,22,23,24,25].include?(kuraxRGB[1]) || [20,21,22,23,24,25].include?(kuraxRGB[2])
+        color = Color.new(230,34,230,255)#Magenta Star
+        #Inverted NEW
+      elsif [14,15,16,17,18,19].include?(kuraxRGB[0]) || [14,15,16,17,18,19].include?(kuraxRGB[1]) || [14,15,16,17,18,19].include?(kuraxRGB[2])
+        color = Color.new(230,34,67,255)#Red Star
+        #NEW
+      elsif [13].include?(kuraxRGB[0]) || [13].include?(kuraxRGB[1]) || [13].include?(kuraxRGB[2])
+        color = Color.new(230,230,34,255)#Yellow Star
+        #Inverted Grey
+      elsif [12].include?(kuraxRGB[0]) || [12].include?(kuraxRGB[1]) || [12].include?(kuraxRGB[2])
+        color = Color.new(100,100,100,255)#Grey Star
+        #Grey
+      elsif [9,10,11].include?(kuraxRGB[0]) || [9,10,11].include?(kuraxRGB[1]) || [9,10,11].include?(kuraxRGB[2])
+        color = Color.new(34,230,230,255)#Cyan Star
+        #Inverted Magenta/Cyan/Yellow
+      elsif [3,4,5].include?(kuraxRGB[0]) || [3,4,5].include?(kuraxRGB[1]) || [3,4,5].include?(kuraxRGB[2])
+        color = Color.new(34,67,230,255)#Blue Star
+        #Magenta/Cyan/Yellow
+      elsif [6,7,8].include?(kuraxRGB[0]) || [6,7,8].include?(kuraxRGB[1]) || [6,7,8].include?(kuraxRGB[2])
+        color = Color.new(0,0,0,255)#Black Star
+        #Inverted Red/Blue/Green
+      else
+        color = Color.new(67,230,34,255)#Green Star (RGB)
+      end
+    else
+      color = nil
+    end
+  end
+  imageloc = "Graphics/Pictures/shiny"
+  imageArray.push([imageloc,xPos,yPos,srcx,srcy,width,height,color])
   if shinyBody && shinyHead
     if showSecondStarUnder
       yPos += 15
@@ -165,7 +333,7 @@ def addShinyStarsToGraphicsArray(imageArray, xPos, yPos, shinyBody, shinyHead, d
     else
       xPos -= 15
     end
-    imageArray.push(["Graphics/Pictures/shiny", xPos, yPos, srcx, srcy, width, height, color])
+    imageArray.push([imageloc,xPos,yPos,srcx,srcy,width,height,color])
   end
   # if onlyOutline
   #   imageArray.push(["Graphics/Pictures/shiny_black",xPos,yPos,srcx,srcy,width,height,color])
@@ -173,28 +341,28 @@ def addShinyStarsToGraphicsArray(imageArray, xPos, yPos, shinyBody, shinyHead, d
 
 end
 
-# def getRandomCustomFusion(returnRandomPokemonIfNoneFound = true, customPokeList = [], maxPoke = -1, recursionLimit = 3, maxBST = 300)
-#   if customPokeList.length == 0
-#     customPokeList = getCustomSpeciesList()
-#   end
-#   randPoke = []
-#   if customPokeList.length >= 5000
-#     chosen = false
-#     i = 0 #loop pas plus que 3 fois pour pas lag
-#     while chosen == false
-#       fusedPoke = customPokeList[rand(customPokeList.length)]
-#       if (i >= recursionLimit) || maxPoke == -1
-#         return fusedPoke
-#       end
-#     end
-#   else
-#     if returnRandomPokemonIfNoneFound
-#       return rand(maxPoke) + 1
-#     end
-#   end
-#
-#   return randPoke
-# end
+def getRandomCustomFusion(returnRandomPokemonIfNoneFound = true, customPokeList = [], maxPoke = -1, recursionLimit = 3, maxBST=300)
+  if customPokeList.length == 0
+    customPokeList = getCustomSpeciesList()
+  end
+  randPoke = []
+  if customPokeList.length >= 5000
+    chosen = false
+    i = 0 #loop pas plus que 3 fois pour pas lag
+    while chosen == false
+      fusedPoke = customPokeList[rand(customPokeList.length)]
+      if (i >= recursionLimit) || maxPoke == -1
+        return fusedPoke
+      end
+    end
+  else
+    if returnRandomPokemonIfNoneFound
+      return rand(maxPoke) + 1
+    end
+  end
+
+  return randPoke
+end
 
 def getAllNonLegendaryPokemon()
   list = []
@@ -246,6 +414,10 @@ def pbGetSelfSwitch(eventId, switch)
   return $game_self_switches[[@map_id, eventId, switch]]
 end
 
+# def obtainBadgeMessage(badgeName)
+#   Kernel.pbMessage(_INTL("\\me[Badge get]{1} obtained the {2}!", $Trainer.name, badgeName))
+# end
+
 def getAllNonLegendaryPokemon()
   list = []
   for i in 1..143
@@ -284,103 +456,57 @@ def generateSimpleTrainerParty(teamSpecies, level)
   return team
 end
 
-def isInKantoGeneration(dexNumber)
-  return dexNumber <= 151
-end
-
-def isKantoPokemon(species)
-  dexNum = getDexNumberForSpecies(species)
-  poke = getPokemon(species)
-  head_dex = getDexNumberForSpecies(poke.get_head_species())
-  body_dex = getDexNumberForSpecies(poke.get_body_species())
-  return isInKantoGeneration(dexNum) || isInKantoGeneration(head_dex) || isInKantoGeneration(body_dex)
-end
-
-def isInJohtoGeneration(dexNumber)
-  return dexNumber > 151 && dexNumber <= 251
-end
-
-def isJohtoPokemon(species)
-  dexNum = getDexNumberForSpecies(species)
-  poke = getPokemon(species)
-  head_dex = getDexNumberForSpecies(poke.get_head_species())
-  body_dex = getDexNumberForSpecies(poke.get_body_species())
-  return isInJohtoGeneration(dexNum) || isInJohtoGeneration(head_dex) || isInJohtoGeneration(body_dex)
-end
-
 def isAlolaPokemon(species)
   dexNum = getDexNumberForSpecies(species)
-  poke = getPokemon(species)
-  head_dex = getDexNumberForSpecies(poke.get_head_species())
-  body_dex = getDexNumberForSpecies(poke.get_body_species())
   list = [
-    370, 373, 430, 431, 432, 433, 450, 451, 452,
-    453, 454, 455, 459, 460, 463, 464, 465, 469, 470,
-    471, 472, 473, 474, 475, 476, 477, 498, 499,
+    370, 373, 430,431,432,433,450, 451,452,
+    453,454,455, 459,460, 463, 464, 465
   ]
-  return list.include?(dexNum) || list.include?(head_dex) || list.include?(body_dex)
+  return list.include?(dexNum)
 end
 
 def isKalosPokemon(species)
   dexNum = getDexNumberForSpecies(species)
-  poke = getPokemon(species)
-  head_dex = getDexNumberForSpecies(poke.get_head_species())
-  body_dex = getDexNumberForSpecies(poke.get_body_species())
   list =
-    [327, 328, 329, 339, 371, 372, 417, 418,
-     425, 426, 438, 439, 440, 441, 444, 445, 446,
-     456, 461, 462, 478, 479, 480, 481, 482, 483, 484, 485, 486, 487,
-     489, 490, 491, 492, 500,
-
+    [327,328,329,339,371,372,417,418,
+     425,426,438,439, 440,441,444,445,446,
+     456,461,462
     ]
-  return list.include?(dexNum) || list.include?(head_dex) || list.include?(body_dex)
+  return list.include?(dexNum)
 end
 
 def isUnovaPokemon(species)
   dexNum = getDexNumberForSpecies(species)
-  poke = getPokemon(species)
-  head_dex = getDexNumberForSpecies(poke.get_head_species())
-  body_dex = getDexNumberForSpecies(poke.get_body_species())
   list =
     [
-      330, 331, 337, 338, 348, 349, 350, 351, 359, 360, 361,
-      362, 363, 364, 365, 366, 367, 368, 369, 374, 375, 376, 377,
-      397, 398, 399, 406, 407, 408, 409, 410, 411, 412, 413, 414,
-      415, 416, 419, 420,
-      422, 423, 424, 434, 345,
-      466, 467, 494, 493,
+      330,331,337,338,348,349,350,351,359,360,361,
+      362,363,364,365,366,367,368,369,374,375,376,377,
+      397,398,399,406,407,408,409,410,411,412,413,414,
+      415,416,419,420,
+      422,423,424,434,345
     ]
-  return list.include?(dexNum) || list.include?(head_dex) || list.include?(body_dex)
+  return list.include?(dexNum)
 end
 
 def isSinnohPokemon(species)
   dexNum = getDexNumberForSpecies(species)
-  poke = getPokemon(species)
-  head_dex = getDexNumberForSpecies(poke.get_head_species())
-  body_dex = getDexNumberForSpecies(poke.get_body_species())
   list =
     [254, 255, 256, 257, 258, 259, 260, 261, 262, 263, 264, 265,
      266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 288, 294,
      295, 296, 297, 298, 299, 305, 306, 307, 308, 315, 316, 317,
      318, 319, 320, 321, 322, 323, 324, 326, 332, 343, 344, 345,
-     346, 347, 352, 353, 354, 358, 383, 384, 388, 389, 400, 402,
-     403, 429, 468]
-
-  return list.include?(dexNum) || list.include?(head_dex) || list.include?(body_dex)
+     346, 347, 352, 353, 354, 358, 383, 384, 388, 389, 400, 402, 403]
+  return list.include?(dexNum)
 end
 
 def isHoennPokemon(species)
   dexNum = getDexNumberForSpecies(species)
-  poke = getPokemon(species)
-  head_dex = getDexNumberForSpecies(poke.get_head_species())
-  body_dex = getDexNumberForSpecies(poke.get_body_species())
   list = [252, 253, 276, 277, 278, 279, 280, 281, 282, 283, 284,
           285, 286, 287, 289, 290, 291, 292, 293, 300, 301, 302, 303,
           304, 309, 310, 311, 312, 313, 314, 333, 334, 335, 336, 340,
           341, 342, 355, 356, 357, 378, 379, 380, 381, 382, 385, 386, 387, 390,
-          391, 392, 393, 394, 395, 396, 401, 404, 405, 421, 427, 428, 436,
-          437, 442, 443, 447, 448, 449, 457, 458, 488, 495, 496, 497, 501]
-  return list.include?(dexNum) || list.include?(head_dex) || list.include?(body_dex)
+          391, 392, 393, 394, 395, 396, 401, 404, 405]
+  return list.include?(dexNum)
 end
 
 def pbBitmap(path)
@@ -394,7 +520,154 @@ def pbBitmap(path)
   return bmp
 end
 
+# def Kernel.setRocketPassword(variableNum)
+#   abilityIndex = rand(233)
+#   speciesIndex = rand(PBSpecies.maxValue - 1)
 
+#   word1 = PBSpecies.getName(speciesIndex)
+#   word2 = GameData::Ability.get(abilityIndex).name
+#   password = _INTL("{1}'s {2}", word1, word2)
+#   pbSet(variableNum, password)
+# end
+
+# def getGenericPokemonCryText(pokemonSpecies)
+#   case pokemonSpecies
+#   when 25
+#     return "Pika!"
+#   when 16, 17, 18, 21, 22, 144, 145, 146, 227, 417, 418, 372 #birds
+#     return "Squawk!"
+#   when 163, 164
+#     return "Hoot!" #owl
+#   else
+#     return "Guaugh!"
+#   end
+# end
+
+def obtainPokemonSpritePath(id, includeCustoms = true)
+  head = getBasePokemonID(param.to_i, false)
+  body = getBasePokemonID(param.to_i, true)
+
+  return obtainPokemonSpritePath(body, head, includeCustoms)
+end
+
+
+
+
+
+def obtainPokemonSpritePath(bodyId, headId, include_customs = true)
+  download_pokemon_sprite_if_missing(bodyId,headId)
+  picturePath = _INTL("Graphics/Battlers/{1}/{1}.{2}.png", headId, bodyId)
+
+  if include_customs && customSpriteExistsBodyHead(bodyId,headId)
+    pathCustom = getCustomSpritePath(bodyId,headId)
+    if (pbResolveBitmap(pathCustom))
+      picturePath = pathCustom
+    end
+  end
+  return picturePath
+end
+
+def getCustomSpritePath(body,head)
+  return _INTL("Graphics/CustomBattlers/indexed/{1}/{1}.{2}.png", head, body)
+end
+
+def customSpriteExistsForm(species,form_id_head=nil, form_id_body=nil)
+  head = getBasePokemonID(species, false)
+  body = getBasePokemonID(species, true)
+
+  folder = head.to_s
+
+  folder += "_" + form_id_head.to_s if form_id_head
+
+  spritename = head.to_s
+  spritename += "_" + form_id_head.to_s if form_id_head
+  spritename += "." + body.to_s
+  spritename += "_" + form_id_body.to_s if form_id_body
+
+  pathCustom = _INTL("Graphics/CustomBattlers/indexed/{1}/{2}.png", folder, spritename)
+  return true if pbResolveBitmap(pathCustom) != nil
+  return download_custom_sprite(head, body,form_id_head,form_id_body) != nil
+end
+
+def customSpriteExists(species)
+  head = getBasePokemonID(species, false)
+  body = getBasePokemonID(species, true)
+  pathCustom = getCustomSpritePath(body,head)
+
+  return true if pbResolveBitmap(pathCustom) != nil
+  return download_custom_sprite(head, body) != nil
+end
+
+def checkIfCustomSpriteExistsByPath(path)
+  return true if pbResolveBitmap(path) != nil
+end
+
+
+def customSpriteExistsBodyHead(body, head)
+  pathCustom = getCustomSpritePath(body,head)
+
+  return true if pbResolveBitmap(pathCustom) != nil
+  return download_custom_sprite(head, body) != nil
+end
+
+def customSpriteExistsBase(body,head)
+  pathCustom = getCustomSpritePath(body,head)
+  return true if pbResolveBitmap(pathCustom) != nil
+  return download_custom_sprite(head, body) != nil
+end
+
+# def getSpriteCredits(spriteName)
+#   File.foreach(Settings::CREDITS_FILE_PATH) do |line|
+#     row = line.split(';')
+#     echo row[0]
+#     if row[0] == spriteName
+#       return row[1]
+#     end
+#   end
+#   return nil
+# end
+
+# def getArceusPlateType(heldItem)
+#   return :NORMAL if heldItem == nil
+#   case heldItem
+#   when :FISTPLATE
+#     return :FIGHTING
+#   when :SKYPLATE
+#     return :FLYING
+#   when :TOXICPLATE
+#     return :POISON
+#   when :EARTHPLATE
+#     return :GROUND
+#   when :STONEPLATE
+#     return :ROCK
+#   when :INSECTPLATE
+#     return :BUG
+#   when :SPOOKYPLATE
+#     return :GHOST
+#   when :IRONPLATE
+#     return :STEEL
+#   when :FLAMEPLATE
+#     return :FIRE
+#   when :SPLASHPLATE
+#     return :WATER
+#   when :MEADOWPLATE
+#     return :GRASS
+#   when :ZAPPLATE
+#     return :ELECTRIC
+#   when :MINDPLATE
+#     return :PSYCHIC
+#   when :ICICLEPLATE
+#     return :ICE
+#   when :DRACOPLATE
+#     return :DRAGON
+#   when :DREADPLATE
+#     return :DARK
+#   when :PIXIEPLATE
+#     return :FAIRY
+#   else
+#     return :NORMAL
+#   end
+# end
 
 def reverseFusionSpecies(species)
   dexId = getDexNumberForSpecies(species)
@@ -407,27 +680,85 @@ def reverseFusionSpecies(species)
 end
 
 def Kernel.getRoamingMap(roamingArrayPos)
-  curmap = $PokemonGlobal.roamPosition[roamingArrayPos]
-  mapinfos = $RPGVX ? load_data("Data/MapInfos.rvdata") : load_data("Data/MapInfos.rxdata")
-  text = mapinfos[curmap].name #,(curmap==$game_map.map_id) ? _INTL("(this map)") : "")
+  curmap=$PokemonGlobal.roamPosition[roamingArrayPos]
+  mapinfos=$RPGVX ? load_data("Data/MapInfos.rvdata") : load_data("Data/MapInfos.rxdata")
+  text= mapinfos[curmap].name#,(curmap==$game_map.map_id) ? _INTL("(this map)") : "")
   return text
 end
 
+# def Kernel.listPlatesInBag()
+#   list = []
+#   list << PBItems::FISTPLATE if $PokemonBag.pbQuantity(:FISTPLATE)>=1
+#   list << PBItems::SKYPLATE if $PokemonBag.pbQuantity(:SKYPLATE)>=1
+#   list << PBItems::TOXICPLATE if $PokemonBag.pbQuantity(:TOXICPLATE)>=1
+#   list << PBItems::EARTHPLATE if $PokemonBag.pbQuantity(:EARTHPLATE)>=1
+#   list << PBItems::STONEPLATE if $PokemonBag.pbQuantity(:STONEPLATE)>=1
+#   list << PBItems::INSECTPLATE if $PokemonBag.pbQuantity(:INSECTPLATE)>=1
+#   list << PBItems::SPOOKYPLATE if $PokemonBag.pbQuantity(:SPOOKYPLATE)>=1
+#   list << PBItems::IRONPLATE if $PokemonBag.pbQuantity(:IRONPLATE)>=1
+#   list << PBItems::FLAMEPLATE if $PokemonBag.pbQuantity(:FLAMEPLATE)>=1
+#   list << PBItems::SPLASHPLATE if $PokemonBag.pbQuantity(:SPLASHPLATE)>=1
+#   list << PBItems::MEADOWPLATE if $PokemonBag.pbQuantity(:MEADOWPLATE)>=1
+#   list << PBItems::ZAPPLATE if $PokemonBag.pbQuantity(:ZAPPLATE)>=1
+#   list << PBItems::MINDPLATE if $PokemonBag.pbQuantity(:MINDPLATE)>=1
+#   list << PBItems::ICICLEPLATE if $PokemonBag.pbQuantity(:ICICLEPLATE)>=1
+#   list << PBItems::DRACOPLATE if $PokemonBag.pbQuantity(:DRACOPLATE)>=1
+#   list << PBItems::DREADPLATE if $PokemonBag.pbQuantity(:DREADPLATE)>=1
+#   list << PBItems::PIXIEPLATE if $PokemonBag.pbQuantity(:PIXIEPLATE)>=1
+#   return list
+# end
+
 def Kernel.getItemNamesAsString(list)
   strList = ""
-  for i in 0..list.length - 1
+  for i in 0..list.length-1
     id = list[i]
-    name = PBItems.getName(id)
+    name =PBItems.getName(id)
     strList += name
-    if i != list.length - 1 && list.length > 1
+    if i != list.length-1 && list.length > 1
       strList += ","
     end
   end
   return strList
 end
 
+def get_body_id_from_symbol(id)
+  split_id = id.to_s.match(/\d+/)
+  if !split_id #non-fusion
+    return GameData::Species.get(id).id_number
+  end
+  return split_id[0].to_i
+end
 
-def get_default_moves_at_level(species, level)
+def get_head_id_from_symbol(id)
+  split_id = id.to_s.match(/(?<=H)\d+/)
+  if !split_id #non-fusion
+    return GameData::Species.get(id).id_number
+  end
+
+  return split_id[0].to_i
+end
+
+def Kernel.getPlateType(item)
+  return :FIGHTING if item == PBItems::FISTPLATE
+  return :FLYING if item == PBItems::SKYPLATE
+  return :POISON if item == PBItems::TOXICPLATE
+  return :GROUND if item == PBItems::EARTHPLATE
+  return :ROCK if item == PBItems::STONEPLATE
+  return :BUG if item == PBItems::INSECTPLATE
+  return :GHOST if item == PBItems::SPOOKYPLATE
+  return :STEEL if item == PBItems::IRONPLATE
+  return :FIRE if item == PBItems::FLAMEPLATE
+  return :WATER if item == PBItems::SPLASHPLATE
+  return :GRASS if item == PBItems::MEADOWPLATE
+  return :ELECTRIC if item == PBItems::ZAPPLATE
+  return :PSYCHIC if item == PBItems::MINDPLATE
+  return :ICE if item == PBItems::ICICLEPLATE
+  return :DRAGON if item == PBItems::DRACOPLATE
+  return :DARK if item == PBItems::DREADPLATE
+  return :FAIRY if item == PBItems::PIXIEPLATE
+  return -1
+end
+def get_default_moves_at_level(species,level)
   moveset = GameData::Species.get(species).moves
   knowable_moves = []
   moveset.each { |m| knowable_moves.push(m[1]) if m[0] <= level }
@@ -443,13 +774,15 @@ def get_default_moves_at_level(species, level)
     #moves.push(Pokemon::Move.new(knowable_moves[i]))
     moves << knowable_moves[i]
   end
+  # p moves
   return moves
 end
+
 
 def find_newer_available_version
   latest_Version = fetch_latest_game_version
   return nil if !latest_Version
-  return nil if is_higher_version(Settings::GAME_VERSION_NUMBER, latest_Version)
+  return nil if is_higher_version(Settings::GAME_VERSION_NUMBER,latest_Version)
   return latest_Version
 end
 
@@ -481,30 +814,60 @@ def get_difficulty_text
   end
 end
 
-def pokemonExceedsLevelCap(pokemon)
-  return false if $Trainer.badge_count >= Settings::NB_BADGES
-  current_max_level = Settings::LEVEL_CAPS[$Trainer.badge_count]
-  current_max_level *= Settings::HARD_MODE_LEVEL_MODIFIER if $game_switches[SWITCH_GAME_DIFFICULTY_HARD]
-  return pokemon.level >= current_max_level
-end
+# def change_game_difficulty(down_only=false)
+#   message = "The game is currently on " + get_difficulty_text() + " difficulty."
+#   pbMessage(message)
+
+
+#   choice_easy = "Easy"
+#   choice_normal = "Normal"
+#   choice_hard = "Hard"
+#   choice_cancel = "Cancel"
+
+
+#   available_difficulties = []
+#   currentDifficulty =get_current_game_difficulty
+#   if down_only
+#     if currentDifficulty == :HARD
+#       available_difficulties << choice_hard
+#       available_difficulties << choice_normal
+#       available_difficulties << choice_easy
+#     elsif currentDifficulty ==:NORMAL
+#       available_difficulties << choice_normal
+#       available_difficulties << choice_easy
+#     elsif currentDifficulty ==:EASY
+#       available_difficulties << choice_easy
+#     end
+#   else
+#     available_difficulties << choice_easy
+#     available_difficulties << choice_normal
+#     available_difficulties << choice_hard
+#   end
+#   available_difficulties << choice_cancel
+#   index = pbMessage("Select a new difficulty", available_difficulties, available_difficulties[-1])
+#   choice = available_difficulties[index]
+#   case choice
+#   when choice_easy
+#     $game_switches[SWITCH_GAME_DIFFICULTY_EASY]=true
+#     $game_switches[SWITCH_GAME_DIFFICULTY_HARD] = false
+#   when choice_normal
+#     $game_switches[SWITCH_GAME_DIFFICULTY_EASY]=false
+#     $game_switches[SWITCH_GAME_DIFFICULTY_HARD] = false
+#   when choice_hard
+#     $game_switches[SWITCH_GAME_DIFFICULTY_EASY]=false
+#     $game_switches[SWITCH_GAME_DIFFICULTY_HARD] = true
+#   when choice_cancel
+#     return
+#   end
+
+#   message = "The game is currently on " + get_difficulty_text() + " difficulty."
+#   pbMessage(message)
+# end
 
 def listPokemonIDs()
   for id in 0..NB_POKEMON
     pokemon = GameData::Species.get(id).species
     echoln id.to_s + ": " + "\"" + pokemon.to_s + "\"" + ", "
   end
-end
 
-def getLatestSpritepackDate()
-  return Time.new(Settings::NEWEST_SPRITEPACK_YEAR, Settings::NEWEST_SPRITEPACK_MONTH)
-end
-
-def new_spritepack_was_released()
-  current_spritepack_date = $PokemonGlobal.current_spritepack_date
-  latest_spritepack_date = getLatestSpritepackDate()
-  if !current_spritepack_date || (current_spritepack_date < latest_spritepack_date)
-    $PokemonGlobal.current_spritepack_date = latest_spritepack_date
-    return true
-  end
-  return false
 end

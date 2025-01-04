@@ -57,13 +57,9 @@ end
 def rockSmashItem(isDark=false)
   chance = 50
   if rand(100)< chance
-    if rand(5) == 0 && !hatUnlocked?(HAT_AERODACTYL)
-      obtainHat(HAT_AERODACTYL)
-    else
-      itemsList = getRockSmashItemList(isDark)
-      i = rand(itemsList.length)
-      Kernel.pbItemBall(itemsList[i],1,nil,false)
-    end
+    itemsList = getRockSmashItemList(isDark)
+    i = rand(itemsList.length)
+    Kernel.pbItemBall(itemsList[i],1,nil,false)
   end
 end
 

@@ -8,67 +8,47 @@ class PokedexUtils
     return ('a'..'z').to_a + ('aa'..'az').to_a
   end
 
-  def getBaseSpritesAlts(dex_number)
-    return $game_temp.base_sprites_list[dex_number]
-  end
+  def pbGetAvailableAlts(species, form_index = 0)
+    if form_index
+      form_suffix = form_index <= 0 ? "" : "_" + form_index.to_s
+    else
+      form_suffix = ""
+    end
 
-  def getLocalBaseSpriteAlts(dex_number)
-    local_sprite_alts = []
-    baseFilename = "#{dex_number}"
-    possible_alt_letters = getAltLettersList()
-    possible_alt_letters << ""
-    possible_alt_letters.each { |alt_letter|
-      spritename = "#{baseFilename}#{alt_letter}"
-      local_path = "#{Settings::CUSTOM_BASE_SPRITES_FOLDER}/#{spritename}.png"
-      if pbResolveBitmap(local_path)
-        local_sprite_alts << getLocalSpriteID(local_path)
+    ret = []
+    return ret if !species
+    dexNum = getDexNumberForSpecies(species)
+    isFusion = dexNum > NB_POKEMON
+    if !isFusion
+      ret << Settings::BATTLERS_FOLDER + dexNum.to_s + form_suffix + "/" + dexNum.to_s + form_suffix + ".png"
+
+      getAltLettersList().each { |alt_letter|
+        altFilePath = Settings::CUSTOM_BASE_SPRITES_FOLDER + dexNum.to_s + form_suffix + alt_letter + ".png"
+        if pbResolveBitmap(altFilePath)
+          ret << altFilePath
+        end
+      }
+      return ret
+    end
+    body_id = getBodyID(species)
+    head_id = getHeadID(species, body_id)
+
+    baseFilename = head_id.to_s + "." + body_id.to_s + form_suffix
+    baseFilePath = Settings::CUSTOM_BATTLERS_FOLDER_INDEXED + head_id.to_s + "/" + baseFilename + ".png"
+    if pbResolveBitmap(baseFilePath)
+      ret << baseFilePath
+    end
+    getAltLettersList().each { |alt_letter|
+      if alt_letter != "" #empty is included in alt letters because unfused sprites can be alts and not have a letter
+        altFilePath = Settings::CUSTOM_BATTLERS_FOLDER_INDEXED + head_id.to_s + "/" + baseFilename + alt_letter + ".png"
+        if pbResolveBitmap(altFilePath)
+          ret << altFilePath
+        end
       end
     }
-    return local_sprite_alts
+    ret << Settings::BATTLERS_FOLDER + head_id.to_s + "/" + baseFilename + ".png"
+    return ret
   end
-
-  def getLocalFusionSpriteAlts(head_id,body_id)
-    local_sprite_alts = []
-    baseFilename = "#{head_id}.#{body_id}"
-    possible_alt_letters = getAltLettersList()
-    possible_alt_letters << ""
-    possible_alt_letters.each { |alt_letter|
-      spritename = "#{baseFilename}#{alt_letter}"
-          local_path = "#{Settings::CUSTOM_BATTLERS_FOLDER_INDEXED}/#{head_id.to_s}/#{spritename}.png"
-          if pbResolveBitmap(local_path)
-            local_sprite_alts << getLocalSpriteID(local_path)
-          end
-      }
-    return local_sprite_alts
-  end
-
-  def getLocalSpriteID(sprite_path)
-    return "local_#{sprite_path}"
-  end
-
-  def getFusionSpriteAlts(head_id, body_id)
-    sprite_id = get_fusion_symbol(head_id,body_id)
-    return $game_temp.custom_sprites_list[sprite_id]
-  end
-
-  def pbGetAvailableAlts(species, includeAutogens=false)
-    dex_number = getDexNumberForSpecies(species)
-    if isFusion(dex_number)
-      body_id = getBodyID(dex_number)
-      head_id = getHeadID(dex_number,body_id)
-      available_alts = getFusionSpriteAlts(head_id,body_id)
-      available_alts = [] if !available_alts
-      local_alts = getLocalFusionSpriteAlts(head_id,body_id)
-    else
-      available_alts= getBaseSpritesAlts(dex_number)
-      available_alts = [] if !available_alts
-      local_alts = getLocalBaseSpriteAlts(dex_number)
-    end
-    available_alts += local_alts if local_alts
-    available_alts << "autogen" if includeAutogens
-    return available_alts
-  end
-
 
   #todo: return array for split evolution lines that have multiple final evos
   def getFinalEvolution(species)

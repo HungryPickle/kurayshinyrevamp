@@ -54,7 +54,7 @@ class OnlineWondertrade
                       |poke| !poke.egg? &&
                         !(poke.isShadow?) &&
                         poke.isFusion? &&
-                        customSpriteExistsSpecies(poke.species) #&&
+                      customSpriteExists(poke.species) #&&
                       #  !poke.debug_shiny
                     })
     poke = $Trainer.party[pbGet(1)]

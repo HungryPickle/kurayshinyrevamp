@@ -178,10 +178,6 @@ def getDayOfTheWeek()
   return UnrealTime::WEEK_DAYS[day_of_week]
 end
 
-def isDayOfTheWeek(day)
-  return day == getDayOfTheWeek()
-end
-
 def pbGetTimeNow
   return Time.now if !$PokemonGlobal || !UnrealTime::ENABLED
   day_seconds = 60 * 60 * 24
@@ -262,7 +258,7 @@ if UnrealTime::ENABLED
 
   if UnrealTime::TIME_STOPS
     class Scene_Map
-      alias :updateold :update
+      alias :updateold :update unless method_defined?(:updateold)
 
       def update
         $PokemonGlobal.addNewFrameCount
@@ -270,7 +266,7 @@ if UnrealTime::ENABLED
       end
 
       if UnrealTime::TALK_PASS
-        alias :miniupdateold :miniupdate
+        alias :miniupdateold :miniupdate unless method_defined?(:miniupdateold)
 
         def miniupdate
           $PokemonGlobal.addNewFrameCount
@@ -281,7 +277,7 @@ if UnrealTime::ENABLED
 
     if UnrealTime::BATTLE_PASS
       class PokeBattle_Scene
-        alias :pbGraphicsUpdateold :pbGraphicsUpdate
+        alias :pbGraphicsUpdateold :pbGraphicsUpdate unless method_defined?(:pbGraphicsUpdateold)
 
         def pbGraphicsUpdate
           $PokemonGlobal.addNewFrameCount
