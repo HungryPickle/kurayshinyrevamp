@@ -1,7 +1,7 @@
-Graphics/CustomBattlers/local_sprites/*
+Graphics/BaseSprites/*
+Graphics/Battlers/*
+Graphics/CustomBattlers/indexed/*
 Graphics/Pokemon/FusionIcons/*
 
-Graphics/CustomBattlers/spritesheets/*
-Data/sprites/*
-Data/VERSION
+Data/REMOTE_VERSION
  
