@@ -135,7 +135,7 @@ class PokemonPokedexInfo_Scene
       download_autogen_sprite(head_id, body_id)
       download_all_alt_sprites(head_id, body_id)
     end
-    return PokedexUtils.new.pbGetAvailableAlts(chosen_species, @formIndex)
+    return PokedexUtils.pbGetAvailableAlts(chosen_species, @formIndex)
   end
 
   def hide_all_selected_windows

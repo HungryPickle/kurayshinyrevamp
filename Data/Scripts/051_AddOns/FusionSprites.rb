@@ -151,7 +151,7 @@ module GameData
     end
 
     def self.sprite_filename(dex_number, spriteform_body = nil, spriteform_head = nil)
-      
+
       #dex_number = GameData::NAT_DEX_MAPPING[dex_number] ? GameData::NAT_DEX_MAPPING[dex_number] : dex_number
       if dex_number.is_a?(GameData::Species)
         dex_number = dex_number.id_number
@@ -203,28 +203,41 @@ def get_unfused_sprite_path(dex_number_id, spriteform = nil)
 
   if alt_sprites_substitutions_available && $PokemonGlobal.alt_sprite_substitutions.keys.include?(substitution_id)
     substitutionPath = $PokemonGlobal.alt_sprite_substitutions[substitution_id]
+    #echoln("---substitutionPath--------#{substitutionPath}-------------------")
     return substitutionPath if pbResolveBitmap(substitutionPath)
   end
   random_alt = get_random_alt_letter_for_unfused(dex_number, true) #nil if no main
   random_alt = "" if !random_alt
 
 
-  filename = _INTL("{1}{2}{3}.png", dex_number, spriteform_letter,random_alt)
+  #filename = _INTL("{1}{2}{3}.png", dex_number, spriteform_letter,random_alt)
+  filename_normal = _INTL("{1}{2}.png", dex_number, spriteform_letter)
+  filename_alt = _INTL("{1}{2}{3}.png", dex_number, spriteform_letter,random_alt)
 
-  normal_path = Settings::BATTLERS_FOLDER + folder + spriteform_letter + "/" + filename
-  lightmode_path = Settings::BATTLERS_FOLDER + filename
+  #normal_path = Settings::BATTLERS_FOLDER + folder + spriteform_letter + "/" + filename
+  #lightmode_path = Settings::BATTLERS_FOLDER + filename
+  normal_path = Settings::BATTLERS_FOLDER + folder + spriteform_letter + "/" + filename_normal
+  alt_path = Settings::CUSTOM_BASE_SPRITES_FOLDER + filename_alt
 
-  path = random_alt == "" ? normal_path : lightmode_path
+  #echoln(normal_path)
+  #echoln(alt_path)
+  #echoln(normal_path)
+  #echoln(lightmode_path)
 
+  #path = random_alt == "" ? normal_path : lightmode_path
+  path = random_alt == "" ? normal_path : alt_path
+  #echoln("-------path--------#{path}-------------------")
   if pbResolveBitmap(path)
     record_sprite_substitution(substitution_id,path)
     return path
   end
   downloaded_path = download_unfused_main_sprite(dex_number, random_alt)
+  #echoln("------downloaded_path-------#{downloaded_path}-------------------")
   if pbResolveBitmap(downloaded_path)
     record_sprite_substitution(substitution_id,downloaded_path)
     return downloaded_path
   end
+  #echoln("------normal_path-------#{normal_path}-------------------")
   return normal_path
 end
 
@@ -278,6 +291,7 @@ def get_fusion_sprite_path(head_id, body_id, spriteform_body = nil, spriteform_h
 
   if alt_sprites_substitutions_available && $PokemonGlobal.alt_sprite_substitutions.keys.include?(substitution_id)
     substitutionPath= $PokemonGlobal.alt_sprite_substitutions[substitution_id]
+    #load_pickles(substitutionPath, head_id)
     return substitutionPath if pbResolveBitmap(substitutionPath)
   end
 
@@ -297,10 +311,10 @@ def get_fusion_sprite_path(head_id, body_id, spriteform_body = nil, spriteform_h
     forcingSprite=true
   end
 
-
   filename = _INTL("{1}{2}.png", pokemon_name, random_alt)
   #Try local custom sprite
   local_custom_path = Settings::CUSTOM_BATTLERS_FOLDER_INDEXED + head_id.to_s + spriteform_head_letter + "/" + filename
+  #load_pickles(local_custom_path, head_id)
   if pbResolveBitmap(local_custom_path)
     record_sprite_substitution(substitution_id, local_custom_path) if !forcingSprite
     return local_custom_path
@@ -317,6 +331,7 @@ def get_fusion_sprite_path(head_id, body_id, spriteform_body = nil, spriteform_h
 
   #Try local generated sprite
   local_generated_path = Settings::BATTLERS_FOLDER + head_id.to_s + spriteform_head_letter + "/" + filename
+  #load_pickles(local_generated_path, head_id)
   if pbResolveBitmap(local_generated_path)
     add_to_autogen_cache(substitution_id,local_generated_path)
     return local_generated_path
@@ -415,7 +430,7 @@ def list_main_sprites_letters(spriteName)
   all_sprites.each do |key, value|
     main_sprites << key if value == "main"
   end
-  
+
   #add temp sprites if no main sprites found
   if main_sprites.empty?
     all_sprites.each do |key, value|

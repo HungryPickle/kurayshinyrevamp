@@ -164,6 +164,19 @@ def mainFunctionDebug
     rescue
       echo "failed to sort custom battlers"
     end
+
+    MountedSprites.set_folder
+    MountedSprites.load_base_sprites
+
+    #Dir.each_child("SpritePack/custom_sprites"){ |file|
+    #  echo(_INTL("\nSpritePack/custom_sprites/{1}",file))
+    #  echo(_INTL("\nGraphics/CustomBattlers/indexed/{1}",file))
+    #  System.mount(_INTL("SpritePack/custom_sprites/{1}",file), _INTL("Graphics/CustomBattlers/indexed/"))
+    #}
+    #Dir.each_child("SpritePack/autogen_sprites"){ |folder|
+    #  System.mount(_INTL("SpritePack/autogen_sprites/{1}",folder), _INTL("Graphics/Battlers/"))
+    #}
+
     $scene = pbCallTitle
     $scene.main until $scene.nil?
     Graphics.transition(20)

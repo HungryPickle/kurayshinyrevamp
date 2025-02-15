@@ -171,6 +171,7 @@ end
 
 #todo refactor & put custom base sprites in same folder as fusion sprites
 def download_unfused_main_sprite(dex_num, alt_letter="")
+  return nil if $PokemonSystem.download_sprites != 0
   base_url = alt_letter == "" ? Settings::BASE_POKEMON_SPRITES_REPO_URL : Settings::BASE_POKEMON_ALT_SPRITES_REPO_URL
   filename = _INTL("{1}{2}.png",dex_num,alt_letter)
   url = base_url + filename
@@ -182,6 +183,7 @@ def download_unfused_main_sprite(dex_num, alt_letter="")
 end
 
 def download_all_unfused_alt_sprites(dex_num)
+  return if $PokemonSystem.download_sprites != 0
   base_url = Settings::BASE_POKEMON_ALT_SPRITES_REPO_URL + "{1}"
   extension = ".png"
   destPath = _INTL("{1}", Settings::CUSTOM_BASE_SPRITES_FOLDER)
@@ -199,6 +201,7 @@ def download_all_unfused_alt_sprites(dex_num)
 end
 
 def download_all_alt_sprites(head_id, body_id)
+  return if $PokemonSystem.download_sprites != 0
   base_url = "#{Settings::CUSTOM_SPRITES_REPO_URL}{1}.{2}"
   extension = ".png"
   destPath = _INTL("{1}{2}", Settings::CUSTOM_BATTLERS_FOLDER_INDEXED, head_id)

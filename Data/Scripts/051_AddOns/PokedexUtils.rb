@@ -4,11 +4,11 @@ class PokedexUtils
   #                  "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "at", "au", "av", "aw", "ax",
   #                  "ay", "az"]
 
-  def getAltLettersList()
+  def self.getAltLettersList
     return ('a'..'z').to_a + ('aa'..'az').to_a
   end
 
-  def pbGetAvailableAlts(species, form_index = 0)
+  def self.pbGetAvailableAlts(species, form_index = 0)
     if form_index
       form_suffix = form_index <= 0 ? "" : "_" + form_index.to_s
     else
@@ -32,9 +32,9 @@ class PokedexUtils
     end
     body_id = getBodyID(species)
     head_id = getHeadID(species, body_id)
-
     baseFilename = head_id.to_s + "." + body_id.to_s + form_suffix
     baseFilePath = Settings::CUSTOM_BATTLERS_FOLDER_INDEXED + head_id.to_s + "/" + baseFilename + ".png"
+    #load_pickles(baseFilePath, head_id)
     if pbResolveBitmap(baseFilePath)
       ret << baseFilePath
     end
@@ -46,12 +46,17 @@ class PokedexUtils
         end
       end
     }
-    ret << Settings::BATTLERS_FOLDER + head_id.to_s + "/" + baseFilename + ".png"
+    if pbResolveBitmap(Settings::BATTLERS_FOLDER + head_id.to_s + "/" + baseFilename + ".png")
+      ret << Settings::BATTLERS_FOLDER + head_id.to_s + "/" + baseFilename + ".png"
+    end
+
+    ret << Settings::DEFAULT_SPRITE_PATH if ret.empty?
+
     return ret
   end
 
   #todo: return array for split evolution lines that have multiple final evos
-  def getFinalEvolution(species)
+  def self.getFinalEvolution(species)
     #ex: [[B3H4,Level 32],[B2H5, Level 35]]
     evolution_line = species.get_evolutions
     return species if evolution_line.empty?

@@ -114,6 +114,17 @@ def pbResolveAudioSE(file)
   return nil
 end
 
+def resolveMountedBitmap(filepath)
+  canon_file = canonicalize(filepath)
+  str = nil
+  begin
+    str = load_data(canon_file, true)
+  rescue Errno::ENOENT, Errno::EINVAL, Errno::EACCES, Errno::EISDIR, RGSSError, MKXPError
+    str = nil
+  end
+  return (str!=nil && str!="") ? filepath : nil
+end
+
 # Finds the real path for an image file.  This includes paths in encrypted
 # archives.  Returns nil if the path can't be found.
 def pbResolveBitmap(x)
@@ -131,6 +142,9 @@ def pbResolveBitmap(x)
 #    filename = pbTryString(path+".jpeg") if !filename
 #    filename = pbTryString(path+".bmp") if !filename
   }
+  if nil_or_empty?(filename)
+    return resolveMountedBitmap(x) if MountedSprites.resolve_path(x)
+  end
   return filename
 end
 
